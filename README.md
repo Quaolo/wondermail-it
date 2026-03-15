@@ -1,4 +1,4 @@
-# https://redcoal27.github.io/wondermail_pdm/
+https://redcoal27.github.io/wondermail_pdm/
 
 # Generateur FR - Lettres Miracle S
 
