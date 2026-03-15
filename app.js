@@ -720,12 +720,25 @@ function getPokemonSpriteDexId(monId) {
   return null;
 }
 
+function getPokemonSpriteAsset(monId) {
+  const normalized = normalizePokemonId(monId);
+  if (!Number.isFinite(normalized) || normalized < 1) return null;
+  if (normalized === 201) return '201';
+  if (normalized >= 202 && normalized <= 226) {
+    const letter = String.fromCharCode(97 + (normalized - 201));
+    return `201-${letter}`;
+  }
+  if (normalized === 227) return '201-exclamation';
+  if (normalized === 228) return '201-question';
+  return String(getPokemonSpriteDexId(normalized));
+}
+
 function getPokemonImage(monId, label) {
-  const spriteDexId = getPokemonSpriteDexId(monId);
+  const spriteAsset = getPokemonSpriteAsset(monId);
   const fallback = buildPreviewBadge(label, 'pokemon');
   return {
-    src: spriteDexId
-      ? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${spriteDexId}.png`
+    src: spriteAsset
+      ? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${spriteAsset}.png`
       : fallback,
     fallback
   };
@@ -768,12 +781,13 @@ function syncDungeonFloorLimit() {
   if (!dungeonSelect || !floorInput) return;
 
   const limit = getDungeonFloorLimit(dungeonSelect.value);
-  floorInput.min = '1';
+  const minFloor = isEggGlitchEnabled() ? 0 : 1;
+  floorInput.min = String(minFloor);
   floorInput.max = String(limit);
 
   const current = parseInt(floorInput.value, 10);
-  if (!Number.isFinite(current) || current < 1) {
-    floorInput.value = '1';
+  if (!Number.isFinite(current) || current < minFloor) {
+    floorInput.value = String(minFloor);
   } else if (current > limit) {
     floorInput.value = String(limit);
   }
@@ -902,6 +916,18 @@ function applyItemToField(selectId, itemId) {
   setSelectByValue(select, numeric);
 }
 
+function isEggGlitchStruct(struct) {
+  if (!struct) return false;
+  return parseInt(struct.missionType, 10) === 6
+    && parseInt(struct.missionSpecial, 10) === 0
+    && parseInt(struct.dungeon, 10) === EGG_GLITCH_DUNGEON
+    && EGG_GLITCH_IMPORT_FLOORS.includes(parseInt(struct.floor, 10))
+    && parseInt(struct.targetItem, 10) === EGG_GLITCH_ITEM
+    && parseInt(struct.rewardType, 10) === 5
+    && [EGG_GLITCH_CLIENT, EGG_GLITCH_LEGACY_CLIENT].includes(parseInt(struct.client, 10))
+    && [EGG_GLITCH_CLIENT, EGG_GLITCH_LEGACY_CLIENT].includes(parseInt(struct.target, 10));
+}
+
 function importDecodedStruct(result) {
   const typeSelect = document.getElementById('missionTypeBox');
   const subSelect = document.getElementById('missionSubTypeBox');
@@ -913,10 +939,18 @@ function importDecodedStruct(result) {
   const output = document.getElementById('outputbox');
   const compact = document.getElementById('compactOutput');
   const rawFlavor = document.getElementById('flavorText');
+  const eggGlitchToggle = document.getElementById('eggGlitch');
   const struct = result.struct;
+  const eggGlitch = isEggGlitchStruct(struct);
+
+  if (eggGlitch) {
+    applyPreset('egg');
+  } else if (eggGlitchToggle?.checked) {
+    eggGlitchToggle.checked = false;
+  }
 
   let missionMapped = false;
-  const missionSelection = findMissionSelectionForStruct(struct);
+  const missionSelection = eggGlitch ? null : findMissionSelectionForStruct(struct);
   if (missionSelection && typeSelect) {
     ensureSelectOption(typeSelect, missionSelection.typeIndex, getMissionTypeDisplayName(missionSelection.typeIndex));
     setSelectByValue(typeSelect, missionSelection.typeIndex);
@@ -945,6 +979,17 @@ function importDecodedStruct(result) {
   if (rewardTypeSelect) {
     ensureSelectOption(rewardTypeSelect, struct.rewardType, textOfSelected('rewardTypeBox') || String(struct.rewardType));
     setSelectByValue(rewardTypeSelect, struct.rewardType);
+  }
+
+  if (eggGlitchToggle) {
+    eggGlitchToggle.checked = eggGlitch;
+  }
+  if (eggGlitch) {
+    const eggSelect = document.getElementById('eggPokemonBox');
+    if (eggSelect) {
+      ensureSelectOption(eggSelect, struct.reward, getEggPokemonDisplayName(struct.reward));
+      setSelectByValue(eggSelect, struct.reward);
+    }
   }
 
   applyPokemonToField('clientBox', 'clientF', struct.client);
@@ -1388,6 +1433,114 @@ function relabelPokemonSelect(selectId) {
   });
 }
 
+function rebuildPokemonLists() {
+  if (!window.WMSGen || !WMSGen.form) return;
+
+  const trackedIds = ['clientBox', 'targetBox', 'target2Box'];
+  const previousValues = {};
+  trackedIds.forEach((id) => {
+    const select = document.getElementById(id);
+    previousValues[id] = select ? String(select.value || '') : '';
+  });
+
+  WMSGen.fillMonsterLists();
+  trackedIds.forEach((id) => {
+    relabelPokemonSelect(id);
+    const select = document.getElementById(id);
+    if (!select) return;
+    if (!setSelectByValue(select, previousValues[id])) {
+      select.selectedIndex = Math.max(select.selectedIndex, 0);
+    }
+  });
+}
+
+const EGG_GLITCH_DUNGEON = 91;
+const EGG_GLITCH_FLOOR = 0;
+const EGG_GLITCH_IMPORT_FLOORS = [0, 10];
+const EGG_GLITCH_ITEM = 92;
+const EGG_GLITCH_CLIENT = 286;
+const EGG_GLITCH_LEGACY_CLIENT = 176;
+
+function getEggPokemonBaseId(monId) {
+  const numeric = parseInt(monId, 10);
+  if (!Number.isFinite(numeric) || numeric < 0) return null;
+  return numeric % 600;
+}
+
+function getEggPokemonSlotSuffix(monId) {
+  const numeric = parseInt(monId, 10);
+  if (!Number.isFinite(numeric)) return '';
+  return numeric >= 600 ? ` (${t('eggPokemonAltSlot')})` : '';
+}
+
+function getEggPokemonDisplayName(monId) {
+  const baseId = getEggPokemonBaseId(monId);
+  if (!Number.isFinite(baseId)) return '-';
+  return `${getLocalizedPokemonName(baseId)}${getEggPokemonSlotSuffix(monId)}`;
+}
+
+function populateEggPokemonList() {
+  const select = document.getElementById('eggPokemonBox');
+  if (!select) return;
+
+  const previous = String(select.value || '');
+  select.innerHTML = '';
+
+  const poke = window.WMSkyPoke || {};
+  Object.keys(poke)
+    .map((key) => parseInt(key, 10))
+    .filter((value) => Number.isFinite(value) && value > 0)
+    .sort((a, b) => a - b)
+    .forEach((value) => {
+      [value, value + 600].forEach((rawValue) => {
+        const option = document.createElement('option');
+        option.value = String(rawValue);
+        option.text = getEggPokemonDisplayName(rawValue);
+        select.add(option);
+      });
+    });
+
+  if (!setSelectByValue(select, previous)) {
+    setSelectByValue(select, EGG_GLITCH_CLIENT);
+  }
+}
+
+function isEggGlitchEnabled() {
+  return !!document.getElementById('eggGlitch')?.checked;
+}
+
+function applyEggGlitchPreset() {
+  const typeSelect = document.getElementById('missionTypeBox');
+  const rewardType = document.getElementById('rewardTypeBox');
+  const dungeon = document.getElementById('dungeonBox');
+  const floor = document.getElementById('floor');
+  const targetItem = document.getElementById('targetItemBox');
+  const client = document.getElementById('clientBox');
+  const clientFemale = document.getElementById('clientF');
+
+  if (typeSelect) {
+    setSelectByValue(typeSelect, findMissionTypeIndex(6));
+    WMSGen.fillSubTypeList();
+  }
+  if (rewardType) setSelectByValue(rewardType, 5);
+  if (dungeon) setSelectByValue(dungeon, EGG_GLITCH_DUNGEON);
+  if (floor) floor.value = String(EGG_GLITCH_FLOOR);
+  if (targetItem) setSelectByValue(targetItem, EGG_GLITCH_ITEM);
+  if (client) setSelectByValue(client, EGG_GLITCH_CLIENT);
+  if (clientFemale) clientFemale.checked = false;
+}
+
+function relabelEggPokemonSelect() {
+  const select = document.getElementById('eggPokemonBox');
+  if (!select) return;
+
+  Array.from(select.options).forEach((option) => {
+    const numeric = parseInt(option.value, 10);
+    if (!Number.isFinite(numeric)) return;
+    option.text = getEggPokemonDisplayName(numeric);
+  });
+}
+
 function relabelItemSelect(selectId) {
   const select = document.getElementById(selectId);
   if (!select) return;
@@ -1589,6 +1742,7 @@ function applyStaticTranslations() {
   setText('.presets h2', t('quickAccess'));
   setText('.preset-btn[data-preset="standard"]', t('presetStandard'));
   setText('.preset-btn[data-preset="memo"]', t('presetMemo'));
+  setText('.preset-btn[data-preset="egg"]', t('presetEgg'));
   ['mewtwo', 'entei', 'raikou', 'suicune', 'jirachi'].forEach((boss) => {
     setText(`.preset-btn[data-preset="${boss}"]`, t('presetChallenge', { boss: boss.charAt(0).toUpperCase() + boss.slice(1) }));
   });
@@ -1613,6 +1767,8 @@ function applyStaticTranslations() {
   setText('#specialFloor + .hint', t('specialFloorHint'));
 
   setText('.form-grid > section:nth-of-type(2) > h2', t('targetSection'));
+  setText('#allPokemonFormsLabel', t('allPokemonFormsLabel'));
+  setText('#allPokemonFormsHint', t('allPokemonFormsHint'));
   setText('label[for="clientSearch"]', t('clientLabel'));
   setPlaceholder('#clientSearch', t('pokemonSearchPlaceholder'));
   setText('label[for="targetSearch"]', t('targetLabel'));
@@ -1636,8 +1792,13 @@ function applyStaticTranslations() {
   setText('label[for="rewardTypeBox"]', t('rewardTypeLabel'));
   setText('label[for="rewardItemSearch"]', t('rewardItemLabel'));
   setPlaceholder('#rewardItemSearch', t('rewardSearchPlaceholder'));
-  setText('.toggle span', t('euToggle'));
-  setText('.toggle + .hint', t('euHint'));
+  setText('#eggGlitchLabel', t('eggGlitchLabel'));
+  setText('#eggGlitchHint', t('eggGlitchHint'));
+  setText('#eggPokemonLabel', t('eggPokemonLabel'));
+  setPlaceholder('#eggPokemonSearch', t('eggPokemonPlaceholder'));
+  setText('#eggPokemonHint', t('eggPokemonHint'));
+  setText('#euToggleLabel', t('euToggle'));
+  setText('#euToggleHint', t('euHint'));
   setText('#summaryBox h3', t('summaryTitle'));
 
   setText('#memoVisuals .eyebrow', t('memoVisualEyebrow'));
@@ -1694,6 +1855,7 @@ function relabelLocalizedControls() {
   relabelRewardTypeSelect();
   relabelDungeonSelect();
   ['clientBox', 'targetBox', 'target2Box'].forEach(relabelPokemonSelect);
+  relabelEggPokemonSelect();
   ['targetItemBox', 'rewardItemBox'].forEach(relabelItemSelect);
   relabelMemoSelectorOptions();
   refreshFlavorTextPresetOptions();
@@ -1878,15 +2040,27 @@ function updateMissionFieldVisibility() {
   if (!typeData) return;
 
   const rewardType = parseInt(document.getElementById('rewardTypeBox')?.value || '0', 10);
+  const eggGlitch = isEggGlitchEnabled();
   const clientFixed = hasOwn(typeData, 'forceClient');
   const targetFixed = !!typeData.clientIsTarget || hasOwn(typeData, 'forceTarget');
 
-  setFieldPreviewOnly('clientField', clientFixed);
-  setFieldPreviewOnly('targetField', targetFixed);
-  setFieldVisibility('target2', !!typeData.useTarget2);
-  setFieldVisibility('targetItemField', !!typeData.useTargetItem);
-  setFieldVisibility('rewardTypeField', !typeData.noReward);
-  setFieldVisibility('rewardItemField', !typeData.noReward && rewardType >= 1 && rewardType <= 4);
+  setFieldVisibility('missionTypeField', !eggGlitch);
+  setFieldVisibility('dungeonField', !eggGlitch);
+  setFieldVisibility('floorField', !eggGlitch);
+  setFieldVisibility('memoSelectorWrap', !eggGlitch && isTreasureMemoType(typeData));
+  const advancedPanel = document.getElementById('advancedOptionsPanel');
+  if (advancedPanel) advancedPanel.classList.toggle('hidden', eggGlitch);
+  const targetSection = document.getElementById('targetSectionCard');
+  if (targetSection) targetSection.classList.toggle('hidden', eggGlitch);
+
+  setFieldVisibility('allPokemonFormsField', !eggGlitch);
+  setFieldPreviewOnly('clientField', !eggGlitch && clientFixed);
+  setFieldPreviewOnly('targetField', !eggGlitch && targetFixed);
+  setFieldVisibility('target2', !eggGlitch && !!typeData.useTarget2);
+  setFieldVisibility('targetItemField', !eggGlitch && !!typeData.useTargetItem);
+  setFieldVisibility('rewardTypeField', !eggGlitch && !typeData.noReward);
+  setFieldVisibility('rewardItemField', !eggGlitch && !typeData.noReward && rewardType >= 1 && rewardType <= 4);
+  setFieldVisibility('eggPokemonField', eggGlitch);
 }
 
 function updateEntityPreviews() {
@@ -1944,11 +2118,22 @@ function updateEntityPreviews() {
       ? getItemPreviewData('rewardItemBox', 'Recompense', 'Objet actuellement selectionne', true)
       : null
   );
+
+  renderEntityPreview(
+    'eggPokemonPreview',
+    isEggGlitchEnabled()
+      ? getEggPokemonPreviewData(
+        'eggPokemonBox',
+        getCurrentLanguage() === 'en' ? 'Egg' : 'Oeuf',
+        getCurrentLanguage() === 'en' ? 'Species forced by the glitch' : 'Espece forcee par le glitch'
+      )
+      : null
+  );
 }
 
 function getPokemonPreviewData(selectId, femaleId, forcedId, label, meta) {
   const select = document.getElementById(selectId);
-  const female = !!document.getElementById(femaleId)?.checked;
+  const female = !!(femaleId && document.getElementById(femaleId)?.checked);
   const forced = Number.isFinite(forcedId);
   const baseId = forced ? forcedId : parseInt(select && select.value ? select.value : '', 10);
   const monId = forced ? forcedId : WMSGen.getTrueMonID(baseId, female);
@@ -1959,6 +2144,24 @@ function getPokemonPreviewData(selectId, femaleId, forcedId, label, meta) {
     name,
     meta,
     image: getPokemonImage(monId || baseId, name)
+  };
+}
+
+function getEggPokemonPreviewData(selectId, label, meta) {
+  const select = document.getElementById(selectId);
+  if (!select || !select.options[select.selectedIndex]) return null;
+
+  const rawId = parseInt(select.value, 10);
+  if (!Number.isFinite(rawId)) return null;
+
+  const baseId = getEggPokemonBaseId(rawId);
+  const name = getEggPokemonDisplayName(rawId);
+
+  return {
+    label,
+    name,
+    meta,
+    image: getPokemonImage(baseId, name)
   };
 }
 
@@ -2420,7 +2623,9 @@ function applyPreset(kind) {
   const typeSelect = document.getElementById('missionTypeBox');
   const subSelect = document.getElementById('missionSubTypeBox');
   const eu = document.getElementById('useEUswap');
+  const eggGlitch = document.getElementById('eggGlitch');
   eu.checked = true;
+  if (eggGlitch) eggGlitch.checked = kind === 'egg';
 
   const specialMap = {
     standard: () => {
@@ -2428,6 +2633,9 @@ function applyPreset(kind) {
     },
     memo: () => {
       setSelectByValue(typeSelect, findMissionTypeIndex(12));
+    },
+    egg: () => {
+      applyEggGlitchPreset();
     },
     mewtwo: () => {
       setSelectByValue(typeSelect, findMissionTypeIndex(11));
@@ -2475,6 +2683,8 @@ function applyPreset(kind) {
 onReady(() => {
   WMSGen.advanced = false;
   WMSGen.setup(document.getElementById('genForm'));
+  WMSGen.showAllPokemon = !!document.getElementById('allPokemonForms')?.checked;
+  populateEggPokemonList();
   relabelItemSelect('targetItemBox');
   relabelItemSelect('rewardItemBox');
   document.getElementById('useEUswap').checked = true;
@@ -2484,13 +2694,16 @@ onReady(() => {
   const watchedIds = [
     'missionTypeBox', 'missionSubTypeBox', 'dungeonBox', 'floor', 'clientBox', 'clientF',
     'targetBox', 'targetF', 'target2Box', 'target2F', 'targetItemBox', 'rewardTypeBox',
-    'rewardItemBox', 'useEUswap', 'flavorText', 'specialFloor'
+    'rewardItemBox', 'useEUswap', 'flavorText', 'specialFloor', 'eggPokemonBox'
   ];
 
   watchedIds.forEach((id) => {
     const node = document.getElementById(id);
     if (!node) return;
     node.addEventListener('change', () => {
+      if (isEggGlitchEnabled() && ['missionTypeBox', 'dungeonBox', 'floor', 'targetItemBox', 'rewardTypeBox', 'clientBox', 'clientF'].includes(id)) {
+        applyEggGlitchPreset();
+      }
       if (id === 'missionTypeBox') {
         WMSGen.fillSubTypeList();
       }
@@ -2526,6 +2739,23 @@ onReady(() => {
       updateSummary();
       updateMemoVisuals();
     });
+  });
+
+  document.getElementById('allPokemonForms')?.addEventListener('change', (event) => {
+    WMSGen.showAllPokemon = !!event.target.checked;
+    rebuildPokemonLists();
+    WMSGen.update();
+    refreshMissionUi();
+    updateSummary();
+  });
+
+  document.getElementById('eggGlitch')?.addEventListener('change', (event) => {
+    if (event.target.checked) {
+      applyEggGlitchPreset();
+    }
+    WMSGen.update();
+    refreshMissionUi();
+    updateSummary();
   });
 
   document.getElementById('memoPreset').addEventListener('change', (event) => {
@@ -2847,6 +3077,17 @@ function updateEntityPreviews() {
       ? getItemPreviewData('rewardItemBox', t('rewardPreviewLabel'), t('currentSelectedItem'), true)
       : null
   );
+
+  renderEntityPreview(
+    'eggPokemonPreview',
+    isEggGlitchEnabled()
+      ? getEggPokemonPreviewData(
+        'eggPokemonBox',
+        getCurrentLanguage() === 'en' ? 'Egg' : 'Oeuf',
+        getCurrentLanguage() === 'en' ? 'Species forced by the glitch' : 'Espece forcee par le glitch'
+      )
+      : null
+  );
 }
 
 function getMemoFlagLabels(room) {
@@ -2993,19 +3234,29 @@ function updateSummary() {
   const client = monNameFromSelect('clientBox', 'clientF', typeData.forceClient);
   const target = typeData.clientIsTarget ? client : monNameFromSelect('targetBox', 'targetF', typeData.forceTarget);
 
-  const parts = [`${mission}${subtype && subtype !== '-' ? ` - ${subtype}` : ''}`, `${t('regionLabel')} ${region}`, t('floorSummary', { dungeon, floor }), t('clientSummary', { name: client })];
+  const parts = [`${mission}${subtype && subtype !== '-' ? ` - ${subtype}` : ''}`, `${t('regionLabel')} ${region}`];
 
-  if (!typeData.clientIsTarget || typeData.forceTarget !== undefined) {
+  if (isEggGlitchEnabled()) {
+    parts.push(t('eggGlitchRecipe'));
+  } else {
+    parts.push(t('floorSummary', { dungeon, floor }));
+    parts.push(t('clientSummary', { name: client }));
+  }
+
+  if (!isEggGlitchEnabled() && (!typeData.clientIsTarget || typeData.forceTarget !== undefined)) {
     parts.push(t('targetSummary', { name: target }));
   }
-  if (typeData.useTarget2) {
+  if (!isEggGlitchEnabled() && typeData.useTarget2) {
     parts.push(t('target2Summary', { name: monNameFromSelect('target2Box', 'target2F') }));
   }
-  if (typeData.useTargetItem) {
+  if (!isEggGlitchEnabled() && typeData.useTargetItem) {
     parts.push(t('targetItemSummary', { name: textOfSelected('targetItemBox') }));
   }
-  if (!typeData.noReward) {
+  if (!isEggGlitchEnabled() && !typeData.noReward) {
     parts.push(t('rewardSummary', { name: textOfSelected('rewardTypeBox') }));
+  }
+  if (isEggGlitchEnabled()) {
+    parts.push(t('eggGlitchSummary', { name: textOfSelected('eggPokemonBox') }));
   }
   if (isTreasureMemoType(typeData)) {
     const memoPreset = document.getElementById('memoPreset');
@@ -3287,7 +3538,9 @@ function applyPreset(kind) {
   const typeSelect = document.getElementById('missionTypeBox');
   const subSelect = document.getElementById('missionSubTypeBox');
   const eu = document.getElementById('useEUswap');
+  const eggGlitch = document.getElementById('eggGlitch');
   eu.checked = true;
+  if (eggGlitch) eggGlitch.checked = kind === 'egg';
 
   const specialMap = {
     standard: () => {
@@ -3295,6 +3548,9 @@ function applyPreset(kind) {
     },
     memo: () => {
       setSelectByValue(typeSelect, findMissionTypeIndex(12));
+    },
+    egg: () => {
+      applyEggGlitchPreset();
     },
     mewtwo: () => {
       setSelectByValue(typeSelect, findMissionTypeIndex(11));

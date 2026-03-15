@@ -165,6 +165,9 @@ WMSGen = {
 	
 	// Enable advanced mode
 	"advanced": false,
+
+	// Show the full Pokemon/form list instead of the vanilla quest-safe subset
+	"showAllPokemon": false,
 	
 	/**
 	 * Handle initial page setup.
@@ -281,7 +284,7 @@ WMSGen = {
 		box1.style.display = 'none';
 		box2.style.display = 'none';
 		var poke = WMSkyPoke;
-		if(this.advanced) {
+		if(this.advanced || this.showAllPokemon) {
 			for(var key in poke) {
 				if(poke.hasOwnProperty(key)) {
 					addOptionToSelect(box1, key, poke[key]);
@@ -387,6 +390,9 @@ WMSGen = {
 	 */
 	"verify": function() {
 		var errors = [];
+		if(this.form.eggGlitch && this.form.eggGlitch.checked) {
+			return errors;
+		}
 		
 		var typeData = this.getTypeData();
 		
@@ -516,23 +522,28 @@ WMSGen = {
 	 * @return String|boolean Prettified code or boolean false
 	 */
 	"generate": function() {
+		var eggGlitch = this.form.eggGlitch && this.form.eggGlitch.checked;
+
 		// Get typeData.
 		var typeData = this.getTypeData();
 		
 		// Build the base struct.
 		var struct = {};
 		
-		struct.missionType = typeData.mainType;
-		struct.missionSpecial = typeData.specialType;
+		struct.missionType = eggGlitch ? 6 : typeData.mainType;
+		struct.missionSpecial = eggGlitch ? 0 : typeData.specialType;
 		
 		struct.nullBits = 0;
 		struct.mailType = 4;
 		struct.restriction = 0;
 		struct.restrictionType = 0;
-		struct.rewardType = parseInt(this.getComboBoxValue("rewardTypeBox"), 10);
+		struct.rewardType = eggGlitch ? 5 : parseInt(this.getComboBoxValue("rewardTypeBox"), 10);
 		
 		// Client
-		if(typeData.hasOwnProperty("forceClient")) {
+		if(eggGlitch) {
+			struct.client = 286;
+		}
+		else if(typeData.hasOwnProperty("forceClient")) {
 			struct.client = typeData.forceClient;
 		}
 		else {
@@ -541,7 +552,10 @@ WMSGen = {
 		}
 		
 		// Target
-		if(typeData.hasOwnProperty("forceTarget")) {
+		if(eggGlitch) {
+			struct.target = struct.client;
+		}
+		else if(typeData.hasOwnProperty("forceTarget")) {
 			struct.target = typeData.forceTarget;
 		}
 		else if(typeData.clientIsTarget) {
@@ -553,7 +567,7 @@ WMSGen = {
 		}
 		
 		// Target 2
-		if(typeData.useTarget2) {
+		if(!eggGlitch && typeData.useTarget2) {
 			// See if this works better.
 			struct.target2 = struct.target;
 		}
@@ -563,7 +577,11 @@ WMSGen = {
 		}
 		
 		// Reward - based on reward type
-		if(typeData.noReward) {
+		if(eggGlitch) {
+			var eggPoke = parseInt(this.getComboBoxValue("eggPokemonBox"), 10);
+			struct.reward = Number.isFinite(eggPoke) ? eggPoke : 1;
+		}
+		else if(typeData.noReward) {
 			// If we don't use a reward for this mission type, set it to Cash + Apple.
 			struct.rewardType = 1;
 			struct.reward = 109;
@@ -580,7 +598,10 @@ WMSGen = {
 		}
 		
 		// Target item - based on mission type
-		if(typeData.useTargetItem) {
+		if(eggGlitch) {
+			struct.targetItem = 92;
+		}
+		else if(typeData.useTargetItem) {
 			struct.targetItem = parseInt(this.getComboBoxValue("targetItemBox"), 10);
 		}
 		else {
@@ -590,12 +611,15 @@ WMSGen = {
 		
 		// Dungeon/floor
 		var dungeon = parseInt(this.getComboBoxValue("dungeonBox"), 10);
-		struct.dungeon = dungeon || 1;
+		struct.dungeon = eggGlitch ? 91 : (dungeon || 1);
 		var floor = parseInt(this.form.floor.value, 10);
-		struct.floor = (floor >= 1 && floor <= 99) ? floor : 1;
+		struct.floor = eggGlitch ? 0 : ((floor >= 1 && floor <= 99) ? floor : 1);
 		
 		// Special floor
-		if(this.form.specialFloor.value != "") {
+		if(eggGlitch) {
+			struct.specialFloor = 0;
+		}
+		else if(this.form.specialFloor.value != "") {
 			struct.specialFloor = parseInt(this.form.specialFloor.value, 10);
 		}
 		else if(typeData.hasOwnProperty("specialFloor")) {

@@ -254,7 +254,7 @@ if (!self.__WB_pmw) {
     236: 'Snubbull',
     237: 'Granbull',
     238: 'Qwilfish',
-    223: 'Cizayox',
+    239: 'Cizayox',
     240: 'Caratroc',
     241: 'Scarhino',
     242: 'Farfuret',

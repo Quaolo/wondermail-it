@@ -5,24 +5,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Wonder Mail S Generator (Explorers of Sky)</title>
   <meta name="description" content="Wonder Mail S generator for Pokemon Mystery Dungeon: Explorers of Sky, with treasure memo visuals, challenge letters and FR/EN support.">
-  <link rel="stylesheet" href="style.css?v=20260315e">
-  <script src="lmutils.js?v=20260315e"></script>
-  <script src="lm.js?v=20260315e"></script>
-  <script src="lmgenerate.js?v=20260315e"></script>
-  <script src="ciel_donjon.js?v=20260315e"></script>
-  <script src="ciel_objet.js?v=20260315e"></script>
-  <script src="ciel_poke.js?v=20260315e"></script>
-  <script src="memo_gallery.js?v=20260315e"></script>
-  <script src="item_title_map.js?v=20260315e"></script>
-  <script src="item_icon_map.js?v=20260315e"></script>
-  <script src="pokemon_name_map.js?v=20260315e"></script>
-  <script src="pokemon_sprite_map.js?v=20260315e"></script>
-  <script src="dungeon_name_map.js?v=20260315e"></script>
-  <script src="dungeon_floor_map.js?v=20260315e"></script>
-  <script src="lang/locales.js?v=20260315e"></script>
-  <script src="lang/fr.js?v=20260315e"></script>
-  <script src="lang/en.js?v=20260315e"></script>
-  <script src="app.js?v=20260315e" defer></script>
+  <link rel="stylesheet" href="style.css?v=20260315q">
+  <script src="lmutils.js?v=20260315q"></script>
+  <script src="lm.js?v=20260315q"></script>
+  <script src="lmgenerate.js?v=20260315q"></script>
+  <script src="ciel_donjon.js?v=20260315q"></script>
+  <script src="ciel_objet.js?v=20260315q"></script>
+  <script src="ciel_poke.js?v=20260315q"></script>
+  <script src="memo_gallery.js?v=20260315q"></script>
+  <script src="item_title_map.js?v=20260315q"></script>
+  <script src="item_icon_map.js?v=20260315q"></script>
+  <script src="pokemon_name_map.js?v=20260315q"></script>
+  <script src="pokemon_sprite_map.js?v=20260315q"></script>
+  <script src="dungeon_name_map.js?v=20260315q"></script>
+  <script src="dungeon_floor_map.js?v=20260315q"></script>
+  <script src="lang/locales.js?v=20260315q"></script>
+  <script src="lang/fr.js?v=20260315q"></script>
+  <script src="lang/en.js?v=20260315q"></script>
+  <script src="app.js?v=20260315q" defer></script>
 </head>
 <body>
   <main class="page">
@@ -49,6 +49,7 @@
       <div class="preset-grid">
         <button type="button" class="preset-btn" data-preset="standard">Mission normale</button>
         <button type="button" class="preset-btn" data-preset="memo">MÃ©mo mystÃ¨re</button>
+        <button type="button" class="preset-btn" data-preset="egg">Egg mission (glitch)</button>
         <button type="button" class="preset-btn" data-preset="mewtwo">Lettre de dÃ©fi - Mewtwo</button>
         <button type="button" class="preset-btn" data-preset="entei">Lettre de dÃ©fi - Entei</button>
         <button type="button" class="preset-btn" data-preset="raikou">Lettre de dÃ©fi - Raikou</button>
@@ -59,9 +60,9 @@
     </section>
 
     <form id="genForm" class="form-grid card" autocomplete="off">
-      <section>
+      <section id="missionSectionCard">
         <h2>Mission</h2>
-        <div class="field">
+        <div class="field" id="missionTypeField">
           <label for="missionTypeBox">Type de mission</label>
           <div class="inline-row">
             <select name="missionTypeBox" id="missionTypeBox"></select>
@@ -69,13 +70,13 @@
           </div>
         </div>
 
-        <div class="field">
+        <div class="field" id="dungeonField">
           <label for="dungeonSearch">Donjon</label>
           <input id="dungeonSearch" type="search" class="searchbox" placeholder="Chercher un donjon..." data-target="dungeonBox">
           <select id="dungeonBox" name="dungeonBox"></select>
         </div>
 
-        <div class="field small-field">
+        <div class="field small-field" id="floorField">
           <label for="floor">Ã‰tage</label>
           <input id="floor" name="floor" type="number" min="1" max="99" value="1">
           <p class="hint" id="floorLimitHint">Etages disponibles : 1 a 99 pour ce donjon.</p>
@@ -107,7 +108,18 @@
           <p class="hint">Choisit directement la variante interne du MÃ©mo mystÃ¨re. "Automatique" laisse le gÃ©nÃ©rateur en alÃ©atoire.</p>
         </div>
 
-        <details class="advanced-panel">
+        <input type="checkbox" name="eggGlitch" id="eggGlitch" value="1" hidden>
+        <div class="field hidden" id="eggPokemonField">
+          <label for="eggPokemonSearch" id="eggPokemonLabel">Egg species</label>
+          <div class="field-control-group">
+            <input id="eggPokemonSearch" type="search" class="searchbox" placeholder="Search an egg species..." data-target="eggPokemonBox">
+            <select name="eggPokemonBox" id="eggPokemonBox"></select>
+          </div>
+          <p class="hint" id="eggPokemonHint">This uses the old Wonder Mail egg exploit recipe. It is experimental and may fail depending on game version.</p>
+          <div class="entity-preview" id="eggPokemonPreview"></div>
+        </div>
+
+        <details class="advanced-panel" id="advancedOptionsPanel">
           <summary>Options expertes</summary>
           <input id="flavorText" name="flavorText" type="hidden" value="">
           <div class="field">
@@ -118,8 +130,16 @@
         </details>
       </section>
 
-      <section>
+      <section id="targetSectionCard">
         <h2>Pokemon et objet cible</h2>
+        <div class="field toggle-field" id="allPokemonFormsField">
+          <label class="toggle" for="allPokemonForms">
+            <input type="checkbox" id="allPokemonForms" name="allPokemonForms">
+            <span id="allPokemonFormsLabel">Show all Pokemon and forms</span>
+          </label>
+          <p class="hint" id="allPokemonFormsHint">Includes non-standard quest entries such as alternate forms. Some combinations may be unstable or non-vanilla.</p>
+        </div>
+
         <div class="field" id="clientField">
           <label for="clientSearch">Client</label>
           <div class="field-control-group">
@@ -193,9 +213,9 @@
         <div class="field toggle-field">
           <label class="toggle">
             <input type="checkbox" name="useEUswap" id="useEUswap" value="1" checked>
-            <span>Generer pour la version europeenne</span>
+            <span id="euToggleLabel">Generer pour la version europeenne</span>
           </label>
-          <p class="hint">Decoche pour les versions US/AUS. Les codes Sky ne sont pas compatibles entre regions.</p>
+          <p class="hint" id="euToggleHint">Decoche pour les versions US/AUS. Les codes Sky ne sont pas compatibles entre regions.</p>
         </div>
 
         <div class="summary-box" id="summaryBox">
