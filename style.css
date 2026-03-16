@@ -1146,14 +1146,14 @@ button:hover, button:focus-visible {
     justify-content: start;
   }
   .memo-picker-panel {
-    position: fixed;
-    left: 10px;
-    right: 10px;
-    bottom: 10px;
-    top: auto;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: calc(100% + 10px);
+    bottom: auto;
     width: auto;
     max-width: none;
-    max-height: min(78vh, 720px);
+    max-height: min(70dvh, 720px);
     overflow: auto;
     grid-template-columns: 1fr;
   }

@@ -3282,6 +3282,10 @@ function closeMemoPresetMenu() {
   toggle.setAttribute('aria-expanded', 'false');
   panel.classList.add('hidden');
   panel.closest('section')?.classList.remove('memo-picker-open');
+  panel.style.removeProperty('top');
+  panel.style.removeProperty('left');
+  panel.style.removeProperty('right');
+  panel.style.removeProperty('max-height');
   renderMemoPresetPreview();
 }
 
