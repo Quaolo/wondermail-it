@@ -6,6 +6,130 @@ function setOption() {
   return false;
 }
 
+function buildPokemonNameRange(start, end, label) {
+  const entries = {};
+  for (let id = start; id <= end; id += 1) {
+    entries[id] = label;
+  }
+  return entries;
+}
+
+const EXTRA_POKEMON_NAMES = {
+  fr: {
+    0: '???',
+    29: 'Nidoran F',
+    32: 'Nidoran M',
+    535: 'Shaymin - Ciel',
+    536: 'Giratina - Origine',
+    ...buildPokemonNameRange(537, 551, 'Reserve'),
+    552: 'Dialga Primal',
+    553: 'Quelque chose',
+    554: 'Statue',
+    555: 'Grodoudou - Ombre',
+    556: 'Regigigas - Statue',
+    557: 'Archodong - Statue',
+    558: 'Kicklee - Statue',
+    559: 'Eoko - Cutscene',
+    560: 'Grodoudou - Cutscene',
+    561: 'Crehelf - Cutscene',
+    562: 'Crefadet - Cutscene',
+    563: 'Crefollet - Cutscene',
+    564: 'Heliatronc - Cutscene',
+    565: 'Taupiqueur - Cutscene',
+    566: 'Triopikeur - Cutscene',
+    567: 'Ecrapince - Cutscene',
+    568: 'Ramboum - Cutscene',
+    569: 'Keunotor - Cutscene',
+    570: 'Pijako - Cutscene',
+    571: 'Massko - Cutscene',
+    572: 'Noctunoir - Cutscene',
+    573: 'Tenefix - Cutscene',
+    574: 'Darkrai - Ombre',
+    575: 'Maman Grodoudou - Cutscene',
+    576: 'Massko - Cutscene',
+    577: 'Noctunoir - Cutscene',
+    578: 'Noctunoir - Cutscene',
+    579: 'Fouinette - Cutscene',
+    580: 'Joliflor - Cutscene',
+    ...buildPokemonNameRange(581, 599, 'Reserve - invalide')
+  },
+  en: {
+    0: '???',
+    29: 'Nidoran F',
+    32: 'Nidoran M',
+    535: 'Shaymin - Sky',
+    536: 'Giratina - Origin',
+    ...buildPokemonNameRange(537, 551, 'Reserve'),
+    552: 'Primal Dialga',
+    553: 'Something',
+    554: 'Statue',
+    555: 'Wigglytuff - Shadow',
+    556: 'Regigigas - Statue',
+    557: 'Bronzong - Statue',
+    558: 'Hitmonlee - Statue',
+    559: 'Chimecho - Cutscene',
+    560: 'Wigglytuff - Cutscene',
+    561: 'Uxie - Cutscene',
+    562: 'Azelf - Cutscene',
+    563: 'Mesprit - Cutscene',
+    564: 'Sunflora - Cutscene',
+    565: 'Diglett - Cutscene',
+    566: 'Dugtrio - Cutscene',
+    567: 'Corphish - Cutscene',
+    568: 'Loudred - Cutscene',
+    569: 'Bidoof - Cutscene',
+    570: 'Chatot - Cutscene',
+    571: 'Grovyle - Cutscene',
+    572: 'Dusknoir - Cutscene',
+    573: 'Sableye - Cutscene',
+    574: 'Darkrai - Shadow',
+    575: 'Wigglytuff Mom - Cutscene',
+    576: 'Grovyle - Cutscene',
+    577: 'Dusknoir - Cutscene',
+    578: 'Dusknoir - Cutscene',
+    579: 'Sentret - Cutscene',
+    580: 'Bellossom - Cutscene',
+    ...buildPokemonNameRange(581, 599, 'Reserve - Invalid')
+  }
+};
+
+const EXTRA_POKEMON_IMAGE_URLS = {
+  279: 'assets/pokemon-extra/celebi-shiny.png',
+  552: 'assets/pokemon-extra/primal-dialga.png',
+  535: 'https://img.pokemondb.net/sprites/home/normal/shaymin-sky.png',
+  536: 'https://img.pokemondb.net/sprites/home/normal/giratina-origin.png'
+};
+
+const EXTRA_POKEMON_IMAGE_BASE_IDS = {
+  552: 525,
+  555: 174,
+  556: 528,
+  557: 479,
+  558: 106,
+  559: 390,
+  560: 174,
+  561: 522,
+  562: 524,
+  563: 523,
+  564: 192,
+  565: 50,
+  566: 51,
+  567: 369,
+  568: 322,
+  569: 434,
+  570: 483,
+  571: 281,
+  572: 519,
+  573: 330,
+  574: 533,
+  575: 174,
+  576: 281,
+  577: 519,
+  578: 519,
+  579: 161,
+  580: 182
+};
+
 function onReady(fn) {
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', fn);
@@ -567,11 +691,19 @@ function ensureSelectOption(select, value, text) {
 function getLocalizedPokemonName(monId) {
   const numeric = parseInt(monId, 10);
   if (!Number.isFinite(numeric)) return '-';
-  if (getCurrentLanguage() !== 'en') {
+  const normalized = numeric >= 600 ? numeric - 600 : numeric;
+  const lang = getCurrentLanguage();
+  const localizedExtras = EXTRA_POKEMON_NAMES[lang] || EXTRA_POKEMON_NAMES.fr;
+  if (localizedExtras && localizedExtras[numeric]) {
+    return localizedExtras[numeric];
+  }
+  if (localizedExtras && localizedExtras[normalized]) {
+    return localizedExtras[normalized];
+  }
+  if (lang !== 'en') {
     return getMonName(numeric);
   }
 
-  const normalized = numeric >= 600 ? numeric - 600 : numeric;
   if (normalized === 29) return 'Nidoran♀';
   if (normalized === 32) return 'Nidoran♂';
   if (window.WMSkyPokemonNamesEn && window.WMSkyPokemonNamesEn[normalized]) {
@@ -710,8 +842,29 @@ function normalizePokemonId(monId) {
   return numeric >= 600 ? numeric - 600 : numeric;
 }
 
-function getPokemonSpriteDexId(monId) {
+function getPokemonImageOverride(monId) {
   const normalized = normalizePokemonId(monId);
+  if (!Number.isFinite(normalized) || normalized < 0) return null;
+  if (EXTRA_POKEMON_IMAGE_URLS[normalized]) {
+    return {
+      type: 'url',
+      value: EXTRA_POKEMON_IMAGE_URLS[normalized]
+    };
+  }
+  if (EXTRA_POKEMON_IMAGE_BASE_IDS[normalized]) {
+    return {
+      type: 'base',
+      value: EXTRA_POKEMON_IMAGE_BASE_IDS[normalized]
+    };
+  }
+  return null;
+}
+
+function getPokemonSpriteDexId(monId) {
+  const override = getPokemonImageOverride(monId);
+  const normalized = override && override.type === 'base'
+    ? normalizePokemonId(override.value)
+    : normalizePokemonId(monId);
   if (!Number.isFinite(normalized) || normalized < 1) return null;
   if (window.WMSkyPokemonSpriteDex && window.WMSkyPokemonSpriteDex[normalized]) {
     return window.WMSkyPokemonSpriteDex[normalized];
@@ -721,7 +874,12 @@ function getPokemonSpriteDexId(monId) {
 }
 
 function getPokemonSpriteAsset(monId) {
-  const normalized = normalizePokemonId(monId);
+  const override = getPokemonImageOverride(monId);
+  if (override && override.type === 'url') return override.value;
+
+  const normalized = override && override.type === 'base'
+    ? normalizePokemonId(override.value)
+    : normalizePokemonId(monId);
   if (!Number.isFinite(normalized) || normalized < 1) return null;
   if (normalized === 201) return '201';
   if (normalized >= 202 && normalized <= 226) {
@@ -736,9 +894,17 @@ function getPokemonSpriteAsset(monId) {
 function getPokemonImage(monId, label) {
   const spriteAsset = getPokemonSpriteAsset(monId);
   const fallback = buildPreviewBadge(label, 'pokemon');
+  const spriteSource = String(spriteAsset || '');
+  const isDirectAsset = spriteSource.startsWith('http')
+    || spriteSource.startsWith('assets/')
+    || spriteSource.startsWith('./')
+    || spriteSource.startsWith('/')
+    || spriteSource.startsWith('data:');
   return {
     src: spriteAsset
-      ? `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${spriteAsset}.png`
+      ? (isDirectAsset
+        ? spriteAsset
+        : `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${spriteAsset}.png`)
       : fallback,
     fallback
   };
@@ -1460,6 +1626,7 @@ const EGG_GLITCH_IMPORT_FLOORS = [0, 10];
 const EGG_GLITCH_ITEM = 92;
 const EGG_GLITCH_CLIENT = 286;
 const EGG_GLITCH_LEGACY_CLIENT = 176;
+const EGG_GLITCH_SELECTABLE_REWARD_IDS = Array.from({ length: 600 }, (_, index) => index);
 
 function getEggPokemonBaseId(monId) {
   const numeric = parseInt(monId, 10);
@@ -1486,19 +1653,12 @@ function populateEggPokemonList() {
   const previous = String(select.value || '');
   select.innerHTML = '';
 
-  const poke = window.WMSkyPoke || {};
-  Object.keys(poke)
-    .map((key) => parseInt(key, 10))
-    .filter((value) => Number.isFinite(value) && value > 0)
-    .sort((a, b) => a - b)
-    .forEach((value) => {
-      [value, value + 600].forEach((rawValue) => {
-        const option = document.createElement('option');
-        option.value = String(rawValue);
-        option.text = getEggPokemonDisplayName(rawValue);
-        select.add(option);
-      });
-    });
+  EGG_GLITCH_SELECTABLE_REWARD_IDS.forEach((value) => {
+    const option = document.createElement('option');
+    option.value = String(value);
+    option.text = getEggPokemonDisplayName(value);
+    select.add(option);
+  });
 
   if (!setSelectByValue(select, previous)) {
     setSelectByValue(select, EGG_GLITCH_CLIENT);
@@ -2161,7 +2321,7 @@ function getEggPokemonPreviewData(selectId, label, meta) {
     label,
     name,
     meta,
-    image: getPokemonImage(baseId, name)
+    image: getPokemonImage(rawId, name)
   };
 }
 
