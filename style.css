@@ -79,6 +79,32 @@ h3 { font-size: 1rem; }
   background: rgba(255,255,255,.05);
   color: var(--text);
 }
+.repo-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.05);
+  color: var(--text);
+  text-decoration: none;
+  font-weight: 700;
+  transition: transform .15s ease, border-color .15s ease, background .15s ease;
+}
+.repo-link:hover,
+.repo-link:focus-visible {
+  transform: translateY(-1px);
+  border-color: rgba(128,196,255,.45);
+  background: rgba(128,196,255,.12);
+}
+.repo-link svg {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+  flex: 0 0 auto;
+}
 .lang-picker {
   position: relative;
   z-index: 3;
