@@ -1101,3 +1101,78 @@ button:hover, button:focus-visible {
   background: #d56a2f;
   color: #2f1204;
 }
+
+@media (max-width: 1024px) {
+  .form-grid { grid-template-columns: 1fr; }
+  .hero { grid-template-columns: 1fr; }
+  .memo-spotlight { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 720px) {
+  .page { width: min(100vw - 20px, 1200px); margin-top: 14px; }
+  .card { padding: 18px; }
+  .result-header,
+  .result-actions,
+  .stack-on-mobile,
+  .inline-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .subtype-wrap { min-width: 0; width: 100%; }
+  .memo-visuals-header,
+  .memo-gallery-grid,
+  .memo-spotlight {
+    grid-template-columns: 1fr;
+  }
+  .source-links {
+    justify-content: flex-start;
+  }
+  .source-link {
+    justify-self: start;
+  }
+  .memo-spotlight-copy {
+    min-width: 0;
+    padding: 16px;
+  }
+  .memo-map-large {
+    min-height: 220px;
+  }
+  .memo-map-card {
+    min-height: 140px;
+  }
+  .memo-map {
+    --memo-cell-size: 10px;
+    overflow: auto;
+    justify-content: start;
+  }
+  .memo-picker-panel {
+    position: fixed;
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    top: auto;
+    width: auto;
+    max-width: none;
+    max-height: min(78vh, 720px);
+    overflow: auto;
+    grid-template-columns: 1fr;
+  }
+  .memo-picker-options {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    max-height: 34vh;
+    overflow: auto;
+    align-content: start;
+  }
+  .memo-picker-preview {
+    min-height: 0;
+  }
+  .memo-picker-preview-text {
+    min-height: 0;
+  }
+}
+
+@media (max-width: 520px) {
+  .memo-picker-options {
+    grid-template-columns: 1fr;
+  }
+}
