@@ -95,6 +95,7 @@ const EXTRA_POKEMON_NAMES = {
 
 const EXTRA_POKEMON_IMAGE_URLS = {
   279: 'assets/pokemon-extra/celebi-shiny.png',
+  384: 'assets/pokemon-extra/kecleon-purple.png',
   552: 'assets/pokemon-extra/primal-dialga.png',
   535: 'https://img.pokemondb.net/sprites/home/normal/shaymin-sky.png',
   536: 'https://img.pokemondb.net/sprites/home/normal/giratina-origin.png'
@@ -757,17 +758,250 @@ function setSelectByValue(select, value) {
   return false;
 }
 
-function scrollSearchToOption(input, select) {
-  const q = input.value.trim().toLowerCase();
-  if (!q) return;
-  for (let i = 0; i < select.options.length; i += 1) {
-    const text = select.options[i].text.toLowerCase();
-    if (text.includes(q)) {
-      select.selectedIndex = i;
-      select.dispatchEvent(new Event('change', { bubbles: true }));
+const searchBoxControllers = new Map();
+
+function getSearchOptionImage(selectId, value, label) {
+  const numeric = parseInt(value, 10);
+  if (['clientBox', 'targetBox', 'target2Box', 'eggPokemonBox'].includes(selectId)) {
+    return getPokemonImage(Number.isFinite(numeric) ? numeric : value, label);
+  }
+  if (selectId === 'rewardItemBox') {
+    return getItemImage(Number.isFinite(numeric) ? numeric : value, label, true);
+  }
+  if (selectId === 'targetItemBox') {
+    return getItemImage(Number.isFinite(numeric) ? numeric : value, label, false);
+  }
+  const fallback = buildPreviewBadge(label, selectId === 'dungeonBox' ? 'pokemon' : 'item');
+  return { src: fallback, fallback };
+}
+
+function setImageElementSource(image, payload) {
+  if (!image || !payload) return;
+  image.src = payload.src;
+  image.dataset.fallback = payload.fallback;
+}
+
+function createSearchSuggestionImage(selectId, suggestion) {
+  const image = document.createElement('img');
+  image.className = 'search-suggestion-icon';
+  image.alt = '';
+  const payload = getSearchOptionImage(selectId, suggestion.value, suggestion.text);
+  setImageElementSource(image, payload);
+  image.addEventListener('error', () => {
+    if (image.src !== image.dataset.fallback) {
+      image.src = image.dataset.fallback;
+    }
+  });
+  return image;
+}
+
+function getSelectedOption(select) {
+  return select && select.options[select.selectedIndex] ? select.options[select.selectedIndex] : null;
+}
+
+function syncSearchBoxSelection(controller) {
+  if (!controller) return;
+  const option = getSelectedOption(controller.select);
+  const text = option ? option.text : '';
+  controller.committedText = text;
+  controller.input.value = text;
+  const payload = getSearchOptionImage(controller.select.id, option ? option.value : '', text || controller.placeholder);
+  setImageElementSource(controller.icon, payload);
+}
+
+function getSearchSuggestions(select, query) {
+  const normalized = String(query || '').trim().toLowerCase();
+  if (!select) return [];
+
+  return Array.from(select.options)
+    .map((option, index) => ({
+      index,
+      value: option.value,
+      text: option.text,
+      searchText: String(option.dataset.search || option.text || '').toLowerCase()
+    }))
+    .filter((entry) => !normalized || entry.searchText.includes(normalized));
+}
+
+function closeSearchSuggestions(controller) {
+  if (!controller) return;
+  controller.activeIndex = -1;
+  controller.suggestions.innerHTML = '';
+  controller.suggestions.classList.add('hidden');
+}
+
+function applySearchSuggestion(controller, suggestion) {
+  if (!controller || !suggestion) return;
+  setSelectByValue(controller.select, suggestion.value);
+  controller.select.dispatchEvent(new Event('change', { bubbles: true }));
+  closeSearchSuggestions(controller);
+}
+
+function renderSearchSuggestions(controller, suggestions) {
+  if (!controller) return;
+  controller.suggestions.innerHTML = '';
+
+  if (!suggestions.length) {
+    const empty = document.createElement('div');
+    empty.className = 'search-suggestion-empty';
+    empty.textContent = getCurrentLanguage() === 'en' ? 'No matches found.' : 'Aucun resultat.';
+    controller.suggestions.appendChild(empty);
+    controller.suggestions.classList.remove('hidden');
+    controller.activeIndex = -1;
+    return;
+  }
+
+  suggestions.forEach((suggestion, index) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'search-suggestion';
+    button.dataset.index = String(index);
+    if (suggestion.value === controller.select.value) {
+      button.classList.add('selected');
+    }
+    if (index === controller.activeIndex) {
+      button.classList.add('active');
+    }
+
+    const icon = createSearchSuggestionImage(controller.select.id, suggestion);
+    const text = document.createElement('span');
+    text.className = 'search-suggestion-text';
+    text.textContent = suggestion.text;
+
+    button.append(icon, text);
+    button.addEventListener('mousedown', (event) => {
+      event.preventDefault();
+      applySearchSuggestion(controller, suggestion);
+    });
+    controller.suggestions.appendChild(button);
+  });
+
+  controller.suggestions.classList.remove('hidden');
+}
+
+function updateSearchSuggestions(controller) {
+  if (!controller) return;
+  const suggestions = getSearchSuggestions(controller.select, controller.input.value);
+  controller.currentSuggestions = suggestions;
+  if (controller.activeIndex >= suggestions.length) {
+    controller.activeIndex = suggestions.length ? 0 : -1;
+  }
+  renderSearchSuggestions(controller, suggestions);
+}
+
+function registerSearchBox(input) {
+  const select = document.getElementById(input.dataset.target);
+  if (!select) return;
+
+  const combo = document.createElement('div');
+  combo.className = 'search-combobox';
+  input.parentNode.insertBefore(combo, input);
+
+  const icon = document.createElement('img');
+  icon.className = 'search-combobox-icon';
+  icon.alt = '';
+  icon.addEventListener('error', () => {
+    if (icon.src !== icon.dataset.fallback) {
+      icon.src = icon.dataset.fallback;
+    }
+  });
+
+  const field = document.createElement('div');
+  field.className = 'searchbox-wrap';
+
+  combo.append(icon, field);
+  field.appendChild(input);
+
+  const suggestions = document.createElement('div');
+  suggestions.className = 'search-suggestions hidden';
+  field.appendChild(suggestions);
+
+  const controller = {
+    combo,
+    input,
+    select,
+    icon,
+    suggestions,
+    currentSuggestions: [],
+    activeIndex: -1,
+    committedText: '',
+    placeholder: input.getAttribute('placeholder') || ''
+  };
+
+  input.setAttribute('autocomplete', 'off');
+  input.classList.add('search-combobox-input');
+  select.classList.add('enhanced-select-hidden');
+  syncSearchBoxSelection(controller);
+
+  input.addEventListener('input', () => {
+    controller.activeIndex = 0;
+    updateSearchSuggestions(controller);
+  });
+
+  input.addEventListener('focus', () => {
+    combo.classList.add('open');
+    if (input.value === controller.committedText) {
+      input.value = '';
+    }
+    controller.activeIndex = 0;
+    updateSearchSuggestions(controller);
+  });
+
+  input.addEventListener('keydown', (event) => {
+    if (suggestions.classList.contains('hidden')) return;
+    if (event.key === 'Escape') {
+      closeSearchSuggestions(controller);
       return;
     }
-  }
+    if (!controller.currentSuggestions.length) return;
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      controller.activeIndex = (controller.activeIndex + 1) % controller.currentSuggestions.length;
+      renderSearchSuggestions(controller, controller.currentSuggestions);
+      return;
+    }
+    if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      controller.activeIndex = controller.activeIndex <= 0
+        ? controller.currentSuggestions.length - 1
+        : controller.activeIndex - 1;
+      renderSearchSuggestions(controller, controller.currentSuggestions);
+      return;
+    }
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      const chosen = controller.currentSuggestions[Math.max(controller.activeIndex, 0)];
+      applySearchSuggestion(controller, chosen);
+    }
+  });
+
+  input.addEventListener('blur', () => {
+    window.setTimeout(() => {
+      combo.classList.remove('open');
+      closeSearchSuggestions(controller);
+      syncSearchBoxSelection(controller);
+    }, 120);
+  });
+
+  select.addEventListener('change', () => {
+    closeSearchSuggestions(controller);
+    syncSearchBoxSelection(controller);
+  });
+
+  searchBoxControllers.set(input.id, controller);
+}
+
+function refreshSearchBoxSelections() {
+  searchBoxControllers.forEach((controller) => {
+    syncSearchBoxSelection(controller);
+    if (!controller.suggestions.classList.contains('hidden')) {
+      updateSearchSuggestions(controller);
+    }
+  });
+}
+
+function initializeSearchBoxes() {
+  document.querySelectorAll('.searchbox').forEach((input) => registerSearchBox(input));
 }
 
 function compactCode(pretty) {
@@ -1618,6 +1852,8 @@ function rebuildPokemonLists() {
       select.selectedIndex = Math.max(select.selectedIndex, 0);
     }
   });
+
+  refreshSearchBoxSelections();
 }
 
 const EGG_GLITCH_DUNGEON = 91;
@@ -1663,6 +1899,8 @@ function populateEggPokemonList() {
   if (!setSelectByValue(select, previous)) {
     setSelectByValue(select, EGG_GLITCH_CLIENT);
   }
+
+  refreshSearchBoxSelections();
 }
 
 function isEggGlitchEnabled() {
@@ -2019,6 +2257,7 @@ function relabelLocalizedControls() {
   ['targetItemBox', 'rewardItemBox'].forEach(relabelItemSelect);
   relabelMemoSelectorOptions();
   refreshFlavorTextPresetOptions();
+  refreshSearchBoxSelections();
 }
 
 function applyLanguage(nextLanguage) {
@@ -2932,10 +3171,7 @@ onReady(() => {
     updateSummary();
   });
 
-  document.querySelectorAll('.searchbox').forEach((input) => {
-    const select = document.getElementById(input.dataset.target);
-    input.addEventListener('input', () => scrollSearchToOption(input, select));
-  });
+  initializeSearchBoxes();
 
   document.querySelectorAll('.preset-btn').forEach((btn) => {
     btn.addEventListener('click', () => applyPreset(btn.dataset.preset));

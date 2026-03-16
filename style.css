@@ -215,6 +215,99 @@ h3 { font-size: 1rem; }
 .field-preview-only .field-control-group {
   display: none;
 }
+.search-combobox {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+}
+.searchbox-wrap {
+  position: relative;
+}
+.search-combobox-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,.08);
+  background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02));
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+.search-combobox-input {
+  padding-right: 42px;
+}
+.search-combobox.open .search-combobox-input {
+  border-color: rgba(102, 197, 255, .45);
+  box-shadow: 0 0 0 3px rgba(102, 197, 255, .12);
+}
+.enhanced-select-hidden {
+  display: none !important;
+}
+.search-suggestions {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  z-index: 30;
+  display: grid;
+  gap: 6px;
+  padding: 8px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  box-shadow: 0 14px 28px rgba(0, 0, 0, .22);
+  max-height: 284px;
+  overflow-y: auto;
+}
+.search-suggestions.hidden {
+  display: none;
+}
+.search-suggestion,
+.search-suggestion-empty {
+  width: 100%;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font: inherit;
+  text-align: left;
+}
+.search-suggestion {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  border: 1px solid transparent;
+  background: rgba(255, 255, 255, .03);
+  color: var(--text);
+  cursor: pointer;
+}
+.search-suggestion-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,.06);
+  background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.02));
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+.search-suggestion-text {
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.search-suggestion:hover,
+.search-suggestion.active {
+  border-color: rgba(255, 255, 255, .08);
+  background: rgba(255, 255, 255, .08);
+}
+.search-suggestion.selected {
+  border-color: rgba(102, 197, 255, .35);
+  background: rgba(102, 197, 255, .12);
+}
+.search-suggestion-empty {
+  color: var(--muted);
+  background: rgba(255, 255, 255, .02);
+}
 label {
   display: inline-block;
   margin-bottom: 8px;
