@@ -2195,6 +2195,13 @@ function applyStaticTranslations() {
   setText('#eggPokemonLabel', t('eggPokemonLabel'));
   setPlaceholder('#eggPokemonSearch', t('eggPokemonPlaceholder'));
   setText('#eggPokemonHint', t('eggPokemonHint'));
+  setText('#eggHelpTitle', t('eggHelpTitle'));
+  setText('#eggHelpLead', t('eggHelpLead'));
+  setText('#eggHelpItem1', t('eggHelpItem1'));
+  setText('#eggHelpItem2', t('eggHelpItem2'));
+  setText('#eggHelpItem3', t('eggHelpItem3'));
+  setText('#eggHelpItem4', t('eggHelpItem4'));
+  setText('#eggHelpLink', t('eggHelpLink'));
   setText('#euToggleLabel', t('euToggle'));
   setText('#euToggleHint', t('euHint'));
   setText('#summaryBox h3', t('summaryTitle'));
@@ -2460,6 +2467,7 @@ function updateMissionFieldVisibility() {
   setFieldVisibility('rewardTypeField', !eggGlitch && !typeData.noReward);
   setFieldVisibility('rewardItemField', !eggGlitch && !typeData.noReward && rewardType >= 1 && rewardType <= 4);
   setFieldVisibility('eggPokemonField', eggGlitch);
+  setFieldVisibility('eggHelpCard', eggGlitch);
 }
 
 function updateEntityPreviews() {

@@ -397,6 +397,44 @@ textarea {
   color: var(--muted);
   font-size: .92rem;
 }
+.egg-help {
+  margin-top: 12px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(128,196,255,.18);
+  background: linear-gradient(180deg, rgba(128,196,255,.08), rgba(255,255,255,.02));
+}
+.egg-help-standalone {
+  margin-top: 0;
+}
+.egg-help-title {
+  margin: 0;
+  font-weight: 800;
+  color: var(--text);
+}
+.egg-help-lead {
+  margin: 8px 0 0;
+  color: var(--muted);
+}
+.egg-help-list {
+  margin: 10px 0 0;
+  padding-left: 1.2rem;
+  color: var(--muted);
+}
+.egg-help-list li + li {
+  margin-top: 8px;
+}
+.egg-help-linkline {
+  margin: 12px 0 0;
+}
+.egg-help-linkline a {
+  color: var(--accent);
+  text-decoration: none;
+}
+.egg-help-linkline a:hover,
+.egg-help-linkline a:focus-visible {
+  text-decoration: underline;
+}
 .entity-preview {
   margin-top: 10px;
   display: flex;
