@@ -1921,6 +1921,59 @@ function getLocalizedPokemonNameFromEnglish(englishName) {
   return (window.WMSkyPoke && window.WMSkyPoke[id]) || target;
 }
 
+function normalizeLookupLabel(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/gi, ' ')
+    .trim()
+    .toLowerCase();
+}
+
+function getPokemonIdFromLabel(label) {
+  const target = normalizeLookupLabel(label);
+  if (!target) return null;
+  const catalogs = [window.WMSkyPokemonNamesEn, window.WMSkyPoke];
+  for (let i = 0; i < catalogs.length; i += 1) {
+    const entries = catalogs[i] ? Object.entries(catalogs[i]) : [];
+    const match = entries.find(([, name]) => normalizeLookupLabel(name) === target);
+    if (match) {
+      const numeric = parseInt(match[0], 10);
+      return Number.isFinite(numeric) ? numeric : null;
+    }
+  }
+  return null;
+}
+
+function getItemOwnerPokemonId(itemId) {
+  const numeric = parseInt(itemId, 10);
+  if (!Number.isFinite(numeric) || numeric === 0) return null;
+  const fallbackNumeric = getChestDescriptionFallbackId(numeric);
+  const candidates = [];
+  [window.WMSkyItemDescriptionsFr, window.WMSkyItemDescriptions].forEach((map) => {
+    if (!map) return;
+    const direct = map[numeric];
+    const fallback = Number.isFinite(fallbackNumeric) ? map[fallbackNumeric] : '';
+    if (direct) candidates.push(direct);
+    if (fallback && fallback !== direct) candidates.push(fallback);
+  });
+  for (let i = 0; i < candidates.length; i += 1) {
+    const text = String(candidates[i] || '').trim();
+    const match = text.match(/(?:Objet pour|Item for)\s*:\s*(.+?)(?=\s+(?:Augmente|Réduit|Restaure|Permet|Emp[eê]che|Inflige|Enseigne|Allows|Boosts|Raises|Lowers|Restores|Prevents|Inflicts|Teaches|Lets)\b|$)/i);
+    if (!match) continue;
+    const owner = String(match[1] || '').trim().replace(/[.:;,]+$/, '');
+    if (!owner || /pokemon de type|type pokemon|type-specific|type-specific item/i.test(owner)) continue;
+    const monId = getPokemonIdFromLabel(owner);
+    if (Number.isFinite(monId)) return monId;
+  }
+  const compat = window.WMSkyItemCompatibility && window.WMSkyItemCompatibility[numeric];
+  if (Array.isArray(compat) && compat.length >= 1 && compat.length <= 8) {
+    const monId = getPokemonIdFromLabel(compat[0]);
+    if (Number.isFinite(monId)) return monId;
+  }
+  return null;
+}
+
 function normalizeFrenchItemDescription(text) {
   return String(text || '')
     .replace(/^(Rarity|Raret[^:]*)\s*:\s*/i, '')
@@ -2573,6 +2626,10 @@ function getHeuristicItemIcon(itemId, label) {
 function getItemImage(itemId, label, rewardStyle) {
   const fallback = buildPreviewBadge(label, rewardStyle ? 'reward' : 'item');
   const numeric = parseInt(itemId, 10);
+  const ownerPokemonId = getItemOwnerPokemonId(numeric);
+  if (Number.isFinite(ownerPokemonId)) {
+    return getPokemonImage(ownerPokemonId, label);
+  }
   const exact = window.WMSkyItemIcons && window.WMSkyItemIcons[numeric];
   const heuristic = getHeuristicItemIcon(itemId, label);
   return {
