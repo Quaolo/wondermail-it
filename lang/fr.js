@@ -76,6 +76,8 @@ window.WMSkyRegisterLocale('fr', {
     targetSearchPlaceholder: 'Chercher une cible...',
     target2SearchPlaceholder: 'Chercher une cible supplémentaire...',
     itemSearchPlaceholder: 'Chercher un objet...',
+    compatibleWith: 'Compatible avec : {names}.',
+    exclusiveFor: 'Objet propre a {names}.',
     rewardSection: 'Récompense et région',
     rewardTypeLabel: 'Type de récompense',
     rewardItemLabel: 'Objet en récompense',

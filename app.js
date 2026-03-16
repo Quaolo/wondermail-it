@@ -795,6 +795,19 @@ function createSearchSuggestionImage(selectId, suggestion) {
   return image;
 }
 
+function getSearchSuggestionDescription(selectId, value, label) {
+  if (!isItemSelect(selectId)) return '';
+  return getItemEffectDescription(value, label);
+}
+
+function createItemInfoPanel(controller) {
+  return null;
+}
+
+function renderItemInfoPanel(controller, optionLike) {
+  return;
+}
+
 function getSelectedOption(select) {
   return select && select.options[select.selectedIndex] ? select.options[select.selectedIndex] : null;
 }
@@ -807,6 +820,13 @@ function syncSearchBoxSelection(controller) {
   controller.input.value = text;
   const payload = getSearchOptionImage(controller.select.id, option ? option.value : '', text || controller.placeholder);
   setImageElementSource(controller.icon, payload);
+  if (isItemSelect(controller.select.id)) {
+    renderItemInfoPanel(controller, option ? {
+      value: option.value,
+      text,
+      description: getSearchSuggestionDescription(controller.select.id, option.value, text)
+    } : null);
+  }
 }
 
 function getSearchSuggestions(select, query) {
@@ -818,6 +838,7 @@ function getSearchSuggestions(select, query) {
       index,
       value: option.value,
       text: option.text,
+      description: getSearchSuggestionDescription(select.id, option.value, option.text),
       searchText: String(option.dataset.search || option.text || '').toLowerCase()
     }))
     .filter((entry) => !normalized || entry.searchText.includes(normalized));
@@ -828,6 +849,7 @@ function closeSearchSuggestions(controller) {
   controller.activeIndex = -1;
   controller.suggestions.innerHTML = '';
   controller.suggestions.classList.add('hidden');
+  syncSearchBoxSelection(controller);
 }
 
 function applySearchSuggestion(controller, suggestion) {
@@ -864,11 +886,24 @@ function renderSearchSuggestions(controller, suggestions) {
     }
 
     const icon = createSearchSuggestionImage(controller.select.id, suggestion);
+    const copy = document.createElement('span');
+    copy.className = 'search-suggestion-copy';
+
     const text = document.createElement('span');
     text.className = 'search-suggestion-text';
     text.textContent = suggestion.text;
 
-    button.append(icon, text);
+    copy.appendChild(text);
+    if (suggestion.description) {
+      const meta = document.createElement('span');
+      meta.className = 'search-suggestion-meta';
+      meta.textContent = suggestion.description;
+      copy.appendChild(meta);
+    }
+
+    button.append(icon, copy);
+    button.addEventListener('mouseenter', () => renderItemInfoPanel(controller, suggestion));
+    button.addEventListener('focus', () => renderItemInfoPanel(controller, suggestion));
     button.addEventListener('mousedown', (event) => {
       event.preventDefault();
       applySearchSuggestion(controller, suggestion);
@@ -876,6 +911,10 @@ function renderSearchSuggestions(controller, suggestions) {
     controller.suggestions.appendChild(button);
   });
 
+  if (isItemSelect(controller.select.id)) {
+    const preview = suggestions[Math.max(controller.activeIndex, 0)] || suggestions[0];
+    renderItemInfoPanel(controller, preview);
+  }
   controller.suggestions.classList.remove('hidden');
 }
 
@@ -892,10 +931,11 @@ function updateSearchSuggestions(controller) {
 function registerSearchBox(input) {
   const select = document.getElementById(input.dataset.target);
   if (!select) return;
+  const group = input.parentNode;
 
   const combo = document.createElement('div');
   combo.className = 'search-combobox';
-  input.parentNode.insertBefore(combo, input);
+  group.insertBefore(combo, input);
 
   const icon = document.createElement('img');
   icon.className = 'search-combobox-icon';
@@ -918,6 +958,7 @@ function registerSearchBox(input) {
 
   const controller = {
     combo,
+    group,
     input,
     select,
     icon,
@@ -987,6 +1028,8 @@ function registerSearchBox(input) {
     closeSearchSuggestions(controller);
     syncSearchBoxSelection(controller);
   });
+
+  suggestions.addEventListener('mouseleave', () => syncSearchBoxSelection(controller));
 
   searchBoxControllers.set(input.id, controller);
 }
@@ -1822,6 +1865,189 @@ function getItemDisplayName(itemId, fallbackLabel) {
   return baseLabel;
 }
 
+function isItemSelect(selectId) {
+  return selectId === 'targetItemBox' || selectId === 'rewardItemBox';
+}
+
+function getItemUiText(key) {
+  const locale = getCurrentLanguage() === 'en' ? 'en' : 'fr';
+  const strings = {
+    fr: {
+      badge: 'Effet',
+      noItem: "Aucun objet selectionne.",
+      unavailable: "Description indisponible pour cet objet.",
+      compatibleWith: 'Compatible avec : {names}.',
+      exclusiveFor: 'Objet propre a {names}.'
+    },
+    en: {
+      badge: 'Effect',
+      noItem: 'No item selected.',
+      unavailable: 'No description available for this item.',
+      compatibleWith: 'Compatible with: {names}.',
+      exclusiveFor: 'Exclusive item for {names}.'
+    }
+  };
+  return strings[locale][key] || '';
+}
+
+function getChestDescriptionFallbackId(itemId) {
+  const numeric = parseInt(itemId, 10);
+  if (!Number.isFinite(numeric) || numeric < 364 || numeric > 399) return null;
+  return numeric + ((2 - ((numeric - 364) % 3) + 3) % 3);
+}
+
+function getExactItemDescription(itemId) {
+  const numeric = parseInt(itemId, 10);
+  if (!Number.isFinite(numeric) || numeric === 0) return '';
+  const fallbackNumeric = getChestDescriptionFallbackId(numeric);
+  if (getCurrentLanguage() === 'fr' && window.WMSkyItemDescriptionsFr) {
+    return window.WMSkyItemDescriptionsFr[numeric]
+      || (Number.isFinite(fallbackNumeric) ? window.WMSkyItemDescriptionsFr[fallbackNumeric] : '')
+      || '';
+  }
+  return (window.WMSkyItemDescriptions && (
+    window.WMSkyItemDescriptions[numeric]
+    || (Number.isFinite(fallbackNumeric) ? window.WMSkyItemDescriptions[fallbackNumeric] : '')
+  )) || '';
+}
+
+function getLocalizedPokemonNameFromEnglish(englishName) {
+  const target = String(englishName || '').trim();
+  if (!target || getCurrentLanguage() === 'en') return target;
+  const entries = window.WMSkyPokemonNamesEn ? Object.entries(window.WMSkyPokemonNamesEn) : [];
+  const match = entries.find(([, name]) => name === target);
+  if (!match) return target;
+  const [id] = match;
+  return (window.WMSkyPoke && window.WMSkyPoke[id]) || target;
+}
+
+function normalizeFrenchItemDescription(text) {
+  return String(text || '')
+    .replace(/^(Rarity|Raret[^:]*)\s*:\s*/i, '')
+    .replace(/HP/g, 'PV')
+    .replace(/Treasure Town/g, 'Bourg-Tresor')
+    .replace(/déménagements?/gi, 'capacite')
+    .replace(/mouvement/gi, 'capacite')
+    .replace(/attaque spéciale/gi, 'Attaque Speciale')
+    .replace(/défense spéciale/gi, 'Defense Speciale')
+    .replace(/défense/gi, 'Defense')
+    .replace(/attaque/gi, 'Attaque')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function normalizeEnglishItemDescription(text) {
+  return String(text || '')
+    .replace(/^(Rarity|Raret[^:]*)\s*:\s*/i, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function descriptionAlreadyMentionsCompatibility(description) {
+  const text = String(description || '').toLowerCase();
+  if (!text) return false;
+  return /co[^ ]*quipier(?:s)?\s*:|teammate(?:s)?\s*:|compatible avec\s*:|compatible with\s*:/.test(text);
+}
+
+function getItemCompatibilitySuffix(itemId, description) {
+  const numeric = parseInt(itemId, 10);
+  if (!Number.isFinite(numeric) || !window.WMSkyItemCompatibility || !window.WMSkyItemCompatibility[numeric]) return '';
+  if (descriptionAlreadyMentionsCompatibility(description)) return '';
+  const names = window.WMSkyItemCompatibility[numeric]
+    .map(getLocalizedPokemonNameFromEnglish)
+    .filter(Boolean)
+    .filter((name, index, list) => list.indexOf(name) === index);
+  if (!names.length) return '';
+  return names.length === 1
+    ? t('exclusiveFor', { names: names[0] })
+    : t('compatibleWith', { names: names.join(', ') });
+}
+
+function translateEnglishItemDescriptionToFrench(text) {
+  let result = String(text || '').trim();
+  if (!result) return '';
+  const replacements = [
+    ["Pokémon's", 'Pokemon'],
+    ['Pokémon', 'Pokemon'],
+    ['Special Attack', 'Attaque Speciale'],
+    ['Special Defense', 'Defense Speciale'],
+    ['Attack', 'Attaque'],
+    ['Defense', 'Defense'],
+    ['Movement Speed', 'Vitesse de deplacement'],
+    ['Belly size', 'taille du ventre'],
+    ['Belly', 'ventre'],
+    ['HP', 'PV'],
+    ['PP', 'PP'],
+    ['Range:', 'Portee :'],
+    ['Line of sight', 'ligne de vue'],
+    ['Team members in room', 'allies dans la salle'],
+    ['Team members on floor', "allies de l'etage"],
+    ['Enemies in room', 'ennemis dans la salle'],
+    ['Enemies on floor', "ennemis de l'etage"],
+    ['Pokémon in room', 'Pokemon dans la salle'],
+    ['Pokémon on floor', "Pokemon de l'etage"],
+    ['Special', 'special'],
+    ['Floor', 'etage'],
+    ['Room', 'salle'],
+    ['A weapon to be hurled.', 'Arme a lancer.'],
+    ['A weapon to be thrown.', 'Arme a jeter.'],
+    ['When hurled, it flies in a straight line to inflict damage on any Pokémon it hits.', 'Lancee, elle file en ligne droite et inflige des degats au Pokemon touche.'],
+    ['When thrown, it flies high in an arc to clear obstacles and strike the target.', 'Jetee, elle passe au-dessus des obstacles et touche la cible.'],
+    ['It is not affected by Pierce or Long Toss statuses.', "Elle n'est pas affectee par les etats Perce ou Long Jet."],
+    ['A food item that ', 'Objet a manger qui '],
+    ['A drink that ', 'Boisson qui '],
+    ['A box that ', 'Boite qui '],
+    ['A box that\'s ', 'Boite qui '],
+    ['A box full of ', 'Boite pleine de '],
+    ['A box brimming with ', 'Boite remplie de '],
+    ['A beautifully', 'Magnifiquement'],
+    ['It also fills the Pokémon\'s Belly slightly.', 'Remplit aussi legerement le ventre.'],
+    ['It also somewhat fills the Pokémon\'s Belly.', 'Remplit aussi un peu le ventre.'],
+    ['It also amply fills the Pokémon\'s Belly.', 'Remplit aussi largement le ventre.'],
+    ['It also slightly enlarges the Pokémon\'s Belly size.', 'Augmente aussi legerement la taille du ventre.'],
+    ['It also fills the Pokémon\'s Belly completely.', 'Remplit aussi completement le ventre.'],
+    ['It allows a certain kind of Pokémon to evolve.', "Permet a un certain type de Pokemon d'evoluer."],
+    ['Take it to Xatu in Treasure Town for appraisal.', "Apporte-la a Xatu a Bourg-Tresor pour l'identifier."],
+    ['When held, ', 'Quand il est tenu, '],
+    ['When held by the team leader, ', 'Quand le leader le tient, '],
+    ['When the leader is holding this, ', 'Quand le leader tient cet objet, '],
+    ['slightly boosts', 'augmente legerement'],
+    ['sharply boosts', 'augmente fortement'],
+    ['slightly raises', 'augmente legerement'],
+    ['sharply raises', 'augmente fortement'],
+    ['boosts', 'augmente'],
+    ['raises', 'augmente'],
+    ['lowers', 'reduit'],
+    ['restores', 'restaure'],
+    ['restores the PP of all the user\'s moves', "restaure les PP de toutes les capacites de l'utilisateur"],
+    ['restores HP', 'restaure des PV'],
+    ['permanently raises', 'augmente definitivement'],
+    ['may afflict', 'peut infliger'],
+    ['status condition', 'comme etat'],
+    ['Makes legendaries appear in dungeons', 'Peut faire apparaitre des legendaires dans les donjons'],
+    ['Used at Recycle Stand', 'Utilise au stand Recyclage'],
+    ['Give to friends and get items in return', 'A offrir pour recevoir des objets en retour'],
+    ['No effect', "N'a pas d'effet"],
+    ['Money picked up in dungeons', 'Argent ramasse dans les donjons']
+  ];
+  replacements.forEach(([from, to]) => {
+    result = result.split(from).join(to);
+  });
+  result = result.replace(/\s+/g, ' ').trim();
+  return result;
+}
+
+function getItemEffectDescription(itemId) {
+  const numeric = parseInt(itemId, 10);
+  if (!Number.isFinite(numeric) || numeric === 0) return getItemUiText('noItem');
+  const description = getExactItemDescription(numeric);
+  const base = getCurrentLanguage() === 'fr'
+    ? normalizeFrenchItemDescription(description || getItemUiText('unavailable'))
+    : normalizeEnglishItemDescription(description || getItemUiText('unavailable'));
+  const compatibility = getItemCompatibilitySuffix(numeric, base);
+  return compatibility ? `${base} ${compatibility}` : base;
+}
+
 function relabelPokemonSelect(selectId) {
   const select = document.getElementById(selectId);
   if (!select) return;
@@ -2294,6 +2520,7 @@ function applyLanguage(nextLanguage) {
 function getHeuristicItemIcon(itemId, label) {
   const title = getKnownItemTitle(itemId, label);
   const lower = title.toLowerCase();
+  const numeric = parseInt(itemId, 10);
 
   const local = {
     apple: 'assets/item-icons-pmdo/Apple-Red.png',
@@ -2322,6 +2549,7 @@ function getHeuristicItemIcon(itemId, label) {
   if (/sky gift/.test(lower)) return 'assets/item-icons/Explorers-of-Sky---Sky-Gift.png';
   if (/gracidea/.test(lower)) return 'assets/item-icons/Explorers-of-Sky---Gracidea.png';
   if (/space globe/.test(lower)) return 'assets/item-icons/Explorers-of-Sky---Space-Globe.png';
+  if (Number.isFinite(numeric) && numeric >= 364 && numeric <= 399) return local.chest;
   if (/apple/.test(lower)) return local.apple;
   if (/berry|dew/.test(lower)) return local.berry;
   if (/seed/.test(lower)) return /golden/.test(lower) ? local.seed : local.seed;
@@ -2332,8 +2560,8 @@ function getHeuristicItemIcon(itemId, label) {
   if (/rock|pebble|stone|fossil|slab|part|shard/.test(lower)) return local.rock;
   if (/specs|lens|goggle|scope/.test(lower)) return local.specs;
   if (/key|cable/.test(lower)) return local.key;
-  if (/chest/.test(lower)) return local.chest;
-  if (/box|bag|loot/.test(lower)) return local.box;
+  if (/chest|coffre/.test(lower)) return local.chest;
+  if (/box|bag|loot|boite|boîte/.test(lower)) return local.box;
   if (/mask/.test(lower)) return local.mask;
   if (/scarf|ribbon|bow|belt|band|cape|poncho|armor|helmet|hat|choker|sash|coat/.test(lower)) {
     return /band/.test(lower) ? local.band : local.scarf;
@@ -2424,7 +2652,7 @@ function getItemPreviewData(selectId, label, meta, rewardStyle) {
   return {
     label,
     name,
-    meta,
+    meta: getItemEffectDescription(itemId) || meta,
     image: getItemImage(itemId, name, rewardStyle)
   };
 }
