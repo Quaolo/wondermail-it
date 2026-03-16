@@ -1974,8 +1974,24 @@ function getItemOwnerPokemonId(itemId) {
   return null;
 }
 
-function normalizeFrenchItemDescription(text) {
+function stripWikiDescriptionArtifacts(text) {
   return String(text || '')
+    .replace(/\bChoisir d[ée]tail\s*:.*$/gi, ' ')
+    .replace(/\bou\s*\/\s*Voir\s*:.*$/gi, ' ')
+    .replace(/\bSelect detail\s*:.*$/gi, ' ')
+    .replace(/\bor\s*\/\s*View\s*:.*$/gi, ' ')
+    .replace(/Choisir d[ée]tail\s*:[^/]*?(?:\/\s*Voir\s*:[^.]*)?/gi, ' ')
+    .replace(/Select detail\s*:[^/]*?(?:\/\s*View\s*:[^.]*)?/gi, ' ')
+    .replace(/Seleccionar t[ée]rmino\s*:[^/]*?(?:\/\s*Ver\s*:[^.]*)?/gi, ' ')
+    .replace(/Detail ausw[aä]hlen\s*:[^/]*?(?:\/\s*Siehe\s*:[^.]*)?/gi, ' ')
+    .replace(/Seleziona dettagli\s*:[^/]*?(?:\/\s*Vedi\s*:[^.]*)?/gi, ' ')
+    .replace(/\[(?:CLUM_SET|M|LS|LE|CS|CR)[^\]]*\]/gi, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function normalizeFrenchItemDescription(text) {
+  return stripWikiDescriptionArtifacts(text)
     .replace(/^(Rarity|Raret[^:]*)\s*:\s*/i, '')
     .replace(/HP/g, 'PV')
     .replace(/Treasure Town/g, 'Bourg-Tresor')
@@ -1990,7 +2006,7 @@ function normalizeFrenchItemDescription(text) {
 }
 
 function normalizeEnglishItemDescription(text) {
-  return String(text || '')
+  return stripWikiDescriptionArtifacts(text)
     .replace(/^(Rarity|Raret[^:]*)\s*:\s*/i, '')
     .replace(/\s+/g, ' ')
     .trim();
