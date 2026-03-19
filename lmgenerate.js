@@ -48,7 +48,7 @@ WMSGenData = {
 			{name: "Cible en fuite", specialType: 2}
 		]},
 		
-		{name: "Arrêter la cible. (Magnéti)", advancedOnly: true, mainType: 10, forceClient: 81, subTypes: [
+		{name: "Arrêter la cible. (Magnéti)", mainType: 10, forceClient: 81, subTypes: [
 			{name: "Normal", specialType: 0},
 			{name: "Escorte", specialType: 4},
 			{name: "Étage spécial", specialType: 6, useTarget2: true, specialFloorFromList: "thievesden"},
@@ -56,7 +56,7 @@ WMSGenData = {
 		]},
 		
 		// This is the same list as above, just with Magnezone.
-		{name: "Arrêter la cible. (Magnézone)", advancedOnly: true, mainType: 10, forceClient: 504, subTypes: [
+		{name: "Arrêter la cible. (Magnézone)", mainType: 10, forceClient: 504, subTypes: [
 			{name: "Normal", specialType: 0},
 			{name: "Escorte", specialType: 4},
 			{name: "Étage spécial", specialType: 6, useTarget2: true, specialFloorFromList: "thievesden"},
@@ -64,7 +64,7 @@ WMSGenData = {
 		]},
 		
 		{name: "Battre la cible.", mainType: 11, subTypes: [
-			{name: "Normal", specialType: 0, useTarget2: true, advancedOnly: true, specialFloorFromList: "challengerequest"},
+			{name: "Normal", specialType: 0, useTarget2: true, specialFloorFromList: "challengerequest"},
 			{name: "Mewtwo", specialType: 1, forceClient: 150, forceTarget: 150, specialFloor: 145},
 			{name: "Entei", specialType: 2, forceClient: 271, forceTarget: 271, specialFloor: 146},
 			{name: "Raikou", specialType: 3, forceClient: 270, forceTarget: 270, specialFloor: 147},

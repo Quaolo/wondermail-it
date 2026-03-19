@@ -576,7 +576,7 @@ const MISSION_TYPE_LABELS = {
     9: "Prendre l'objet a la cible.",
     10: 'Arreter la cible. (Magneti)',
     11: 'Arreter la cible. (Magnezone)',
-    12: 'Battre la cible.',
+    12: 'Lettre de defi.',
     13: 'Trouver le tresor.'
   },
   en: {
@@ -592,7 +592,7 @@ const MISSION_TYPE_LABELS = {
     9: 'Take the item from the target.',
     10: 'Stop the target. (Magnemite)',
     11: 'Stop the target. (Magnezone)',
-    12: 'Defeat the target.',
+    12: 'Challenge Letter.',
     13: 'Find the treasure.'
   }
 };
@@ -613,6 +613,27 @@ const MISSION_SUBTYPE_LABELS = {
     12: { 0: 'Normal', 1: 'Mewtwo', 2: 'Entei', 3: 'Raikou', 4: 'Suicune', 5: 'Jirachi' }
   }
 };
+
+const MISSION_DIFFICULTY_TIERS = {
+  0: { rank: '-', points: 5 },
+  1: { rank: 'E', points: 10 },
+  2: { rank: 'D', points: 15 },
+  3: { rank: 'C', points: 20 },
+  4: { rank: 'B', points: 30 },
+  5: { rank: 'A', points: 60 },
+  6: { rank: 'S', points: 90 },
+  7: { rank: '★1', points: 150 },
+  8: { rank: '★2', points: 250 },
+  9: { rank: '★3', points: 400 },
+  10: { rank: '★4', points: 600 },
+  11: { rank: '★5', points: 800 },
+  12: { rank: '★6', points: 1000 },
+  13: { rank: '★7', points: 1200 },
+  14: { rank: '★8', points: 1400 },
+  15: { rank: '★9', points: 1600 }
+};
+
+const HARDER_MISSION_MAIN_TYPES = new Set([2, 3, 4, 5, 9, 10]);
 
 const REWARD_TYPE_LABELS = {
   fr: {
@@ -1217,7 +1238,7 @@ function getDungeonFloorLimit(dungeonId) {
   return Number.isFinite(limit) && limit >= 1 ? limit : 99;
 }
 
-function syncDungeonFloorLimit() {
+function syncDungeonFloorLimit(forceClamp = false) {
   const dungeonSelect = document.getElementById('dungeonBox');
   const floorInput = document.getElementById('floor');
   const hint = document.getElementById('floorLimitHint');
@@ -1228,11 +1249,24 @@ function syncDungeonFloorLimit() {
   floorInput.min = String(minFloor);
   floorInput.max = String(limit);
 
-  const current = parseInt(floorInput.value, 10);
-  if (!Number.isFinite(current) || current < minFloor) {
-    floorInput.value = String(minFloor);
-  } else if (current > limit) {
-    floorInput.value = String(limit);
+  const activeEditing = document.activeElement === floorInput;
+  const rawValue = String(floorInput.value || '').trim();
+
+  if (rawValue === '') {
+    if (forceClamp || !activeEditing) {
+      floorInput.value = String(minFloor);
+    }
+  } else {
+    const current = parseInt(rawValue, 10);
+    if (!Number.isFinite(current) || current < minFloor) {
+      if (forceClamp || !activeEditing) {
+        floorInput.value = String(minFloor);
+      }
+    } else if (current > limit) {
+      if (forceClamp || !activeEditing) {
+        floorInput.value = String(limit);
+      }
+    }
   }
 
   if (hint) {
@@ -1240,6 +1274,41 @@ function syncDungeonFloorLimit() {
       ? t('floorLimitHint', { count: limit })
       : t('floorLimitUnknown');
   }
+}
+
+function getMissionDifficultyInfo(typeData = getCurrentTypeData()) {
+  const dungeonId = parseInt(document.getElementById('dungeonBox')?.value || '', 10);
+  const floorValue = parseInt(document.getElementById('floor')?.value || '', 10);
+  if (!Number.isFinite(dungeonId) || !Number.isFinite(floorValue)) return null;
+
+  const dungeonRanks = window.WMSkyMissionRankMap && window.WMSkyMissionRankMap[dungeonId];
+  if (!dungeonRanks) return null;
+
+  let rankId = parseInt(dungeonRanks[floorValue], 10);
+  if (!Number.isFinite(rankId)) return null;
+
+  if (typeData && HARDER_MISSION_MAIN_TYPES.has(parseInt(typeData.mainType, 10)) && rankId < 15) {
+    rankId += 1;
+  }
+
+  const tier = MISSION_DIFFICULTY_TIERS[rankId];
+  if (!tier) return null;
+
+  return {
+    rankId,
+    rank: tier.rank,
+    points: tier.points
+  };
+}
+
+function updateMissionDifficultyHint() {
+  const hint = document.getElementById('missionDifficultyHint');
+  if (!hint) return;
+
+  const info = getMissionDifficultyInfo();
+  hint.textContent = info
+    ? t('missionDifficultyHint', { rank: info.rank, points: info.points })
+    : t('missionDifficultyUnknown');
 }
 
 function scoreDecodedStruct(struct) {
@@ -1446,7 +1515,7 @@ function importDecodedStruct(result) {
   }
 
   WMSGen.update();
-  syncDungeonFloorLimit();
+  syncDungeonFloorLimit(true);
   syncMemoSelectorFromSpecialFloor();
   refreshMissionUi();
   updateSummary();
@@ -2447,6 +2516,7 @@ function applyStaticTranslations() {
   setPlaceholder('#dungeonSearch', t('dungeonPlaceholder'));
   setText('label[for="floor"]', t('floorLabel'));
   setText('#floorLimitHint', t('floorLimitUnknown'));
+  setText('#missionDifficultyHint', t('missionDifficultyUnknown'));
   setText('#memoSelectorWrap > label', t('memoSelectorLabel'));
   setText('#memoSelectorWrap > .hint', t('memoHint'));
   setText('.advanced-panel > summary', t('advancedOptions'));
@@ -2876,6 +2946,7 @@ function getEggPokemonPreviewData(selectId, label, meta) {
 function refreshMissionUi() {
   updateMissionFieldVisibility();
   syncDungeonFloorLimit();
+  updateMissionDifficultyHint();
   updateEntityPreviews();
 }
 
@@ -3409,6 +3480,9 @@ onReady(() => {
     const node = document.getElementById(id);
     if (!node) return;
     node.addEventListener('change', () => {
+      if (id === 'floor') {
+        syncDungeonFloorLimit(true);
+      }
       if (isEggGlitchEnabled() && ['missionTypeBox', 'dungeonBox', 'floor', 'targetItemBox', 'rewardTypeBox', 'clientBox', 'clientF'].includes(id)) {
         applyEggGlitchPreset();
       }
@@ -3435,6 +3509,7 @@ onReady(() => {
       refreshMissionUi();
       updateSummary();
       updateMemoVisuals();
+      scheduleLiveGeneration();
     });
     node.addEventListener('input', () => {
       if (id === 'flavorText') {
@@ -3446,6 +3521,7 @@ onReady(() => {
       refreshMissionUi();
       updateSummary();
       updateMemoVisuals();
+      scheduleLiveGeneration(id === 'floor' || id === 'specialFloor' ? 220 : 120);
     });
   });
 
@@ -3455,6 +3531,7 @@ onReady(() => {
     WMSGen.update();
     refreshMissionUi();
     updateSummary();
+    scheduleLiveGeneration();
   });
 
   document.getElementById('eggGlitch')?.addEventListener('change', (event) => {
@@ -3464,6 +3541,7 @@ onReady(() => {
     WMSGen.update();
     refreshMissionUi();
     updateSummary();
+    scheduleLiveGeneration();
   });
 
   document.getElementById('memoPreset').addEventListener('change', (event) => {
@@ -3472,12 +3550,14 @@ onReady(() => {
     refreshMissionUi();
     updateSummary();
     updateMemoVisuals();
+    scheduleLiveGeneration();
   });
 
   document.getElementById('flavorTextHead')?.addEventListener('change', () => {
     applyFlavorTextPresetSelection();
     refreshMissionUi();
     updateSummary();
+    scheduleLiveGeneration();
   });
 
   initializeSearchBoxes();
@@ -3499,6 +3579,7 @@ onReady(() => {
   refreshMissionUi();
   updateSummary();
   updateMemoVisuals();
+  generateCode();
 });
 
 function populateMemoSelector() {
@@ -3942,6 +4023,7 @@ function updateSummary() {
   const region = document.getElementById('useEUswap').checked ? t('regionEurope') : t('regionUs');
   const client = monNameFromSelect('clientBox', 'clientF', typeData.forceClient);
   const target = typeData.clientIsTarget ? client : monNameFromSelect('targetBox', 'targetF', typeData.forceTarget);
+  const difficulty = isEggGlitchEnabled() ? null : getMissionDifficultyInfo(typeData);
 
   const parts = [`${mission}${subtype && subtype !== '-' ? ` - ${subtype}` : ''}`, `${t('regionLabel')} ${region}`];
 
@@ -3950,6 +4032,9 @@ function updateSummary() {
   } else {
     parts.push(t('floorSummary', { dungeon, floor }));
     parts.push(t('clientSummary', { name: client }));
+    if (difficulty) {
+      parts.push(t('difficultySummary', { rank: difficulty.rank, points: difficulty.points }));
+    }
   }
 
   if (!isEggGlitchEnabled() && (!typeData.clientIsTarget || typeData.forceTarget !== undefined)) {
@@ -3996,6 +4081,20 @@ function generateCode() {
   output.value = pretty;
   compact.value = compactCode(pretty);
   status.textContent = document.getElementById('useEUswap').checked ? t('generatedEu') : t('generatedUs');
+}
+
+let liveGenerateTimer = null;
+
+function scheduleLiveGeneration(delay = 0) {
+  if (liveGenerateTimer) {
+    window.clearTimeout(liveGenerateTimer);
+    liveGenerateTimer = null;
+  }
+
+  liveGenerateTimer = window.setTimeout(() => {
+    liveGenerateTimer = null;
+    generateCode();
+  }, Math.max(0, delay));
 }
 
 function importCode() {

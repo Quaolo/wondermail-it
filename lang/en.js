@@ -27,6 +27,8 @@ window.WMSkyRegisterLocale('en', {
     floorLabel: 'Floor',
     floorLimitHint: 'Available floors: 1 to {count} for this dungeon.',
     floorLimitUnknown: 'Available floors: 1 to 99 for this dungeon.',
+    missionDifficultyHint: 'Difficulty: {rank} ({points} exploration points)',
+    missionDifficultyUnknown: 'Difficulty: unavailable for this floor.',
     memoSelectorLabel: 'Treasure Memo selector',
     memoHint: 'Directly choose the internal Treasure Memo variant. "Automatic" keeps the generator random.',
     advancedOptions: 'Advanced options',
@@ -209,6 +211,7 @@ window.WMSkyRegisterLocale('en', {
     regionLabel: 'region',
     floorSummary: '{dungeon} floor {floor}',
     clientSummary: 'client: {name}',
+    difficultySummary: 'difficulty: {rank} ({points} points)',
     targetSummary: 'target: {name}',
     target2Summary: 'extra target: {name}',
     targetItemSummary: 'target item: {name}',
@@ -246,7 +249,7 @@ window.WMSkyRegisterLocale('en', {
     9: 'Take the item from the target.',
     10: 'Stop the target. (Magnemite)',
     11: 'Stop the target. (Magnezone)',
-    12: 'Defeat the target.',
+    12: 'Challenge Letter.',
     13: 'Find the treasure.'
   },
   missionSubtypes: {

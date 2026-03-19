@@ -27,6 +27,8 @@ window.WMSkyRegisterLocale('fr', {
     floorLabel: 'Étage',
     floorLimitHint: 'Étages disponibles : 1 à {count} pour ce donjon.',
     floorLimitUnknown: 'Étages disponibles : 1 à 99 pour ce donjon.',
+    missionDifficultyHint: 'Difficulte : {rank} ({points} points d exploration)',
+    missionDifficultyUnknown: 'Difficulte : inconnue pour cet etage.',
     memoSelectorLabel: 'Sélecteur Mémo mystère',
     memoHint: 'Choisit directement la variante interne du Mémo mystère. "Automatique" laisse le générateur en aléatoire.',
     advancedOptions: 'Options expertes',
@@ -209,6 +211,7 @@ window.WMSkyRegisterLocale('fr', {
     regionLabel: 'region',
     floorSummary: '{dungeon} etage {floor}',
     clientSummary: 'client : {name}',
+    difficultySummary: 'difficulte : {rank} ({points} points)',
     targetSummary: 'cible : {name}',
     target2Summary: 'cible sup. : {name}',
     targetItemSummary: 'objet cible : {name}',
@@ -246,7 +249,7 @@ window.WMSkyRegisterLocale('fr', {
     9: "Prendre l'objet a la cible.",
     10: 'Arreter la cible. (Magnemite)',
     11: 'Arreter la cible. (Magnezone)',
-    12: 'Battre la cible.',
+    12: 'Lettre de defi.',
     13: 'Trouver le tresor.'
   },
   missionSubtypes: {

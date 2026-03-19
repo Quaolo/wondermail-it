@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="style.css?v=20260317d">
   <script src="lmutils.js?v=20260317d"></script>
   <script src="lm.js?v=20260317d"></script>
-  <script src="lmgenerate.js?v=20260317d"></script>
+  <script src="lmgenerate.js?v=20260319a"></script>
   <script src="ciel_donjon.js?v=20260317d"></script>
   <script src="ciel_objet.js?v=20260317d"></script>
   <script src="ciel_poke.js?v=20260317d"></script>
@@ -22,10 +22,11 @@
   <script src="pokemon_sprite_map.js?v=20260317d"></script>
   <script src="dungeon_name_map.js?v=20260317d"></script>
   <script src="dungeon_floor_map.js?v=20260317d"></script>
-  <script src="lang/locales.js?v=20260317d"></script>
-  <script src="lang/fr.js?v=20260317d"></script>
-  <script src="lang/en.js?v=20260317d"></script>
-  <script src="app.js?v=20260317d" defer></script>
+  <script src="mission_rank_map.js?v=20260319a"></script>
+  <script src="lang/locales.js?v=20260319a"></script>
+  <script src="lang/fr.js?v=20260319a"></script>
+  <script src="lang/en.js?v=20260319a"></script>
+  <script src="app.js?v=20260319a" defer></script>
 </head>
 <body>
   <main class="page">
@@ -95,6 +96,7 @@
           <label for="floor">Ã‰tage</label>
           <input id="floor" name="floor" type="number" min="1" max="99" value="1">
           <p class="hint" id="floorLimitHint">Etages disponibles : 1 a 99 pour ce donjon.</p>
+          <p class="hint" id="missionDifficultyHint">Difficulty: unavailable for this floor.</p>
         </div>
 
         <div class="field memo-selector hidden" id="memoSelectorWrap">
