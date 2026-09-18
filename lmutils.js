@@ -1,127 +1,94 @@
-var _____WB$wombat$assign$function_____ = function(name) {return (self._wb_wombat && self._wb_wombat.local_init && self._wb_wombat.local_init(name)) || self[name]; };
-if (!self.__WB_pmw) { self.__WB_pmw = function(obj) { this.__WB_source = obj; return this; } }
-{
-  let window = _____WB$wombat$assign$function_____("window");
-  let self = _____WB$wombat$assign$function_____("self");
-  let document = _____WB$wombat$assign$function_____("document");
-  let location = _____WB$wombat$assign$function_____("location");
-  let top = _____WB$wombat$assign$function_____("top");
-  let parent = _____WB$wombat$assign$function_____("parent");
-  let frames = _____WB$wombat$assign$function_____("frames");
-  let opener = _____WB$wombat$assign$function_____("opener");
+/*
+  Funzioni di supporto: formattazione della password e nomi di strumenti, dungeon e Pokémon
+  nella lingua corrente, presi dai testi ufficiali del gioco (data/testi_gioco_*.js).
+*/
 
-if(typeof(console) === "indéfini" || typeof(console.log) === "indéfini") {
-	var console = { log: function() {} };
-	console.info = console.log;
-	console.error = console.log;
-	console.warn = console.log;
-}
-
-if(!Array.prototype.indexOf) {
-	// Based on the Mozilla-provided sample:
-	// https://developer.mozilla.org/en/Core_JavaScript_1.5_Reference/Global_Objects/Array/indexOf#Compatibility
-	Array.prototype.indexOf = function(elt, from) {
-		var from = Number(from) || 0;
-		var len = this.length;
-
-		for(var i = from; i < len; i++) {
-			if(this[i] == elt) {
-				return i;
-			}
-		}
-		
-		return -1;
-	}
-}
-
-/**
- * Wrapper for document.getElementById because I am lazy.
- * @param String ID
- * @return DOMstuff
- */
 function $(id) {
-	return document.getElementById(id);
+  return document.getElementById(id);
 }
 
 /**
- * Prettifies a mail string, given the amount of rows and the length of the middle column. Outer column
- * width is automagically calculated.
- * @param String Mail string to prettify
- * @param Number Amount of rows
- * @param Number Amount of characters in the middle column
- * @return String Prettified mail string
+ * Formatta la password su più righe: colonna esterna, colonna centrale, colonna esterna.
+ * Con 34 caratteri, 2 righe e colonna centrale da 7: "XXXXX XXXXXXX XXXXX" per riga.
  */
 function prettyMailString(mailString, rows, middleColumnSize) {
-	mailString = WMSParser.sanitize(mailString);
-	
-	// If our mailString is 18 bytes and the middle column is 5 bytes with 2 rows, we'll have 8 bytes left for the rest.
-	// There'll be 2 columns for 2 rows each = 8/2/2 = 2 bytes.
-	//                    (18                - (2 * 5))                   / (2 * 2)    = 2
-	var outerColumnSize = (mailString.length - (rows * middleColumnSize)) / (rows * 2);
-	
-	var prettyString = "";
-	var stringPtr = 0;
-	for(var row = 0; row < rows; row++) {
-		if(prettyString != "") {
-			prettyString += "\n";
-		}
-		prettyString += mailString.substr(stringPtr, outerColumnSize) + " ";
-		stringPtr += outerColumnSize;
-		prettyString += mailString.substr(stringPtr, middleColumnSize) + " ";
-		stringPtr += middleColumnSize;
-		prettyString += mailString.substr(stringPtr, outerColumnSize);
-		stringPtr += outerColumnSize;
-	}
-	return prettyString;
+  mailString = WMSParser.sanitize(mailString);
+  var outerColumnSize = (mailString.length - rows * middleColumnSize) / (rows * 2);
+  var lines = [];
+  var pointer = 0;
+  for (var row = 0; row < rows; row++) {
+    var first = mailString.substr(pointer, outerColumnSize);
+    pointer += outerColumnSize;
+    var middle = mailString.substr(pointer, middleColumnSize);
+    pointer += middleColumnSize;
+    var last = mailString.substr(pointer, outerColumnSize);
+    pointer += outerColumnSize;
+    lines.push(first + ' ' + middle + ' ' + last);
+  }
+  return lines.join('\n');
+}
+
+function getActiveLanguageCode() {
+  return typeof getCurrentLanguage === 'function' ? getCurrentLanguage() : 'it';
+}
+
+function getGameText(lang) {
+  var all = window.WMSkyGameText || {};
+  return all[lang || getActiveLanguageCode()] || all.en || all.it || null;
+}
+
+function getLocaleData(lang) {
+  var registry = (window.WMSkyLocaleData && window.WMSkyLocaleData.locales) || {};
+  return registry[lang || getActiveLanguageCode()] || registry.en || {};
+}
+
+function getLocaleMessage(key) {
+  var messages = getLocaleData().messages || {};
+  return messages[key] || key;
 }
 
 /**
- * Returns the item name for a given item ID. Requires the sky_item file to be loaded.
- * @param Number Item ID
- * @return String Item name or "Unknown Item"
+ * Nome ufficiale dello strumento nella lingua corrente.
  */
 function getItemName(itemId) {
-	if(WMSkyItem[itemId]) {
-		return WMSkyItem[itemId];
-	}
-	else {
-		return "Objet inconnu";
-	}
+  var id = parseInt(itemId, 10);
+  var text = getGameText();
+  var name = text && isFinite(id) ? text.items[id] : null;
+  return name || getLocaleMessage('unknownItem');
 }
 
 /**
- * Returns the dungeon name for a given dungeon ID. Requires the sky_dungeon file to be loaded.
- * @param Number Dungeon ID
- * @return String Dungeon name or "Unknown"
+ * Nome ufficiale del dungeon nella lingua corrente.
  */
 function getDungeonName(dungeonId) {
-	// TODO: keep list of valid/invalid WMS dungeons
-	if(WMSkyDungeon[dungeonId]) {
-		return WMSkyDungeon[dungeonId];
-	}
-	else {
-		return "Inconnu";
-	}
+  var id = parseInt(dungeonId, 10);
+  var text = getGameText();
+  var name = text && isFinite(id) ? text.dungeons[id] : null;
+  return name || getLocaleMessage('unknownDungeon');
 }
 
 /**
- * Returns the monster name for a given monster ID. Requires the sky_monster file to be loaded.
- * @param Number Monster ID
- * @return String Monster name or "Unknown"
+ * Nome del Pokémon. Il gioco non distingue le forme alternative (tutti gli Unown si chiamano
+ * "Unown"): per quelle si usano le etichette del file di lingua (pokemonForms).
+ * Le forme femminili (ID + 600) sono indicate con ♀.
  */
 function getMonName(monId) {
-	var female = (monId > 600);
-	if(female) {
-		monId -= 600;
-	}
-		
-	if(WMSkyPoke[monId]) {
-		// (female ? "[F]" : "[M]") +
-		return WMSkyPoke[monId];
-	}
-	else {
-		return "Inconnu";
-	}
-}
-
+  var id = parseInt(monId, 10);
+  if (!isFinite(id) || id < 0) {
+    return '-';
+  }
+  var base = id % 600;
+  var forms = getLocaleData().pokemonForms || {};
+  var name = forms[base];
+  if (!name) {
+    var text = getGameText();
+    name = text ? text.pokemon[base] : null;
+  }
+  if (!name || /^\?+$/.test(name) || /^reserve_/.test(name)) {
+    name = getLocaleMessage('reservedPokemon').replace('{id}', String(base));
+  }
+  if (id >= 600 && typeof hasFemaleForm === 'function' && hasFemaleForm(base)) {
+    name += ' ♀';
+  }
+  return name;
 }

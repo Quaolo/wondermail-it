@@ -1,97 +1,4 @@
-function getOption() {
-  return false;
-}
 
-function setOption() {
-  return false;
-}
-
-function buildPokemonNameRange(start, end, label) {
-  const entries = {};
-  for (let id = start; id <= end; id += 1) {
-    entries[id] = label;
-  }
-  return entries;
-}
-
-const EXTRA_POKEMON_NAMES = {
-  fr: {
-    0: '???',
-    29: 'Nidoran F',
-    32: 'Nidoran M',
-    535: 'Shaymin - Ciel',
-    536: 'Giratina - Origine',
-    ...buildPokemonNameRange(537, 551, 'Reserve'),
-    552: 'Dialga Primal',
-    553: 'Quelque chose',
-    554: 'Statue',
-    555: 'Grodoudou - Ombre',
-    556: 'Regigigas - Statue',
-    557: 'Archodong - Statue',
-    558: 'Kicklee - Statue',
-    559: 'Eoko - Cutscene',
-    560: 'Grodoudou - Cutscene',
-    561: 'Crehelf - Cutscene',
-    562: 'Crefadet - Cutscene',
-    563: 'Crefollet - Cutscene',
-    564: 'Heliatronc - Cutscene',
-    565: 'Taupiqueur - Cutscene',
-    566: 'Triopikeur - Cutscene',
-    567: 'Ecrapince - Cutscene',
-    568: 'Ramboum - Cutscene',
-    569: 'Keunotor - Cutscene',
-    570: 'Pijako - Cutscene',
-    571: 'Massko - Cutscene',
-    572: 'Noctunoir - Cutscene',
-    573: 'Tenefix - Cutscene',
-    574: 'Darkrai - Ombre',
-    575: 'Maman Grodoudou - Cutscene',
-    576: 'Massko - Cutscene',
-    577: 'Noctunoir - Cutscene',
-    578: 'Noctunoir - Cutscene',
-    579: 'Fouinette - Cutscene',
-    580: 'Joliflor - Cutscene',
-    ...buildPokemonNameRange(581, 599, 'Reserve - invalide')
-  },
-  en: {
-    0: '???',
-    29: 'Nidoran F',
-    32: 'Nidoran M',
-    535: 'Shaymin - Sky',
-    536: 'Giratina - Origin',
-    ...buildPokemonNameRange(537, 551, 'Reserve'),
-    552: 'Primal Dialga',
-    553: 'Something',
-    554: 'Statue',
-    555: 'Wigglytuff - Shadow',
-    556: 'Regigigas - Statue',
-    557: 'Bronzong - Statue',
-    558: 'Hitmonlee - Statue',
-    559: 'Chimecho - Cutscene',
-    560: 'Wigglytuff - Cutscene',
-    561: 'Uxie - Cutscene',
-    562: 'Azelf - Cutscene',
-    563: 'Mesprit - Cutscene',
-    564: 'Sunflora - Cutscene',
-    565: 'Diglett - Cutscene',
-    566: 'Dugtrio - Cutscene',
-    567: 'Corphish - Cutscene',
-    568: 'Loudred - Cutscene',
-    569: 'Bidoof - Cutscene',
-    570: 'Chatot - Cutscene',
-    571: 'Grovyle - Cutscene',
-    572: 'Dusknoir - Cutscene',
-    573: 'Sableye - Cutscene',
-    574: 'Darkrai - Shadow',
-    575: 'Wigglytuff Mom - Cutscene',
-    576: 'Grovyle - Cutscene',
-    577: 'Dusknoir - Cutscene',
-    578: 'Dusknoir - Cutscene',
-    579: 'Sentret - Cutscene',
-    580: 'Bellossom - Cutscene',
-    ...buildPokemonNameRange(581, 599, 'Reserve - Invalid')
-  }
-};
 
 const EXTRA_POKEMON_IMAGE_URLS = {
   279: 'assets/pokemon-extra/celebi-shiny.png',
@@ -140,7 +47,9 @@ function onReady(fn) {
 }
 
 const LANGUAGE_STORAGE_KEY = 'wmsky-language';
-let currentLanguage = 'en';
+const DEFAULT_LANGUAGE = 'it';
+const FALLBACK_LANGUAGE = 'en';
+let currentLanguage = DEFAULT_LANGUAGE;
 
 function getLocaleRegistry() {
   return (window.WMSkyLocaleData && window.WMSkyLocaleData.locales) || {};
@@ -157,9 +66,9 @@ function getAvailableLanguages() {
 
 function getDefaultLanguage() {
   const languages = getAvailableLanguages();
-  if (languages.includes('en')) return 'en';
-  if (languages.includes('fr')) return 'fr';
-  return languages[0] || 'en';
+  if (languages.includes(DEFAULT_LANGUAGE)) return DEFAULT_LANGUAGE;
+  if (languages.includes(FALLBACK_LANGUAGE)) return FALLBACK_LANGUAGE;
+  return languages[0] || DEFAULT_LANGUAGE;
 }
 
 function getUrlLanguage() {
@@ -180,11 +89,12 @@ function getLocale(code) {
 
 function getLocaleMeta(code) {
   const locale = getLocale(code);
+  const fallbackCode = String(code || DEFAULT_LANGUAGE).toUpperCase();
   return (locale && locale.meta) || {
-    code: code || 'fr',
-    label: String(code || 'fr').toUpperCase(),
-    nativeLabel: String(code || 'fr').toUpperCase(),
-    shortLabel: String(code || 'fr').toUpperCase(),
+    code: code || DEFAULT_LANGUAGE,
+    label: fallbackCode,
+    nativeLabel: fallbackCode,
+    shortLabel: fallbackCode,
     flagPath: ''
   };
 }
@@ -196,423 +106,9 @@ function getLocaleMessages(code) {
 
 function getLocaleLabelMap(key, code) {
   const locale = getLocale(code);
-  return (locale && locale[key]) || {};
+  const fallback = getLocaleRegistry()[FALLBACK_LANGUAGE];
+  return (locale && locale[key]) || (fallback && fallback[key]) || {};
 }
-
-const UI_TEXT = {
-  fr: {
-    pageTitle: 'Generateur FR - Lettres Miracle S (Explorateurs du Ciel)',
-    metaDescription: 'Generateur francais de Lettres Miracle S pour Pokemon Donjon Mystere : Explorateurs du Ciel, avec mode Europe, Memo mystere et Lettres de defi.',
-    heroEyebrow: 'Pokemon Donjon Mystere : Explorateurs du Ciel',
-    heroTitle: 'Generateur FR de Lettres Miracle S',
-    heroLead: 'Version propre en francais, avec generation pour la <strong>version europeenne</strong>, les <strong>Memo mystere</strong> et les <strong>Lettres de defi</strong>.',
-    badgeChars: '34 caracteres',
-    badgeRegion: 'Mode Europe',
-    quickAccess: 'Acces rapide',
-    presetStandard: 'Mission normale',
-    presetMemo: 'Memo mystere',
-    presetChallenge: 'Lettre de defi - {boss}',
-    presetsHint: 'Les lettres de defi et les memos mystere sont des types exclusifs a Explorateurs du Ciel.',
-    missionSection: 'Mission',
-    missionTypeLabel: 'Type de mission',
-    dungeonLabel: 'Donjon',
-    dungeonPlaceholder: 'Chercher un donjon...',
-    floorLabel: 'Etage',
-    memoSelectorLabel: 'Selecteur Memo mystere',
-    memoHint: 'Choisit directement la variante interne du Memo mystere. "Automatique" laisse le generateur en aleatoire.',
-    advancedOptions: 'Options expertes',
-    flavorTextLabel: 'Type de texte',
-    flavorTextHeadLabel: 'Titre du message',
-    flavorTextBodyLabel: 'Contenu du message',
-    flavorTextHeadAuto: 'Automatique',
-    flavorTextHeadCustom: 'Personnalise',
-    flavorTextBodyAuto: 'Texte automatique du jeu',
-    flavorTextChoiceHintKnown: 'Choisis un texte de quete predefini quand il existe. "Personnalise" laisse la main sur la valeur brute.',
-    flavorTextChoiceHintNone: 'Aucun texte de quete documente ici pour ce type de mission. Utilise "Personnalise" si tu veux forcer une valeur brute.',
-    flavorTextPlaceholder: 'Automatique si vide',
-    specialFloorLabel: 'Etage special',
-    specialFloorPlaceholder: 'Automatique si vide',
-    specialFloorHint: 'Le selecteur ci-dessus remplit ce champ automatiquement pour les Memos mystere.',
-    targetSection: 'Pokemon et objet cible',
-    clientLabel: 'Client',
-    targetLabel: 'Cible',
-    target2Label: 'Cible supplementaire',
-    targetItemLabel: 'Objet cible',
-    pokemonSearchPlaceholder: 'Chercher un Pokemon...',
-    targetSearchPlaceholder: 'Chercher une cible...',
-    target2SearchPlaceholder: 'Chercher une cible supplementaire...',
-    itemSearchPlaceholder: 'Chercher un objet...',
-    rewardSection: 'Recompense et region',
-    rewardTypeLabel: 'Type de recompense',
-    rewardItemLabel: 'Objet en recompense',
-    rewardSearchPlaceholder: 'Chercher un objet de recompense...',
-    female: 'Femelle',
-    euToggle: 'Generer pour la version europeenne',
-    euHint: 'Decoche pour les versions US/AUS. Les codes Sky ne sont pas compatibles entre regions.',
-    summaryTitle: 'Resume',
-    summaryEmpty: 'Choisis une mission pour voir le resume.',
-    memoVisualEyebrow: 'Memo tresor',
-    memoVisualTitle: 'Cartographie des salles',
-    memoVisualLead: 'Cette section affiche les formes exactes relevees sur la wiki japonaise des Memos tresor.',
-    memoHintBottom: "Les formes 115 a 144 viennent directement de la wiki japonaise. La variante 114 a ete reconstituee d'apres captures joueur : salle etroite avec escalier au nord, 4 coffres luxe au centre, et une mission qui semble ne jamais se valider.",
-    sourceShapes: 'Wiki JP : formes',
-    sourceCodes: 'Wiki JP : codes',
-    importCodeLabel: 'Lire un code existant',
-    importCodePlaceholder: 'Colle un code Wonder Mail S ici...',
-    importCodeButton: 'Lire ce code',
-    resultTitle: 'Code genere',
-    generate: 'Generer',
-    copy: 'Copier',
-    copyCompact: 'Copier sans espaces',
-    outputPlaceholder: 'Le code apparaitra ici...',
-    compactLabel: 'Version compacte',
-    statusDefault: 'Astuce : le mode Europe est deja active par defaut.',
-    warningEyebrow: 'Avertissement',
-    warningTitle: 'Contenu a relire avec prudence',
-    warningLead: 'Des textes, libelles, descriptions, rapprochements et annotations ont ete ajoutes automatiquement. De nombreuses erreurs, approximations ou mauvaises interpretations peuvent encore etre presentes.',
-    warningHint: 'Le site, la cartographie Memo tresor et plusieurs aides visuelles doivent etre traites comme un outil communautaire en cours de verification, pas comme une reference parfaite.',
-    notesTitle: 'Notes utiles',
-    note1: '<strong>Memo mystere</strong> = mission de type <em>Trouver le tresor</em>.',
-    note2: '<strong>Lettres de defi</strong> = missions speciales Sky avec combat de boss.',
-    note3: 'Certaines combinaisons restent rejetees par le jeu, meme si un code peut etre construit.',
-    note4: 'Sur console reelle, quelques combinaisons exotiques peuvent causer un freeze ; reste sur des reglages coherents.',
-    sourcesSummary: 'Credits et sources',
-    creditsTitle: 'Credits',
-    creditsBody1: 'Credit a <strong>_RedCoal_</strong> pour les retours, les captures, les corrections de salles et les verifications de contenu.',
-    creditsBody2: "Cette refonte et ses ajouts ont ete realises full par IA avec <strong>GPT-5.4</strong>. Des erreurs peuvent etre presentes dans les textes, les labels, les associations d'images et certaines interpretations.",
-    creditsBody3: "J'ai fait ce site car je trouvais l'interface des autres pas tres visuelle, et le seul site capable de generer des salles Memo tresor etait un site japonais peu comprehensible. J'ai monte celui-ci en un apres-midi avec Codex et je trouve qu'il fait bien le taff. Une partie du code provient probablement de projets deja existants ; les sources que Codex a utilisees sont listees ci-dessous.",
-    generatorBaseTitle: 'Base du generateur',
-    wonderMailDocsTitle: 'Documentation Wonder Mail et PMD',
-    memoSourcesTitle: 'Memo tresor et sources japonaises',
-    auxDataTitle: 'Images et donnees auxiliaires',
-    footerText: "Interface francaise refaite a partir d'un backend historique de generation Wonder Mail S, enrichie avec des ajouts communautaires, des recoupements externes et des contenus assistes par IA.",
-    auto: 'Automatique',
-    noForcedVariant: 'Aucune variante forcee',
-    autoPreviewBadge: 'Apercu auto',
-    autoPreviewText: "Le generateur choisit une variante automatiquement. Passe la souris sur un etage pour voir sa forme ici.",
-    chooseVariant: 'Choisis une variante',
-    waiting: 'En attente',
-    noRoomSelected: 'Aucune salle selectionnee',
-    roomMapAppears: "La carte exacte ne s'affiche que quand tu choisis une variante ou un etage special.",
-    missingSource: 'Source manquante',
-    noUsableMap: "Aucune carte exploitable pour cet etage special pour le moment.",
-    jpSource: 'Source japonaise',
-    roomTitle: 'Salle {floor}',
-    specialFloorShort: 'Etage {floor}',
-    specialFloorFull: 'Etage special {floor}',
-    previewTitle: 'Variante {variant} - Etage {floor}',
-    previewOption: 'Variante {variant} (etage special {floor})',
-    memoPickerHint: "Survole un etage pour voir l'apercu a droite, puis clique pour le choisir.",
-    memoUsesRoom: '{label} utilise la salle {floor}. La carte ci-dessous suit la forme referencee sur la wiki japonaise.',
-    memoMissingInData: "{label} reference bien un etage special, mais je n'ai pas trouve de carte correspondante dans les donnees chargees.",
-    memoMissingPage: 'Cette variante est absente de la page de formes japonaise.',
-    memoReconstructed: 'Reconstitution depuis captures joueur · format {width} x {height}',
-    memoFormat: 'Format {width} x {height}',
-    memoSampleFoundDungeon: 'Exemple de code retrouve sur {dungeon}, etage {floor}.',
-    memoSampleFoundGeneric: 'Exemple de code retrouve sur le donjon {dungeon}, etage {floor}.',
-    memoNoSample: "Aucun exemple de code automatique retrouve sur la page japonaise pour cette variante.",
-    sourceIncomplete: 'source incomplete',
-    mapMissing: 'Carte absente de la source JP',
-    chooseVariantToShow: 'Choisis une variante pour afficher sa salle.',
-    missingRoomDescription: "La source japonaise utilisee ne montre pas cette variante, donc on n'a pas encore sa forme exacte.",
-    mapSize: 'Carte {width} x {height}.',
-    treasurePosition: 'Tresor {position}.',
-    stairsPosition: 'Escalier {position}.',
-    playerPosition: 'Zone P {position}.',
-    luxuryChestCount: '{count} coffres luxe visibles au centre de la salle.',
-    sourceMarker: 'Repere source : {flags}.',
-    noSpecialMarker: 'Aucun repere special signale dans le tableau source.',
-    left: 'a gauche',
-    right: 'a droite',
-    center: 'au centre',
-    top: 'en haut',
-    middle: 'au milieu',
-    bottom: 'en bas',
-    flagPlayer: 'depart P',
-    flagKey: 'cle requise',
-    flagWater: 'zone bleue',
-    flagBreakWall: 'mur traversable',
-    flagChestnut: 'piege chestnut',
-    flagWind: 'piege vent',
-    flagWarp: 'piege warp',
-    tileWall: 'Mur',
-    tileFloor: 'Sol',
-    tileWater: 'Eau',
-    tileStairs: 'Escalier',
-    tileTreasure: 'Tresor',
-    tileLuxuryChest: 'Coffre luxe',
-    tilePlayer: 'Depart joueur',
-    tileKey: 'Cle requise',
-    tileBreakWall: 'Mur traversable',
-    tileChestnut: 'Piege chestnut',
-    tileWind: 'Piege vent',
-    tileWarp: 'Piege warp',
-    forcedMissionPokemon: 'Pokemon impose par la mission',
-    activeFemaleVersion: 'Version femelle active',
-    activeSelection: 'Selection active',
-    samePokemonAsClient: 'Meme Pokemon que le client',
-    currentSelectedItem: 'Objet actuellement selectionne',
-    rewardPreviewLabel: 'Recompense',
-    target2PreviewLabel: 'Cible sup.',
-    missionLabel: 'mission',
-    regionLabel: 'region',
-    floorSummary: '{dungeon} etage {floor}',
-    clientSummary: 'client : {name}',
-    targetSummary: 'cible : {name}',
-    target2Summary: 'cible sup. : {name}',
-    targetItemSummary: 'objet cible : {name}',
-    rewardSummary: 'recompense : {name}',
-    memoSummary: 'memo : {name}',
-    regionEurope: 'Europe',
-    regionUs: 'US/AUS',
-    generatedEu: 'Code genere pour la version europeenne.',
-    generatedUs: 'Code genere pour la version US/AUS.',
-    blockedCombination: 'Le generateur a bloque la combinaison choisie.',
-    importCodeEmpty: 'Colle d abord un code a lire.',
-    importCodeInvalid: 'Impossible de lire ce code. Verifie le format ou la region.',
-    importCodePartial: 'Code lu, mais certains champs ne correspondent pas a une mission exposee par l interface.',
-    importCodeEu: 'Code lu et formulaire rempli depuis un code europeen.',
-    importCodeUs: 'Code lu et formulaire rempli depuis un code US/AUS.',
-    nothingToCopy: 'Aucun code a copier.',
-    compactCopied: 'Version compacte copiee.',
-    codeCopied: 'Code copie.',
-    copyFailed: 'Copie impossible dans ce navigateur.',
-    chestVariantTitle: 'Variante interne {variant} du coffre',
-    fixedItem835Title: 'Correction du libelle : Elekid Card'
-  },
-  en: {
-    pageTitle: 'Wonder Mail S Generator (Explorers of Sky)',
-    metaDescription: 'Wonder Mail S generator for Pokemon Mystery Dungeon: Explorers of Sky, with EU mode, Treasure Memos, and Challenge Letters.',
-    heroEyebrow: 'Pokemon Mystery Dungeon: Explorers of Sky',
-    heroTitle: 'Wonder Mail S Generator',
-    heroLead: 'Clean interface with support for the <strong>European version</strong>, <strong>Treasure Memos</strong>, and <strong>Challenge Letters</strong>.',
-    badgeChars: '34 characters',
-    badgeRegion: 'Europe mode',
-    quickAccess: 'Quick access',
-    presetStandard: 'Standard mission',
-    presetMemo: 'Treasure Memo',
-    presetChallenge: 'Challenge Letter - {boss}',
-    presetsHint: 'Challenge letters and treasure memos are exclusive mission types from Explorers of Sky.',
-    missionSection: 'Mission',
-    missionTypeLabel: 'Mission type',
-    dungeonLabel: 'Dungeon',
-    dungeonPlaceholder: 'Search a dungeon...',
-    floorLabel: 'Floor',
-    memoSelectorLabel: 'Treasure Memo selector',
-    memoHint: 'Directly choose the internal Treasure Memo variant. "Automatic" keeps the generator random.',
-    advancedOptions: 'Advanced options',
-    flavorTextLabel: 'Text type',
-    flavorTextHeadLabel: 'Message title',
-    flavorTextBodyLabel: 'Message body',
-    flavorTextHeadAuto: 'Automatic',
-    flavorTextHeadCustom: 'Custom',
-    flavorTextBodyAuto: 'Automatic in-game text',
-    flavorTextChoiceHintKnown: 'Choose a predefined quest text when available. "Custom" leaves the raw value under your control.',
-    flavorTextChoiceHintNone: 'No quest text is documented here for this mission type. Use "Custom" if you want to force a raw value.',
-    flavorTextPlaceholder: 'Automatic if empty',
-    specialFloorLabel: 'Special floor',
-    specialFloorPlaceholder: 'Automatic if empty',
-    specialFloorHint: 'The selector above fills this field automatically for Treasure Memos.',
-    targetSection: 'Pokemon and target item',
-    clientLabel: 'Client',
-    targetLabel: 'Target',
-    target2Label: 'Extra target',
-    targetItemLabel: 'Target item',
-    pokemonSearchPlaceholder: 'Search a Pokemon...',
-    targetSearchPlaceholder: 'Search a target...',
-    target2SearchPlaceholder: 'Search an extra target...',
-    itemSearchPlaceholder: 'Search an item...',
-    rewardSection: 'Reward and region',
-    rewardTypeLabel: 'Reward type',
-    rewardItemLabel: 'Reward item',
-    rewardSearchPlaceholder: 'Search a reward item...',
-    female: 'Female',
-    euToggle: 'Generate for the European version',
-    euHint: 'Uncheck this for US/AUS. Sky codes are not cross-region compatible.',
-    summaryTitle: 'Summary',
-    summaryEmpty: 'Choose a mission to see the summary.',
-    memoVisualEyebrow: 'Treasure Memo',
-    memoVisualTitle: 'Room maps',
-    memoVisualLead: 'This section shows the exact room shapes documented on the Japanese Treasure Memo wiki.',
-    memoHintBottom: 'Shapes 115 to 144 come directly from the Japanese wiki. Variant 114 was rebuilt from player screenshots: narrow room with stairs to the north, 4 deluxe chests in the center, and a mission that appears to never validate.',
-    sourceShapes: 'JP wiki: shapes',
-    sourceCodes: 'JP wiki: codes',
-    importCodeLabel: 'Read an existing code',
-    importCodePlaceholder: 'Paste a Wonder Mail S code here...',
-    importCodeButton: 'Read this code',
-    resultTitle: 'Generated code',
-    generate: 'Generate',
-    copy: 'Copy',
-    copyCompact: 'Copy compact',
-    outputPlaceholder: 'The code will appear here...',
-    compactLabel: 'Compact version',
-    statusDefault: 'Tip: Europe mode is already enabled by default.',
-    warningEyebrow: 'Warning',
-    warningTitle: 'Review this content carefully',
-    warningLead: 'Some texts, labels, descriptions, matches, and annotations were added automatically. Many errors, approximations, or bad interpretations may still be present.',
-    warningHint: 'The site, the Treasure Memo mapping, and several visual helpers should be treated as a community tool under verification, not as a perfect reference.',
-    notesTitle: 'Useful notes',
-    note1: '<strong>Treasure Memo</strong> = mission type <em>Find the treasure</em>.',
-    note2: '<strong>Challenge Letters</strong> = Sky-exclusive boss fight missions.',
-    note3: 'Some combinations are still rejected by the game even if a code can be generated.',
-    note4: 'On real hardware, a few unusual combinations may freeze the game; stick to coherent settings.',
-    sourcesSummary: 'Credits and sources',
-    creditsTitle: 'Credits',
-    creditsBody1: 'Credit to <strong>_RedCoal_</strong> for feedback, screenshots, room corrections, and content verification.',
-    creditsBody2: 'This overhaul and its additions were made entirely by AI with <strong>GPT-5.4</strong>. Errors may still be present in texts, labels, image matching, and some interpretations.',
-    creditsBody3: 'I made this site because I found the interfaces of the other ones not very visual, and the only site that could generate Treasure Memo rooms was a Japanese site that was hard to understand. I put this one together in an afternoon with Codex, and I think it does the job well. Some of the code probably comes from existing projects; the sources Codex used are listed below.',
-    generatorBaseTitle: 'Generator base',
-    wonderMailDocsTitle: 'Wonder Mail and PMD references',
-    memoSourcesTitle: 'Treasure Memo and Japanese sources',
-    auxDataTitle: 'Images and auxiliary data',
-    footerText: 'French interface rebuilt from a historical Wonder Mail S backend, extended with community additions, external cross-checks, and AI-assisted content.',
-    auto: 'Automatic',
-    noForcedVariant: 'No forced variant',
-    autoPreviewBadge: 'Auto preview',
-    autoPreviewText: 'The generator chooses a variant automatically. Hover a floor to preview its shape here.',
-    chooseVariant: 'Choose a variant',
-    waiting: 'Waiting',
-    noRoomSelected: 'No room selected',
-    roomMapAppears: 'The exact map only appears when you choose a variant or a special floor.',
-    missingSource: 'Missing source',
-    noUsableMap: 'No usable map is available for this special floor yet.',
-    jpSource: 'Japanese source',
-    roomTitle: 'Room {floor}',
-    specialFloorShort: 'Floor {floor}',
-    specialFloorFull: 'Special floor {floor}',
-    previewTitle: 'Variant {variant} - Floor {floor}',
-    previewOption: 'Variant {variant} (special floor {floor})',
-    memoPickerHint: 'Hover a floor to preview it on the right, then click to select it.',
-    memoUsesRoom: '{label} uses room {floor}. The map below follows the shape referenced on the Japanese wiki.',
-    memoMissingInData: '{label} does reference a special floor, but I could not find a matching room map in the loaded data.',
-    memoMissingPage: 'This variant is missing from the Japanese room-shape page.',
-    memoReconstructed: 'Rebuilt from player screenshots · size {width} x {height}',
-    memoFormat: 'Size {width} x {height}',
-    memoSampleFoundDungeon: 'Example code found for {dungeon}, floor {floor}.',
-    memoSampleFoundGeneric: 'Example code found for dungeon {dungeon}, floor {floor}.',
-    memoNoSample: 'No automatic example code was found on the Japanese page for this variant.',
-    sourceIncomplete: 'incomplete source',
-    mapMissing: 'Map missing from the JP source',
-    chooseVariantToShow: 'Choose a variant to show its room.',
-    missingRoomDescription: 'The Japanese source page does not show this variant yet, so its exact shape is still unknown.',
-    mapSize: 'Map {width} x {height}.',
-    treasurePosition: 'Treasure {position}.',
-    stairsPosition: 'Stairs {position}.',
-    playerPosition: 'P zone {position}.',
-    luxuryChestCount: '{count} deluxe chests are visible in the middle of the room.',
-    sourceMarker: 'Source marker: {flags}.',
-    noSpecialMarker: 'No special marker is listed in the source table.',
-    left: 'on the left',
-    right: 'on the right',
-    center: 'in the center',
-    top: 'at the top',
-    middle: 'in the middle',
-    bottom: 'at the bottom',
-    flagPlayer: 'P start',
-    flagKey: 'key required',
-    flagWater: 'blue zone',
-    flagBreakWall: 'breakable wall',
-    flagChestnut: 'chestnut trap',
-    flagWind: 'wind trap',
-    flagWarp: 'warp trap',
-    tileWall: 'Wall',
-    tileFloor: 'Floor',
-    tileWater: 'Water',
-    tileStairs: 'Stairs',
-    tileTreasure: 'Treasure',
-    tileLuxuryChest: 'Deluxe chest',
-    tilePlayer: 'Player start',
-    tileKey: 'Key required',
-    tileBreakWall: 'Breakable wall',
-    tileChestnut: 'Chestnut trap',
-    tileWind: 'Wind trap',
-    tileWarp: 'Warp trap',
-    forcedMissionPokemon: 'Pokemon forced by the mission',
-    activeFemaleVersion: 'Female version enabled',
-    activeSelection: 'Current selection',
-    samePokemonAsClient: 'Same Pokemon as the client',
-    currentSelectedItem: 'Currently selected item',
-    rewardPreviewLabel: 'Reward',
-    target2PreviewLabel: 'Extra target',
-    missionLabel: 'mission',
-    regionLabel: 'region',
-    floorSummary: '{dungeon} floor {floor}',
-    clientSummary: 'client: {name}',
-    targetSummary: 'target: {name}',
-    target2Summary: 'extra target: {name}',
-    targetItemSummary: 'target item: {name}',
-    rewardSummary: 'reward: {name}',
-    memoSummary: 'memo: {name}',
-    regionEurope: 'Europe',
-    regionUs: 'US/AUS',
-    generatedEu: 'Code generated for the European version.',
-    generatedUs: 'Code generated for the US/AUS version.',
-    blockedCombination: 'The generator blocked the selected combination.',
-    importCodeEmpty: 'Paste a code to read first.',
-    importCodeInvalid: 'Could not read this code. Check the format or region.',
-    importCodePartial: 'Code read, but some fields do not map cleanly to a mission exposed by this interface.',
-    importCodeEu: 'Code read and form filled from a European code.',
-    importCodeUs: 'Code read and form filled from a US/AUS code.',
-    nothingToCopy: 'No code to copy.',
-    compactCopied: 'Compact version copied.',
-    codeCopied: 'Code copied.',
-    copyFailed: 'Copy failed in this browser.',
-    chestVariantTitle: 'Internal chest variant {variant}',
-    fixedItem835Title: 'Label fix: Elekid Card'
-  }
-};
-
-const MISSION_TYPE_LABELS = {
-  fr: {
-    0: 'Sauver le client.',
-    1: 'Sauver la cible.',
-    2: "Escorter jusqu'a la cible.",
-    3: 'Explorer avec le client',
-    4: 'Prospecter avec le client.',
-    5: 'Guider le client.',
-    6: 'Trouver un objet.',
-    7: 'Livrer un objet.',
-    8: 'Chercher le client.',
-    9: "Prendre l'objet a la cible.",
-    10: 'Arreter la cible. (Magneti)',
-    11: 'Arreter la cible. (Magnezone)',
-    12: 'Lettre de defi.',
-    13: 'Trouver le tresor.'
-  },
-  en: {
-    0: 'Rescue the client.',
-    1: 'Rescue the target.',
-    2: 'Escort to the target.',
-    3: 'Explore with the client.',
-    4: 'Search with the client.',
-    5: 'Guide the client.',
-    6: 'Find an item.',
-    7: 'Deliver an item.',
-    8: 'Search for the client.',
-    9: 'Take the item from the target.',
-    10: 'Stop the target. (Magnemite)',
-    11: 'Stop the target. (Magnezone)',
-    12: 'Challenge Letter.',
-    13: 'Find the treasure.'
-  }
-};
-
-const MISSION_SUBTYPE_LABELS = {
-  fr: {
-    3: { 0: 'Normal', 1: 'Chambre Scellee', 2: 'Chambre Doree', 3: 'Nouveau Donjon' },
-    9: { 0: 'Normal', 1: 'Cible cachee', 2: 'Cible en fuite' },
-    10: { 0: 'Normal', 1: 'Escorte', 2: 'Etage special', 3: 'Maison de monstres' },
-    11: { 0: 'Normal', 1: 'Escorte', 2: 'Etage special', 3: 'Maison de monstres' },
-    12: { 0: 'Normal', 1: 'Mewtwo', 2: 'Entei', 3: 'Raikou', 4: 'Suicune', 5: 'Jirachi' }
-  },
-  en: {
-    3: { 0: 'Normal', 1: 'Sealed Chamber', 2: 'Golden Chamber', 3: 'New Dungeon' },
-    9: { 0: 'Normal', 1: 'Hidden target', 2: 'Fleeing target' },
-    10: { 0: 'Normal', 1: 'Escort', 2: 'Special floor', 3: 'Monster House' },
-    11: { 0: 'Normal', 1: 'Escort', 2: 'Special floor', 3: 'Monster House' },
-    12: { 0: 'Normal', 1: 'Mewtwo', 2: 'Entei', 3: 'Raikou', 4: 'Suicune', 5: 'Jirachi' }
-  }
-};
 
 const MISSION_DIFFICULTY_TIERS = {
   0: { rank: '-', points: 5 },
@@ -634,27 +130,6 @@ const MISSION_DIFFICULTY_TIERS = {
 };
 
 const HARDER_MISSION_MAIN_TYPES = new Set([2, 3, 4, 5, 9, 10]);
-
-const REWARD_TYPE_LABELS = {
-  fr: {
-    0: 'Argent',
-    1: 'Argent + ??? (objet en recompense)',
-    2: 'Objet',
-    3: 'Objet + ??? (aleatoire)',
-    4: '??? (objet en recompense)',
-    5: '??? (oeuf)',
-    6: '??? (recrutement du client)'
-  },
-  en: {
-    0: 'Money',
-    1: 'Money + ??? (reward item)',
-    2: 'Item',
-    3: 'Item + ??? (random)',
-    4: '??? (reward item)',
-    5: '??? (egg)',
-    6: '??? (client recruitment)'
-  }
-};
 
 function getStoredLanguage() {
   try {
@@ -678,27 +153,12 @@ function interpolate(template, values) {
   ));
 }
 
+// Testo dell'interfaccia nella lingua corrente, con l'inglese come riserva.
 function t(key, values) {
-  const lang = getCurrentLanguage();
-  const currentMessages = getLocaleMessages(lang);
-  const fallbackMessages = getLocaleMessages('fr');
-  const text = currentMessages[key] || fallbackMessages[key] || ((UI_TEXT[lang] && UI_TEXT[lang][key]) || (UI_TEXT.fr && UI_TEXT.fr[key]) || key);
+  const currentMessages = getLocaleMessages(getCurrentLanguage());
+  const fallbackMessages = getLocaleMessages(FALLBACK_LANGUAGE);
+  const text = currentMessages[key] || fallbackMessages[key] || key;
   return interpolate(text, values);
-}
-
-function setText(selector, text) {
-  const node = typeof selector === 'string' ? document.querySelector(selector) : selector;
-  if (node) node.textContent = text;
-}
-
-function setHtml(selector, html) {
-  const node = typeof selector === 'string' ? document.querySelector(selector) : selector;
-  if (node) node.innerHTML = html;
-}
-
-function setPlaceholder(selector, text) {
-  const node = typeof selector === 'string' ? document.querySelector(selector) : selector;
-  if (node) node.placeholder = text;
 }
 
 function ensureSelectOption(select, value, text) {
@@ -710,28 +170,9 @@ function ensureSelectOption(select, value, text) {
   select.add(option);
 }
 
+// Nomi ufficiali del gioco (lmutils.js), con le etichette delle forme prese dal file di lingua.
 function getLocalizedPokemonName(monId) {
-  const numeric = parseInt(monId, 10);
-  if (!Number.isFinite(numeric)) return '-';
-  const normalized = numeric >= 600 ? numeric - 600 : numeric;
-  const lang = getCurrentLanguage();
-  const localizedExtras = EXTRA_POKEMON_NAMES[lang] || EXTRA_POKEMON_NAMES.fr;
-  if (localizedExtras && localizedExtras[numeric]) {
-    return localizedExtras[numeric];
-  }
-  if (localizedExtras && localizedExtras[normalized]) {
-    return localizedExtras[normalized];
-  }
-  if (lang !== 'en') {
-    return getMonName(numeric);
-  }
-
-  if (normalized === 29) return 'Nidoran♀';
-  if (normalized === 32) return 'Nidoran♂';
-  if (window.WMSkyPokemonNamesEn && window.WMSkyPokemonNamesEn[normalized]) {
-    return window.WMSkyPokemonNamesEn[normalized];
-  }
-  return getMonName(numeric);
+  return getMonName(monId);
 }
 
 function findMissionTypeIndex(mainType) {
@@ -747,25 +188,19 @@ function findSubtypeIndex(typeIndex, label) {
 function getMissionTypeDisplayName(typeIndex) {
   const labels = getLocaleLabelMap('missionTypes', getCurrentLanguage());
   return labels[typeIndex]
-    || (MISSION_TYPE_LABELS[getCurrentLanguage()] && MISSION_TYPE_LABELS[getCurrentLanguage()][typeIndex])
     || (WMSGenData.missionTypes[typeIndex] && WMSGenData.missionTypes[typeIndex].name)
-    || `Type ${typeIndex}`;
+    || String(typeIndex);
 }
 
 function getMissionSubtypeDisplayName(typeIndex, subtypeIndex) {
   const labels = getLocaleLabelMap('missionSubtypes', getCurrentLanguage());
   const localized = labels[typeIndex] && labels[typeIndex][subtypeIndex];
   if (localized) return localized;
-  if (MISSION_SUBTYPE_LABELS[getCurrentLanguage()]
-    && MISSION_SUBTYPE_LABELS[getCurrentLanguage()][typeIndex]
-    && MISSION_SUBTYPE_LABELS[getCurrentLanguage()][typeIndex][subtypeIndex]) {
-    return MISSION_SUBTYPE_LABELS[getCurrentLanguage()][typeIndex][subtypeIndex];
-  }
   const type = WMSGenData.missionTypes[typeIndex];
   if (type && type.subTypes && type.subTypes[subtypeIndex]) {
     return type.subTypes[subtypeIndex].name;
   }
-  return `Sous-type ${subtypeIndex}`;
+  return String(subtypeIndex);
 }
 
 function setSelectByValue(select, value) {
@@ -816,17 +251,9 @@ function createSearchSuggestionImage(selectId, suggestion) {
   return image;
 }
 
-function getSearchSuggestionDescription(selectId, value, label) {
+function getSearchSuggestionDescription(selectId, value) {
   if (!isItemSelect(selectId)) return '';
-  return getItemEffectDescription(value, label);
-}
-
-function createItemInfoPanel(controller) {
-  return null;
-}
-
-function renderItemInfoPanel(controller, optionLike) {
-  return;
+  return getItemShortDescription(value);
 }
 
 function getSelectedOption(select) {
@@ -841,13 +268,6 @@ function syncSearchBoxSelection(controller) {
   controller.input.value = text;
   const payload = getSearchOptionImage(controller.select.id, option ? option.value : '', text || controller.placeholder);
   setImageElementSource(controller.icon, payload);
-  if (isItemSelect(controller.select.id)) {
-    renderItemInfoPanel(controller, option ? {
-      value: option.value,
-      text,
-      description: getSearchSuggestionDescription(controller.select.id, option.value, text)
-    } : null);
-  }
 }
 
 function getSearchSuggestions(select, query) {
@@ -859,10 +279,10 @@ function getSearchSuggestions(select, query) {
       index,
       value: option.value,
       text: option.text,
-      description: getSearchSuggestionDescription(select.id, option.value, option.text),
-      searchText: String(option.dataset.search || option.text || '').toLowerCase()
+      description: getSearchSuggestionDescription(select.id, option.value),
+      searchText: normalizeSearchText(option.dataset.search || option.text || '')
     }))
-    .filter((entry) => !normalized || entry.searchText.includes(normalized));
+    .filter((entry) => !normalized || entry.searchText.includes(normalizeSearchText(normalized)));
 }
 
 function closeSearchSuggestions(controller) {
@@ -887,7 +307,7 @@ function renderSearchSuggestions(controller, suggestions) {
   if (!suggestions.length) {
     const empty = document.createElement('div');
     empty.className = 'search-suggestion-empty';
-    empty.textContent = getCurrentLanguage() === 'en' ? 'No matches found.' : 'Aucun resultat.';
+    empty.textContent = t('noMatches');
     controller.suggestions.appendChild(empty);
     controller.suggestions.classList.remove('hidden');
     controller.activeIndex = -1;
@@ -923,8 +343,6 @@ function renderSearchSuggestions(controller, suggestions) {
     }
 
     button.append(icon, copy);
-    button.addEventListener('mouseenter', () => renderItemInfoPanel(controller, suggestion));
-    button.addEventListener('focus', () => renderItemInfoPanel(controller, suggestion));
     button.addEventListener('mousedown', (event) => {
       event.preventDefault();
       applySearchSuggestion(controller, suggestion);
@@ -932,10 +350,6 @@ function renderSearchSuggestions(controller, suggestions) {
     controller.suggestions.appendChild(button);
   });
 
-  if (isItemSelect(controller.select.id)) {
-    const preview = suggestions[Math.max(controller.activeIndex, 0)] || suggestions[0];
-    renderItemInfoPanel(controller, preview);
-  }
   controller.suggestions.classList.remove('hidden');
 }
 
@@ -1057,6 +471,8 @@ function registerSearchBox(input) {
 
 function refreshSearchBoxSelections() {
   searchBoxControllers.forEach((controller) => {
+    // Non toccare il campo in cui si sta scrivendo.
+    if (document.activeElement === controller.input) return;
     syncSearchBoxSelection(controller);
     if (!controller.suggestions.classList.contains('hidden')) {
       updateSearchSuggestions(controller);
@@ -1072,6 +488,14 @@ function compactCode(pretty) {
   return WMSParser.sanitize(pretty || '');
 }
 
+// Ricerca senza badare a maiuscole e accenti ("citta" trova "Città").
+function normalizeSearchText(value) {
+  return String(value || '')
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .toLowerCase();
+}
+
 function getCurrentTypeData() {
   try {
     return WMSGen.getTypeData();
@@ -1080,27 +504,13 @@ function getCurrentTypeData() {
   }
 }
 
-function monNameFromSelect(selectId, femaleId, forcedId) {
-  if (typeof forcedId === 'number') return getMonName(forcedId);
-  const select = document.getElementById(selectId);
-  if (!select || !select.options[select.selectedIndex]) return '—';
-  const female = document.getElementById(femaleId)?.checked;
-  const base = parseInt(select.value, 10);
-  return getMonName(WMSGen.getTrueMonID(base, !!female));
-}
-
-function textOfSelected(selectId) {
-  const select = document.getElementById(selectId);
-  return select && select.options[select.selectedIndex] ? select.options[select.selectedIndex].text : '—';
-}
-
 function hasOwn(data, key) {
   return !!data && Object.prototype.hasOwnProperty.call(data, key);
 }
 
 function getInitials(label) {
   return String(label || '')
-    .replace(/[^A-Za-z0-9 ]+/g, ' ')
+    .replace(/[^\p{L}\p{N} ]+/gu, ' ')
     .trim()
     .split(/\s+/)
     .slice(0, 2)
@@ -1211,13 +621,14 @@ function getPokemonImage(monId, label) {
 function getLocalizedDungeonName(dungeonId, fallbackLabel) {
   const numeric = parseInt(dungeonId, 10);
   if (!Number.isFinite(numeric)) return String(fallbackLabel || '');
-  if (getCurrentLanguage() === 'en' && window.WMSkyDungeonNamesEn && window.WMSkyDungeonNamesEn[numeric]) {
-    return window.WMSkyDungeonNamesEn[numeric];
-  }
-  if (window.WMSkyDungeon && Object.prototype.hasOwnProperty.call(window.WMSkyDungeon, numeric)) {
-    return window.WMSkyDungeon[numeric];
-  }
-  return String(fallbackLabel || '');
+  return getDungeonName(numeric);
+}
+
+// Nome nell'altra lingua, per poter cercare sia "Grotta Marina" sia "Beach Cave".
+function getOtherLanguageText(list, id) {
+  const other = getCurrentLanguage() === FALLBACK_LANGUAGE ? DEFAULT_LANGUAGE : FALLBACK_LANGUAGE;
+  const text = getGameText(other);
+  return (text && text[list] && text[list][id]) || '';
 }
 
 function relabelDungeonSelect() {
@@ -1228,6 +639,7 @@ function relabelDungeonSelect() {
     const numeric = parseInt(option.value, 10);
     if (!Number.isFinite(numeric)) return;
     option.text = getLocalizedDungeonName(numeric, option.text);
+    option.dataset.search = `${option.text} ${getOtherLanguageText('dungeons', numeric)}`;
   });
 }
 
@@ -1311,53 +723,25 @@ function updateMissionDifficultyHint() {
     : t('missionDifficultyUnknown');
 }
 
-function scoreDecodedStruct(struct) {
-  if (!struct || typeof struct !== 'object') return -1;
-  let score = 0;
-  if (struct.mailType === 4) score += 20;
-  if (Number.isFinite(struct.missionType) && struct.missionType >= 0 && struct.missionType <= 12) score += 8;
-  if (Number.isFinite(struct.missionSpecial) && struct.missionSpecial >= 0 && struct.missionSpecial <= 15) score += 2;
-  if (Number.isFinite(struct.rewardType) && struct.rewardType >= 0 && struct.rewardType <= 6) score += 4;
-  if (Number.isFinite(struct.floor) && struct.floor >= 1 && struct.floor <= 99) score += 2;
-  if (window.WMSkyDungeon && Object.prototype.hasOwnProperty.call(window.WMSkyDungeon, struct.dungeon)) score += 3;
-  if (Number.isFinite(struct.client) && struct.client > 0 && struct.client < 1200) score += 1;
-  if (Number.isFinite(struct.target) && struct.target > 0 && struct.target < 1200) score += 1;
-  return score;
+function getSelectedRegion() {
+  const value = String(document.getElementById('regionBox')?.value || 'eu').toLowerCase();
+  return WMSParser.regions.includes(value) ? value : 'eu';
 }
 
-function decodeWonderMailCandidate(code, useEuSwap) {
-  try {
-    const clean = WMSParser.sanitize(code || '');
-    if (clean.length !== 34) return null;
-    const unscrambled = WMSParser.unscrambleString(clean, useEuSwap ? WMSParser.byteSwapEU : WMSParser.byteSwap);
-    const encryptedBits = WMSParser.bytesToBits(unscrambled);
-    if (encryptedBits.length !== 170) return null;
-    const decryptedBits = WMSParser.decryptBitStream(encryptedBits, false);
-    const struct = WMSParser.bitsToStructure(decryptedBits);
-    const score = scoreDecodedStruct(struct);
-    return { clean, struct, score, useEuSwap };
-  } catch (error) {
-    return null;
+function setSelectedRegion(region) {
+  const select = document.getElementById('regionBox');
+  if (select && WMSParser.regions.includes(region)) {
+    select.value = region;
   }
 }
 
+function getRegionName(region) {
+  return t(`region_${region}`);
+}
+
+// Legge una password: vale la regione (EU, NA o JP) il cui checksum CRC32 torna.
 function detectWonderMailCode(code) {
-  const preferredEu = !!document.getElementById('useEUswap')?.checked;
-  const candidates = [
-    decodeWonderMailCandidate(code, true),
-    decodeWonderMailCandidate(code, false)
-  ].filter(Boolean);
-
-  if (!candidates.length) return null;
-
-  candidates.sort((left, right) => {
-    if (right.score !== left.score) return right.score - left.score;
-    if (left.useEuSwap === preferredEu) return -1;
-    if (right.useEuSwap === preferredEu) return 1;
-    return 0;
-  });
-
-  return candidates[0] && candidates[0].score >= 25 ? candidates[0] : null;
+  return WMSParser.decode(code, getSelectedRegion());
 }
 
 function mergeMissionTypeData(typeIndex, subtypeIndex) {
@@ -1394,12 +778,6 @@ function findMissionSelectionForStruct(struct) {
 function splitTrueMonId(monId) {
   const numeric = parseInt(monId, 10);
   if (!Number.isFinite(numeric)) return null;
-  if (numeric === WMSGenData.NIDORAN_FEMALE) {
-    return { baseId: WMSGenData.NIDORAN_FEMALE, female: true };
-  }
-  if (numeric === WMSGenData.NIDORAN_MALE) {
-    return { baseId: WMSGenData.NIDORAN_MALE, female: false };
-  }
   if (numeric >= 600) {
     return { baseId: numeric - 600, female: true };
   }
@@ -1424,7 +802,7 @@ function applyItemToField(selectId, itemId) {
   if (!select) return;
   const numeric = parseInt(itemId, 10);
   if (!Number.isFinite(numeric)) return;
-  ensureSelectOption(select, numeric, getItemDisplayName(numeric, WMSkyItem[numeric] || String(numeric)));
+  ensureSelectOption(select, numeric, getItemDisplayName(numeric));
   setSelectByValue(select, numeric);
 }
 
@@ -1447,7 +825,6 @@ function importDecodedStruct(result) {
   const floorInput = document.getElementById('floor');
   const specialFloorInput = document.getElementById('specialFloor');
   const rewardTypeSelect = document.getElementById('rewardTypeBox');
-  const euToggle = document.getElementById('useEUswap');
   const output = document.getElementById('outputbox');
   const compact = document.getElementById('compactOutput');
   const rawFlavor = document.getElementById('flavorText');
@@ -1474,12 +851,10 @@ function importDecodedStruct(result) {
     missionMapped = true;
   }
 
-  if (euToggle) {
-    euToggle.checked = !!result.useEuSwap;
-  }
+  setSelectedRegion(result.region);
 
   if (dungeonSelect) {
-    ensureSelectOption(dungeonSelect, struct.dungeon, getLocalizedDungeonName(struct.dungeon, WMSkyDungeon[struct.dungeon] || String(struct.dungeon)));
+    ensureSelectOption(dungeonSelect, struct.dungeon, getLocalizedDungeonName(struct.dungeon, String(struct.dungeon)));
     setSelectByValue(dungeonSelect, struct.dungeon);
   }
   if (floorInput && Number.isFinite(struct.floor)) {
@@ -1528,371 +903,15 @@ function importDecodedStruct(result) {
     compact.value = result.clean;
   }
 
-  return missionMapped;
-}
-
-const FLAVOR_TEXT_PRESET_CUSTOM = '__custom__';
-const FLAVOR_TEXT_PRESET_AUTO = '__auto__';
-
-const FLAVOR_TEXT_CHOICES = [
-  {
-    id: 'explore-sealed',
-    value: '1',
-    match: (typeData) => !!typeData && typeData.mainType === 3 && typeData.specialType === 1,
-    head: {
-      fr: 'Le mystere de la Chambre Scellee...',
-      en: 'The mystery of the Sealed Chamber...'
-    },
-    body: {
-      fr: "Il y a une Chambre Scellee la-dedans ! Viens percer ce mystere avec moi !",
-      en: "There's a Sealed Chamber in there! Someone crack that mystery with me!"
-    }
-  },
-  {
-    id: 'explore-golden',
-    value: '2',
-    match: (typeData) => !!typeData && typeData.mainType === 3 && typeData.specialType === 2,
-    head: {
-      fr: 'Allons trouver la Chambre Doree !',
-      en: "Let's find the Golden Chamber!"
-    },
-    body: {
-      fr: "On dit que la Chambre Doree est remplie de tresors ! Allons la chercher ensemble !",
-      en: "The Golden Chamber's supposed to be full of treasure! Let's team up and look for it!"
-    }
-  },
-  {
-    id: 'explore-new-dungeon',
-    value: '3',
-    match: (typeData) => !!typeData && typeData.mainType === 3 && typeData.specialType === 3,
-    head: {
-      fr: 'Un nouveau donjon a ete decouvert !',
-      en: 'A new dungeon was discovered!'
-    },
-    body: {
-      fr: "Un nouveau donjon serait apparu. Allons verifier ca ensemble !",
-      en: "A new dungeon may have appeared. Let's check it out together!"
-    }
-  },
-  {
-    id: 'find-item-evolve',
-    value: '2',
-    match: (typeData) => !!typeData && typeData.mainType === 6,
-    head: {
-      fr: "Il me faut cet objet pour evoluer !",
-      en: 'I need this item to evolve!'
-    },
-    body: {
-      fr: "J'ai desesperement besoin de cet objet pour evoluer ! Quelqu'un peut me l'apporter ?",
-      en: 'I desperately need this item to evolve! Could someone bring it to me?'
-    }
-  },
-  {
-    id: 'find-item-gabite-scale',
-    value: '4',
-    match: (typeData) => !!typeData && typeData.mainType === 6,
-    head: {
-      fr: 'Rapportez-moi une Gabite Scale !',
-      en: 'Please bring me a Gabite Scale!'
-    },
-    body: {
-      fr: "Quelqu'un pourrait me rapporter une Gabite Scale ?",
-      en: 'Could someone bring back a Gabite Scale for me?'
-    }
-  },
-  {
-    id: 'outlaw-hidden',
-    value: '1',
-    match: (typeData) => !!typeData && typeData.mainType === 9 && typeData.specialType === 1,
-    head: {
-      fr: 'La cible est cachee.',
-      en: 'The target is hidden.'
-    },
-    body: {
-      fr: "La cible se cache quelque part. Aide-moi a la retrouver.",
-      en: 'The target is hiding somewhere. Help me track it down.'
-    }
-  },
-  {
-    id: 'outlaw-fleeing',
-    value: '2',
-    match: (typeData) => !!typeData && typeData.mainType === 9 && typeData.specialType === 2,
-    head: {
-      fr: 'La cible prend la fuite !',
-      en: 'The target is on the run!'
-    },
-    body: {
-      fr: "La cible s'enfuit sans arret. Il faut l'attraper vite !",
-      en: 'The target keeps running away. We need to catch it quickly!'
-    }
-  },
-  {
-    id: 'arrest-normal',
-    value: '0',
-    match: (typeData) => !!typeData && typeData.mainType === 10 && typeData.specialType === 0,
-    head: {
-      fr: 'Allons arreter la cible.',
-      en: "Let's arrest the target."
-    },
-    body: {
-      fr: "C'est un vrai probleme. Allons le capturer ensemble !",
-      en: "They're a real problem. Let's capture them together!"
-    }
-  },
-  {
-    id: 'arrest-escort',
-    value: '4',
-    match: (typeData) => !!typeData && typeData.mainType === 10 && typeData.specialType === 4,
-    head: {
-      fr: 'Jusqu a la cible !',
-      en: 'Take me to the target!'
-    },
-    body: {
-      fr: "Je veux absolument y aller ! Escorte-moi jusque-la !",
-      en: 'I really want to go there! Please escort me there!'
-    }
-  },
-  {
-    id: 'arrest-special-floor',
-    value: '6',
-    match: (typeData) => !!typeData && typeData.mainType === 10 && typeData.specialType === 6,
-    head: {
-      fr: 'La cible se cache a un etage special.',
-      en: 'The target is on a special floor.'
-    },
-    body: {
-      fr: "On a repere la cible a un etage special. Va l'arreter !",
-      en: 'The target was spotted on a special floor. Go arrest them!'
-    }
-  },
-  {
-    id: 'arrest-monster-house',
-    value: '7',
-    match: (typeData) => !!typeData && typeData.mainType === 10 && typeData.specialType === 7,
-    head: {
-      fr: 'La cible est dans une Maison de monstres !',
-      en: 'The target is in a Monster House!'
-    },
-    body: {
-      fr: "La cible s'est retranchee dans une Maison de monstres. Bon courage !",
-      en: "The target is holed up in a Monster House. Good luck!"
-    }
-  },
-  {
-    id: 'challenge-mewtwo',
-    value: '1',
-    match: (typeData) => !!typeData && typeData.mainType === 11 && typeData.specialType === 1,
-    head: {
-      fr: 'Lettre de defi : Mewtwo',
-      en: 'Challenge Letter: Mewtwo'
-    },
-    body: {
-      fr: 'Une lettre de defi de Mewtwo. Prepare-toi au combat.',
-      en: 'A challenge letter from Mewtwo. Prepare for battle.'
-    }
-  },
-  {
-    id: 'challenge-entei',
-    value: '2',
-    match: (typeData) => !!typeData && typeData.mainType === 11 && typeData.specialType === 2,
-    head: {
-      fr: 'Lettre de defi : Entei',
-      en: 'Challenge Letter: Entei'
-    },
-    body: {
-      fr: 'Une lettre de defi d Entei. Prepare-toi au combat.',
-      en: 'A challenge letter from Entei. Prepare for battle.'
-    }
-  },
-  {
-    id: 'challenge-raikou',
-    value: '3',
-    match: (typeData) => !!typeData && typeData.mainType === 11 && typeData.specialType === 3,
-    head: {
-      fr: 'Lettre de defi : Raikou',
-      en: 'Challenge Letter: Raikou'
-    },
-    body: {
-      fr: 'Une lettre de defi de Raikou. Prepare-toi au combat.',
-      en: 'A challenge letter from Raikou. Prepare for battle.'
-    }
-  },
-  {
-    id: 'challenge-suicune',
-    value: '4',
-    match: (typeData) => !!typeData && typeData.mainType === 11 && typeData.specialType === 4,
-    head: {
-      fr: 'Lettre de defi : Suicune',
-      en: 'Challenge Letter: Suicune'
-    },
-    body: {
-      fr: 'Une lettre de defi de Suicune. Prepare-toi au combat.',
-      en: 'A challenge letter from Suicune. Prepare for battle.'
-    }
-  },
-  {
-    id: 'challenge-jirachi',
-    value: '5',
-    match: (typeData) => !!typeData && typeData.mainType === 11 && typeData.specialType === 5,
-    head: {
-      fr: 'Lettre de defi : Jirachi',
-      en: 'Challenge Letter: Jirachi'
-    },
-    body: {
-      fr: 'Une lettre de defi de Jirachi. Prepare-toi au combat.',
-      en: 'A challenge letter from Jirachi. Prepare for battle.'
-    }
-  }
-];
-
-function getFlavorTextChoiceLabel(entry, field) {
-  const lang = getCurrentLanguage();
-  return (entry && entry[field] && (entry[field][lang] || entry[field].fr || entry[field].en)) || '';
-}
-
-function getFlavorTextPresetEntries(typeData) {
-  return FLAVOR_TEXT_CHOICES.filter((entry) => entry.match(typeData));
-}
-
-function setFlavorTextCustomVisibility(visible) {
-  const wrap = document.getElementById('flavorTextCustomWrap');
-  if (!wrap) return;
-  wrap.classList.toggle('hidden', !visible);
-}
-
-function updateFlavorTextBodyOptions(entry) {
-  const bodySelect = document.getElementById('flavorTextBody');
-  if (!bodySelect) return;
-
-  bodySelect.innerHTML = '';
-  const option = document.createElement('option');
-  option.value = entry ? entry.id : FLAVOR_TEXT_PRESET_AUTO;
-  option.textContent = entry ? getFlavorTextChoiceLabel(entry, 'body') : t('flavorTextBodyAuto');
-  bodySelect.add(option);
-  bodySelect.disabled = false;
-}
-
-function applyFlavorTextPresetSelection() {
-  const headSelect = document.getElementById('flavorTextHead');
-  const input = document.getElementById('flavorText');
-  if (!headSelect || !input) return;
-
-  const entries = getFlavorTextPresetEntries(getCurrentTypeData());
-  const entry = entries.find((candidate) => candidate.id === headSelect.value) || null;
-
-  if (headSelect.value === FLAVOR_TEXT_PRESET_CUSTOM) {
-    setFlavorTextCustomVisibility(true);
-    updateFlavorTextBodyOptions(null);
-    return;
-  }
-
-  setFlavorTextCustomVisibility(false);
-  if (entry) {
-    input.value = entry.value;
-    updateFlavorTextBodyOptions(entry);
-  } else {
-    input.value = '';
-    updateFlavorTextBodyOptions(null);
-  }
-}
-
-function refreshFlavorTextPresetOptions() {
-  const headSelect = document.getElementById('flavorTextHead');
-  const bodySelect = document.getElementById('flavorTextBody');
-  const input = document.getElementById('flavorText');
-  const hint = document.getElementById('flavorTextChoiceHint');
-  if (!headSelect || !bodySelect || !input) return;
-
-  const currentValue = input.value.trim();
-  const entries = getFlavorTextPresetEntries(getCurrentTypeData());
-  const matchingEntry = entries.find((entry) => entry.value === currentValue) || null;
-
-  headSelect.innerHTML = '';
-
-  const autoOption = document.createElement('option');
-  autoOption.value = FLAVOR_TEXT_PRESET_AUTO;
-  autoOption.textContent = t('flavorTextHeadAuto');
-  headSelect.add(autoOption);
-
-  entries.forEach((entry) => {
-    const option = document.createElement('option');
-    option.value = entry.id;
-    option.textContent = getFlavorTextChoiceLabel(entry, 'head');
-    headSelect.add(option);
-  });
-
-  const customOption = document.createElement('option');
-  customOption.value = FLAVOR_TEXT_PRESET_CUSTOM;
-  customOption.textContent = t('flavorTextHeadCustom');
-  headSelect.add(customOption);
-
-  if (currentValue === '') {
-    headSelect.value = FLAVOR_TEXT_PRESET_AUTO;
-  } else if (matchingEntry) {
-    headSelect.value = matchingEntry.id;
-  } else {
-    headSelect.value = FLAVOR_TEXT_PRESET_CUSTOM;
-  }
-
-  if (hint) {
-    hint.textContent = entries.length
-      ? t('flavorTextChoiceHintKnown')
-      : t('flavorTextChoiceHintNone');
-  }
-
-  applyFlavorTextPresetSelection();
-}
-
-function syncFlavorTextPresetFromInput() {
-  refreshFlavorTextPresetOptions();
-}
-
-function getKnownItemTitle(itemId, label) {
-  const numeric = parseInt(itemId, 10);
-  return (window.WMSkyItemTitles && window.WMSkyItemTitles[numeric]) || label || '';
+  // Le restrizioni di squadra non sono gestite dal modulo: rigenerando andrebbero perse.
+  const hasRestriction = struct.restriction !== 0 || struct.restrictionType !== 0;
+  return missionMapped && !hasRestriction;
 }
 
 function getTreasureBoxVariantLabel(itemId) {
   const numeric = parseInt(itemId, 10);
   if (!Number.isFinite(numeric) || numeric < 364 || numeric > 399) return '';
   return String.fromCharCode(65 + ((numeric - 364) % 3));
-}
-
-function getItemDisplayName(itemId, fallbackLabel) {
-  const numeric = parseInt(itemId, 10);
-  const baseLabel = String(fallbackLabel || '');
-
-  if (numeric === 834) return 'Elekigriffe';
-  if (numeric === 835) return 'Elekicarte';
-
-  const chestVariant = getTreasureBoxVariantLabel(numeric);
-  if (chestVariant) {
-    return `${baseLabel} (var. ${chestVariant})`;
-  }
-
-  return baseLabel;
-}
-
-function relabelItemSelect(selectId) {
-  const select = document.getElementById(selectId);
-  if (!select) return;
-
-  Array.from(select.options).forEach((option) => {
-    const numeric = parseInt(option.value, 10);
-    if (!Number.isFinite(numeric)) return;
-
-    const displayName = getItemDisplayName(numeric, WMSkyItem[numeric] || option.text);
-    option.text = displayName;
-
-    const chestVariant = getTreasureBoxVariantLabel(numeric);
-    if (chestVariant) {
-      option.title = `Variante interne ${chestVariant} du coffre`;
-    } else if (numeric === 835) {
-      option.title = 'Correction du libelle: Elekid Card';
-    } else {
-      option.title = '';
-    }
-  });
 }
 
 function monNameFromSelect(selectId, femaleId, forcedId) {
@@ -1909,281 +928,38 @@ function textOfSelected(selectId) {
   return select && select.options[select.selectedIndex] ? select.options[select.selectedIndex].text : '-';
 }
 
-function getItemBaseName(itemId, fallbackLabel) {
+// Nome ufficiale dello strumento; i forzieri con lo stesso nome ricevono una lettera (A, B, C).
+function getItemDisplayName(itemId) {
   const numeric = parseInt(itemId, 10);
-  if (!Number.isFinite(numeric)) return String(fallbackLabel || '');
-  if (numeric === 0) return getCurrentLanguage() === 'en' ? 'None' : 'Aucun';
-  if (getCurrentLanguage() === 'en') {
-    return String(getKnownItemTitle(numeric, fallbackLabel || WMSkyItem[numeric] || ''));
-  }
-  return String(WMSkyItem[numeric] || fallbackLabel || '');
-}
-
-function getItemDisplayName(itemId, fallbackLabel) {
-  const numeric = parseInt(itemId, 10);
-  const baseLabel = getItemBaseName(itemId, fallbackLabel);
-
-  if (numeric === 834) return getCurrentLanguage() === 'en' ? 'Elekid Claw' : 'Elekigriffe';
-  if (numeric === 835) return getCurrentLanguage() === 'en' ? 'Elekid Card' : 'Elekicarte';
-
+  const baseLabel = numeric === 0 ? t('noItem') : getItemName(numeric);
   const chestVariant = getTreasureBoxVariantLabel(numeric);
-  if (chestVariant) {
-    return `${baseLabel} (${getCurrentLanguage() === 'en' ? 'Var.' : 'var.'} ${chestVariant})`;
-  }
-
-  return baseLabel;
+  return chestVariant ? `${baseLabel} (${t('chestVariantShort', { variant: chestVariant })})` : baseLabel;
 }
 
 function isItemSelect(selectId) {
   return selectId === 'targetItemBox' || selectId === 'rewardItemBox';
 }
 
-function getItemUiText(key) {
-  const locale = getCurrentLanguage() === 'en' ? 'en' : 'fr';
-  const strings = {
-    fr: {
-      badge: 'Effet',
-      noItem: "Aucun objet selectionne.",
-      unavailable: "Description indisponible pour cet objet.",
-      compatibleWith: 'Compatible avec : {names}.',
-      exclusiveFor: 'Objet propre a {names}.'
-    },
-    en: {
-      badge: 'Effect',
-      noItem: 'No item selected.',
-      unavailable: 'No description available for this item.',
-      compatibleWith: 'Compatible with: {names}.',
-      exclusiveFor: 'Exclusive item for {names}.'
-    }
-  };
-  return strings[locale][key] || '';
+// Pokémon a cui è dedicato uno strumento esclusivo (dalla descrizione ufficiale), per l'icona.
+function getItemOwnerPokemonId(itemId) {
+  const owners = window.WMSkyGameData && window.WMSkyGameData.exclusiveOwner;
+  const owner = owners ? owners[parseInt(itemId, 10)] : undefined;
+  return Number.isFinite(owner) ? owner : null;
 }
 
-function getChestDescriptionFallbackId(itemId) {
-  const numeric = parseInt(itemId, 10);
-  if (!Number.isFinite(numeric) || numeric < 364 || numeric > 399) return null;
-  return numeric + ((2 - ((numeric - 364) % 3) + 3) % 3);
-}
-
-function getExactItemDescription(itemId) {
+function getItemShortDescription(itemId) {
   const numeric = parseInt(itemId, 10);
   if (!Number.isFinite(numeric) || numeric === 0) return '';
-  const fallbackNumeric = getChestDescriptionFallbackId(numeric);
-  if (getCurrentLanguage() === 'fr' && window.WMSkyItemDescriptionsFr) {
-    return window.WMSkyItemDescriptionsFr[numeric]
-      || (Number.isFinite(fallbackNumeric) ? window.WMSkyItemDescriptionsFr[fallbackNumeric] : '')
-      || '';
-  }
-  return (window.WMSkyItemDescriptions && (
-    window.WMSkyItemDescriptions[numeric]
-    || (Number.isFinite(fallbackNumeric) ? window.WMSkyItemDescriptions[fallbackNumeric] : '')
-  )) || '';
+  const text = getGameText();
+  return (text && text.itemShort[numeric]) || '';
 }
 
-function getLocalizedPokemonNameFromEnglish(englishName) {
-  const target = String(englishName || '').trim();
-  if (!target || getCurrentLanguage() === 'en') return target;
-  const entries = window.WMSkyPokemonNamesEn ? Object.entries(window.WMSkyPokemonNamesEn) : [];
-  const match = entries.find(([, name]) => name === target);
-  if (!match) return target;
-  const [id] = match;
-  return (window.WMSkyPoke && window.WMSkyPoke[id]) || target;
-}
-
-function normalizeLookupLabel(value) {
-  return String(value || '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z0-9]+/gi, ' ')
-    .trim()
-    .toLowerCase();
-}
-
-function getPokemonIdFromLabel(label) {
-  const target = normalizeLookupLabel(label);
-  if (!target) return null;
-  const catalogs = [window.WMSkyPokemonNamesEn, window.WMSkyPoke];
-  for (let i = 0; i < catalogs.length; i += 1) {
-    const entries = catalogs[i] ? Object.entries(catalogs[i]) : [];
-    const match = entries.find(([, name]) => normalizeLookupLabel(name) === target);
-    if (match) {
-      const numeric = parseInt(match[0], 10);
-      return Number.isFinite(numeric) ? numeric : null;
-    }
-  }
-  return null;
-}
-
-function getItemOwnerPokemonId(itemId) {
-  const numeric = parseInt(itemId, 10);
-  if (!Number.isFinite(numeric) || numeric === 0) return null;
-  const fallbackNumeric = getChestDescriptionFallbackId(numeric);
-  const candidates = [];
-  [window.WMSkyItemDescriptionsFr, window.WMSkyItemDescriptions].forEach((map) => {
-    if (!map) return;
-    const direct = map[numeric];
-    const fallback = Number.isFinite(fallbackNumeric) ? map[fallbackNumeric] : '';
-    if (direct) candidates.push(direct);
-    if (fallback && fallback !== direct) candidates.push(fallback);
-  });
-  for (let i = 0; i < candidates.length; i += 1) {
-    const text = String(candidates[i] || '').trim();
-    const match = text.match(/(?:Objet pour|Item for)\s*:\s*(.+?)(?=\s+(?:Augmente|Réduit|Restaure|Permet|Emp[eê]che|Inflige|Enseigne|Allows|Boosts|Raises|Lowers|Restores|Prevents|Inflicts|Teaches|Lets)\b|$)/i);
-    if (!match) continue;
-    const owner = String(match[1] || '').trim().replace(/[.:;,]+$/, '');
-    if (!owner || /pokemon de type|type pokemon|type-specific|type-specific item/i.test(owner)) continue;
-    const monId = getPokemonIdFromLabel(owner);
-    if (Number.isFinite(monId)) return monId;
-  }
-  const compat = window.WMSkyItemCompatibility && window.WMSkyItemCompatibility[numeric];
-  if (Array.isArray(compat) && compat.length >= 1 && compat.length <= 8) {
-    const monId = getPokemonIdFromLabel(compat[0]);
-    if (Number.isFinite(monId)) return monId;
-  }
-  return null;
-}
-
-function stripWikiDescriptionArtifacts(text) {
-  return String(text || '')
-    .replace(/\bChoisir d[ée]tail\s*:.*$/gi, ' ')
-    .replace(/\bou\s*\/\s*Voir\s*:.*$/gi, ' ')
-    .replace(/\bSelect detail\s*:.*$/gi, ' ')
-    .replace(/\bor\s*\/\s*View\s*:.*$/gi, ' ')
-    .replace(/Choisir d[ée]tail\s*:[^/]*?(?:\/\s*Voir\s*:[^.]*)?/gi, ' ')
-    .replace(/Select detail\s*:[^/]*?(?:\/\s*View\s*:[^.]*)?/gi, ' ')
-    .replace(/Seleccionar t[ée]rmino\s*:[^/]*?(?:\/\s*Ver\s*:[^.]*)?/gi, ' ')
-    .replace(/Detail ausw[aä]hlen\s*:[^/]*?(?:\/\s*Siehe\s*:[^.]*)?/gi, ' ')
-    .replace(/Seleziona dettagli\s*:[^/]*?(?:\/\s*Vedi\s*:[^.]*)?/gi, ' ')
-    .replace(/\[(?:CLUM_SET|M|LS|LE|CS|CR)[^\]]*\]/gi, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-function normalizeFrenchItemDescription(text) {
-  return stripWikiDescriptionArtifacts(text)
-    .replace(/^(Rarity|Raret[^:]*)\s*:\s*/i, '')
-    .replace(/HP/g, 'PV')
-    .replace(/Treasure Town/g, 'Bourg-Tresor')
-    .replace(/déménagements?/gi, 'capacite')
-    .replace(/mouvement/gi, 'capacite')
-    .replace(/attaque spéciale/gi, 'Attaque Speciale')
-    .replace(/défense spéciale/gi, 'Defense Speciale')
-    .replace(/défense/gi, 'Defense')
-    .replace(/attaque/gi, 'Attaque')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-function normalizeEnglishItemDescription(text) {
-  return stripWikiDescriptionArtifacts(text)
-    .replace(/^(Rarity|Raret[^:]*)\s*:\s*/i, '')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
-
-function descriptionAlreadyMentionsCompatibility(description) {
-  const text = String(description || '').toLowerCase();
-  if (!text) return false;
-  return /co[^ ]*quipier(?:s)?\s*:|teammate(?:s)?\s*:|compatible avec\s*:|compatible with\s*:/.test(text);
-}
-
-function getItemCompatibilitySuffix(itemId, description) {
-  const numeric = parseInt(itemId, 10);
-  if (!Number.isFinite(numeric) || !window.WMSkyItemCompatibility || !window.WMSkyItemCompatibility[numeric]) return '';
-  if (descriptionAlreadyMentionsCompatibility(description)) return '';
-  const names = window.WMSkyItemCompatibility[numeric]
-    .map(getLocalizedPokemonNameFromEnglish)
-    .filter(Boolean)
-    .filter((name, index, list) => list.indexOf(name) === index);
-  if (!names.length) return '';
-  return names.length === 1
-    ? t('exclusiveFor', { names: names[0] })
-    : t('compatibleWith', { names: names.join(', ') });
-}
-
-function translateEnglishItemDescriptionToFrench(text) {
-  let result = String(text || '').trim();
-  if (!result) return '';
-  const replacements = [
-    ["Pokémon's", 'Pokemon'],
-    ['Pokémon', 'Pokemon'],
-    ['Special Attack', 'Attaque Speciale'],
-    ['Special Defense', 'Defense Speciale'],
-    ['Attack', 'Attaque'],
-    ['Defense', 'Defense'],
-    ['Movement Speed', 'Vitesse de deplacement'],
-    ['Belly size', 'taille du ventre'],
-    ['Belly', 'ventre'],
-    ['HP', 'PV'],
-    ['PP', 'PP'],
-    ['Range:', 'Portee :'],
-    ['Line of sight', 'ligne de vue'],
-    ['Team members in room', 'allies dans la salle'],
-    ['Team members on floor', "allies de l'etage"],
-    ['Enemies in room', 'ennemis dans la salle'],
-    ['Enemies on floor', "ennemis de l'etage"],
-    ['Pokémon in room', 'Pokemon dans la salle'],
-    ['Pokémon on floor', "Pokemon de l'etage"],
-    ['Special', 'special'],
-    ['Floor', 'etage'],
-    ['Room', 'salle'],
-    ['A weapon to be hurled.', 'Arme a lancer.'],
-    ['A weapon to be thrown.', 'Arme a jeter.'],
-    ['When hurled, it flies in a straight line to inflict damage on any Pokémon it hits.', 'Lancee, elle file en ligne droite et inflige des degats au Pokemon touche.'],
-    ['When thrown, it flies high in an arc to clear obstacles and strike the target.', 'Jetee, elle passe au-dessus des obstacles et touche la cible.'],
-    ['It is not affected by Pierce or Long Toss statuses.', "Elle n'est pas affectee par les etats Perce ou Long Jet."],
-    ['A food item that ', 'Objet a manger qui '],
-    ['A drink that ', 'Boisson qui '],
-    ['A box that ', 'Boite qui '],
-    ['A box that\'s ', 'Boite qui '],
-    ['A box full of ', 'Boite pleine de '],
-    ['A box brimming with ', 'Boite remplie de '],
-    ['A beautifully', 'Magnifiquement'],
-    ['It also fills the Pokémon\'s Belly slightly.', 'Remplit aussi legerement le ventre.'],
-    ['It also somewhat fills the Pokémon\'s Belly.', 'Remplit aussi un peu le ventre.'],
-    ['It also amply fills the Pokémon\'s Belly.', 'Remplit aussi largement le ventre.'],
-    ['It also slightly enlarges the Pokémon\'s Belly size.', 'Augmente aussi legerement la taille du ventre.'],
-    ['It also fills the Pokémon\'s Belly completely.', 'Remplit aussi completement le ventre.'],
-    ['It allows a certain kind of Pokémon to evolve.', "Permet a un certain type de Pokemon d'evoluer."],
-    ['Take it to Xatu in Treasure Town for appraisal.', "Apporte-la a Xatu a Bourg-Tresor pour l'identifier."],
-    ['When held, ', 'Quand il est tenu, '],
-    ['When held by the team leader, ', 'Quand le leader le tient, '],
-    ['When the leader is holding this, ', 'Quand le leader tient cet objet, '],
-    ['slightly boosts', 'augmente legerement'],
-    ['sharply boosts', 'augmente fortement'],
-    ['slightly raises', 'augmente legerement'],
-    ['sharply raises', 'augmente fortement'],
-    ['boosts', 'augmente'],
-    ['raises', 'augmente'],
-    ['lowers', 'reduit'],
-    ['restores', 'restaure'],
-    ['restores the PP of all the user\'s moves', "restaure les PP de toutes les capacites de l'utilisateur"],
-    ['restores HP', 'restaure des PV'],
-    ['permanently raises', 'augmente definitivement'],
-    ['may afflict', 'peut infliger'],
-    ['status condition', 'comme etat'],
-    ['Makes legendaries appear in dungeons', 'Peut faire apparaitre des legendaires dans les donjons'],
-    ['Used at Recycle Stand', 'Utilise au stand Recyclage'],
-    ['Give to friends and get items in return', 'A offrir pour recevoir des objets en retour'],
-    ['No effect', "N'a pas d'effet"],
-    ['Money picked up in dungeons', 'Argent ramasse dans les donjons']
-  ];
-  replacements.forEach(([from, to]) => {
-    result = result.split(from).join(to);
-  });
-  result = result.replace(/\s+/g, ' ').trim();
-  return result;
-}
-
+// Descrizione ufficiale del gioco (quella lunga, se c'è).
 function getItemEffectDescription(itemId) {
   const numeric = parseInt(itemId, 10);
-  if (!Number.isFinite(numeric) || numeric === 0) return getItemUiText('noItem');
-  const description = getExactItemDescription(numeric);
-  const base = getCurrentLanguage() === 'fr'
-    ? normalizeFrenchItemDescription(description || getItemUiText('unavailable'))
-    : normalizeEnglishItemDescription(description || getItemUiText('unavailable'));
-  const compatibility = getItemCompatibilitySuffix(numeric, base);
-  return compatibility ? `${base} ${compatibility}` : base;
+  if (!Number.isFinite(numeric) || numeric === 0) return t('noItemSelected');
+  const text = getGameText();
+  return (text && (text.itemLong[numeric] || text.itemShort[numeric])) || t('noItemDescription');
 }
 
 function relabelPokemonSelect(selectId) {
@@ -2311,15 +1087,10 @@ function relabelItemSelect(selectId) {
     const numeric = parseInt(option.value, 10);
     if (!Number.isFinite(numeric)) return;
 
-    option.text = getItemDisplayName(numeric, option.text);
+    option.text = getItemDisplayName(numeric);
+    option.dataset.search = `${option.text} ${getOtherLanguageText('items', numeric)}`;
     const chestVariant = getTreasureBoxVariantLabel(numeric);
-    if (chestVariant) {
-      option.title = t('chestVariantTitle', { variant: chestVariant });
-    } else if (numeric === 835) {
-      option.title = t('fixedItem835Title');
-    } else {
-      option.title = '';
-    }
+    option.title = chestVariant ? t('chestVariantTitle', { variant: chestVariant }) : '';
   });
 }
 
@@ -2330,7 +1101,7 @@ function relabelMissionTypeSelect() {
 
   Array.from(select.options).forEach((option) => {
     const key = parseInt(option.value, 10);
-    option.text = labels[key] || (MISSION_TYPE_LABELS[getCurrentLanguage()] && MISSION_TYPE_LABELS[getCurrentLanguage()][key]) || option.text;
+    option.text = labels[key] || option.text;
   });
 }
 
@@ -2341,7 +1112,7 @@ function relabelMissionSubTypeSelect() {
 
   const missionKey = parseInt(typeSelect.value, 10);
   const subtypeMap = getLocaleLabelMap('missionSubtypes', getCurrentLanguage());
-  const labels = subtypeMap[missionKey] || (MISSION_SUBTYPE_LABELS[getCurrentLanguage()] && MISSION_SUBTYPE_LABELS[getCurrentLanguage()][missionKey]);
+  const labels = subtypeMap[missionKey];
   if (!labels) return;
 
   Array.from(subSelect.options).forEach((option) => {
@@ -2357,7 +1128,7 @@ function relabelRewardTypeSelect() {
 
   Array.from(select.options).forEach((option) => {
     const key = parseInt(option.value, 10);
-    option.text = labels[key] || (REWARD_TYPE_LABELS[getCurrentLanguage()] && REWARD_TYPE_LABELS[getCurrentLanguage()][key]) || option.text;
+    option.text = labels[key] || option.text;
   });
 }
 
@@ -2372,7 +1143,7 @@ function localizeMemoOption(option, index, value) {
   }
 
   option.text = t('previewOption', { variant: index + 1, floor: value });
-  option.dataset.shortLabel = `${getCurrentLanguage() === 'en' ? 'V' : 'V'}${index + 1}`;
+  option.dataset.shortLabel = `V${index + 1}`;
   option.dataset.floorLabel = String(value);
   option.dataset.previewTitle = t('previewTitle', { variant: index + 1, floor: value });
 }
@@ -2381,8 +1152,9 @@ function relabelMemoSelectorOptions() {
   const select = document.getElementById('memoPreset');
   if (!select) return;
 
+  // La prima opzione è "Automatico": le varianti partono dalla seconda.
   Array.from(select.options).forEach((option, index) => {
-    localizeMemoOption(option, index, option.value);
+    localizeMemoOption(option, index - 1, option.value);
   });
 }
 
@@ -2491,131 +1263,32 @@ function renderLanguagePicker() {
   updateLanguagePicker();
 }
 
+// Testi statici della pagina: ogni elemento indica la sua chiave con data-i18n (testo),
+// data-i18n-html (testo con markup), data-i18n-placeholder o data-i18n-title.
 function applyStaticTranslations() {
   document.documentElement.lang = getCurrentLanguage();
   document.title = t('pageTitle');
   const meta = document.querySelector('meta[name="description"]');
   if (meta) meta.setAttribute('content', t('metaDescription'));
 
-  setText('.hero .eyebrow', t('heroEyebrow'));
-  setText('.hero h1', t('heroTitle'));
-  setHtml('.hero .lead', t('heroLead'));
-
-  setText('.presets h2', t('quickAccess'));
-  setText('.preset-btn[data-preset="standard"]', t('presetStandard'));
-  setText('.preset-btn[data-preset="memo"]', t('presetMemo'));
-  setText('.preset-btn[data-preset="egg"]', t('presetEgg'));
-  ['mewtwo', 'entei', 'raikou', 'suicune', 'jirachi'].forEach((boss) => {
-    setText(`.preset-btn[data-preset="${boss}"]`, t('presetChallenge', { boss: boss.charAt(0).toUpperCase() + boss.slice(1) }));
+  document.querySelectorAll('[data-i18n]').forEach((node) => {
+    node.textContent = t(node.dataset.i18n);
   });
-  setText('.presets .hint', t('presetsHint'));
-
-  setText('.form-grid > section:nth-of-type(1) > h2', t('missionSection'));
-  setText('label[for="missionTypeBox"]', t('missionTypeLabel'));
-  setText('label[for="dungeonSearch"]', t('dungeonLabel'));
-  setPlaceholder('#dungeonSearch', t('dungeonPlaceholder'));
-  setText('label[for="floor"]', t('floorLabel'));
-  setText('#floorLimitHint', t('floorLimitUnknown'));
-  setText('#missionDifficultyHint', t('missionDifficultyUnknown'));
-  setText('#memoSelectorWrap > label', t('memoSelectorLabel'));
-  setText('#memoSelectorWrap > .hint', t('memoHint'));
-  setText('.advanced-panel > summary', t('advancedOptions'));
-  setText('label[for="flavorTextHead"]', t('flavorTextHeadLabel'));
-  setText('label[for="flavorTextBody"]', t('flavorTextBodyLabel'));
-  setText('label[for="flavorText"]', t('flavorTextCustomLabel'));
-  setPlaceholder('#flavorText', t('flavorTextCustomPlaceholder'));
-  setText('#flavorTextCustomHint', t('flavorTextCustomHint'));
-  setText('label[for="specialFloor"]', t('specialFloorLabel'));
-  setPlaceholder('#specialFloor', t('specialFloorPlaceholder'));
-  setText('#specialFloor + .hint', t('specialFloorHint'));
-
-  setText('.form-grid > section:nth-of-type(2) > h2', t('targetSection'));
-  setText('#allPokemonFormsLabel', t('allPokemonFormsLabel'));
-  setText('#allPokemonFormsHint', t('allPokemonFormsHint'));
-  setText('label[for="clientSearch"]', t('clientLabel'));
-  setPlaceholder('#clientSearch', t('pokemonSearchPlaceholder'));
-  setText('label[for="targetSearch"]', t('targetLabel'));
-  setPlaceholder('#targetSearch', t('targetSearchPlaceholder'));
-  setText('label[for="target2Search"]', t('target2Label'));
-  setPlaceholder('#target2Search', t('target2SearchPlaceholder'));
-  setText('label[for="targetItemSearch"]', t('targetItemLabel'));
-  setPlaceholder('#targetItemSearch', t('itemSearchPlaceholder'));
-
-  const femaleLabels = document.querySelectorAll('.checkbox-inline');
-  femaleLabels.forEach((label) => {
-    const input = label.querySelector('input');
-    label.textContent = '';
-    if (input) {
-      label.appendChild(input);
-      label.append(` ${t('female')}`);
-    }
+  document.querySelectorAll('[data-i18n-html]').forEach((node) => {
+    node.innerHTML = t(node.dataset.i18nHtml);
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach((node) => {
+    node.placeholder = t(node.dataset.i18nPlaceholder);
+  });
+  document.querySelectorAll('[data-i18n-title]').forEach((node) => {
+    node.title = t(node.dataset.i18nTitle);
   });
 
-  setText('.form-grid > section:nth-of-type(3) > h2', t('rewardSection'));
-  setText('label[for="rewardTypeBox"]', t('rewardTypeLabel'));
-  setText('label[for="rewardItemSearch"]', t('rewardItemLabel'));
-  setPlaceholder('#rewardItemSearch', t('rewardSearchPlaceholder'));
-  setText('#eggGlitchLabel', t('eggGlitchLabel'));
-  setText('#eggGlitchHint', t('eggGlitchHint'));
-  setText('#eggPokemonLabel', t('eggPokemonLabel'));
-  setPlaceholder('#eggPokemonSearch', t('eggPokemonPlaceholder'));
-  setText('#eggPokemonHint', t('eggPokemonHint'));
-  setText('#eggHelpTitle', t('eggHelpTitle'));
-  setText('#eggHelpLead', t('eggHelpLead'));
-  setText('#eggHelpItem1', t('eggHelpItem1'));
-  setText('#eggHelpItem2', t('eggHelpItem2'));
-  setText('#eggHelpItem3', t('eggHelpItem3'));
-  setText('#eggHelpItem4', t('eggHelpItem4'));
-  setText('#eggHelpLink', t('eggHelpLink'));
-  setText('#euToggleLabel', t('euToggle'));
-  setText('#euToggleHint', t('euHint'));
-  setText('#summaryBox h3', t('summaryTitle'));
+  // Pulsanti delle Lettere di sfida: il nome del leggendario è quello ufficiale del gioco.
+  document.querySelectorAll('.preset-btn[data-boss]').forEach((button) => {
+    button.textContent = t('presetChallenge', { boss: getMonName(parseInt(button.dataset.boss, 10)) });
+  });
 
-  setText('#memoVisuals .eyebrow', t('memoVisualEyebrow'));
-  setText('#memoVisuals h2', t('memoVisualTitle'));
-  setText('#memoVisualLead', t('memoVisualLead'));
-  const memoLinks = document.querySelectorAll('.memo-visuals .source-link');
-  if (memoLinks[0]) memoLinks[0].textContent = t('sourceShapes');
-  if (memoLinks[1]) memoLinks[1].textContent = t('sourceCodes');
-  const memoBottomHint = document.querySelector('#memoVisuals > .hint');
-  if (memoBottomHint) memoBottomHint.textContent = t('memoHintBottom');
-
-  setText('label[for="importCode"]', t('importCodeLabel'));
-  setPlaceholder('#importCode', t('importCodePlaceholder'));
-  setText('#importCodeBtn', t('importCodeButton'));
-
-  setText('.result-card h2', t('resultTitle'));
-  setText('#generateBtn', t('generate'));
-  setText('#copyPrettyBtn', t('copy'));
-  setText('#copyCompactBtn', t('copyCompact'));
-  setPlaceholder('#outputbox', t('outputPlaceholder'));
-  setText('label[for="compactOutput"]', t('compactLabel'));
-
-  setText('.project-warning .eyebrow', t('warningEyebrow'));
-  setText('.project-warning h2', t('warningTitle'));
-  setText('.project-warning .lead', t('warningLead'));
-  setText('.project-warning .hint', t('warningHint'));
-
-  setText('.notes h2', t('notesTitle'));
-  const notes = document.querySelectorAll('.notes li');
-  if (notes[0]) notes[0].innerHTML = t('note1');
-  if (notes[1]) notes[1].innerHTML = t('note2');
-  if (notes[2]) notes[2].innerHTML = t('note3');
-  if (notes[3]) notes[3].innerHTML = t('note4');
-
-  setText('.sources-panel > summary', t('sourcesSummary'));
-  const sourceTitles = document.querySelectorAll('.sources-block h3');
-  if (sourceTitles[0]) sourceTitles[0].textContent = t('creditsTitle');
-  if (sourceTitles[1]) sourceTitles[1].textContent = t('generatorBaseTitle');
-  if (sourceTitles[2]) sourceTitles[2].textContent = t('wonderMailDocsTitle');
-  if (sourceTitles[3]) sourceTitles[3].textContent = t('memoSourcesTitle');
-  if (sourceTitles[4]) sourceTitles[4].textContent = t('auxDataTitle');
-  const sourceParagraphs = document.querySelectorAll('.sources-block p');
-  if (sourceParagraphs[0]) sourceParagraphs[0].innerHTML = t('creditsBody1');
-  if (sourceParagraphs[1]) sourceParagraphs[1].innerHTML = t('creditsBody2');
-  if (sourceParagraphs[2]) sourceParagraphs[2].innerHTML = t('creditsBody3');
-
-  setText('.footer p', t('footerText'));
   updateLanguagePicker();
 }
 
@@ -2628,17 +1301,18 @@ function relabelLocalizedControls() {
   relabelEggPokemonSelect();
   ['targetItemBox', 'rewardItemBox'].forEach(relabelItemSelect);
   relabelMemoSelectorOptions();
-  refreshFlavorTextPresetOptions();
   refreshSearchBoxSelections();
 }
 
-function applyLanguage(nextLanguage) {
+function applyLanguage(nextLanguage, options = {}) {
   const available = getAvailableLanguages();
   currentLanguage = available.includes(nextLanguage) ? nextLanguage : getDefaultLanguage();
-  try {
-    localStorage.setItem(LANGUAGE_STORAGE_KEY, currentLanguage);
-  } catch (e) {
-    /* ignore storage failures */
+  if (options.persist !== false) {
+    try {
+      localStorage.setItem(LANGUAGE_STORAGE_KEY, currentLanguage);
+    } catch (e) {
+      /* archiviazione non disponibile: la scelta vale solo per questa visita */
+    }
   }
 
   renderLanguagePicker();
@@ -2656,10 +1330,11 @@ function applyLanguage(nextLanguage) {
   }
 }
 
-function getHeuristicItemIcon(itemId, label) {
-  const title = getKnownItemTitle(itemId, label);
-  const lower = title.toLowerCase();
+// Icona indicativa a partire dal nome inglese ufficiale (le parole chiave sono in inglese).
+function getHeuristicItemIcon(itemId) {
   const numeric = parseInt(itemId, 10);
+  const english = getGameText(FALLBACK_LANGUAGE);
+  const lower = String((english && english.items[numeric]) || '').toLowerCase();
 
   const local = {
     apple: 'assets/item-icons-pmdo/Apple-Red.png',
@@ -2699,8 +1374,8 @@ function getHeuristicItemIcon(itemId, label) {
   if (/rock|pebble|stone|fossil|slab|part|shard/.test(lower)) return local.rock;
   if (/specs|lens|goggle|scope/.test(lower)) return local.specs;
   if (/key|cable/.test(lower)) return local.key;
-  if (/chest|coffre/.test(lower)) return local.chest;
-  if (/box|bag|loot|boite|boîte/.test(lower)) return local.box;
+  if (/chest/.test(lower)) return local.chest;
+  if (/box|bag|loot/.test(lower)) return local.box;
   if (/mask/.test(lower)) return local.mask;
   if (/scarf|ribbon|bow|belt|band|cape|poncho|armor|helmet|hat|choker|sash|coat/.test(lower)) {
     return /band/.test(lower) ? local.band : local.scarf;
@@ -2717,7 +1392,7 @@ function getItemImage(itemId, label, rewardStyle) {
     return getPokemonImage(ownerPokemonId, label);
   }
   const exact = window.WMSkyItemIcons && window.WMSkyItemIcons[numeric];
-  const heuristic = getHeuristicItemIcon(itemId, label);
+  const heuristic = getHeuristicItemIcon(itemId);
   return {
     src: exact || heuristic || fallback,
     fallback
@@ -2771,27 +1446,11 @@ function renderEntityPreview(previewId, data) {
   root.append(visual, copy);
 }
 
-function getPokemonPreviewData(selectId, femaleId, forcedId, label, meta) {
-  const select = document.getElementById(selectId);
-  const female = !!document.getElementById(femaleId)?.checked;
-  const forced = Number.isFinite(forcedId);
-  const baseId = forced ? forcedId : parseInt(select && select.value ? select.value : '', 10);
-  const monId = forced ? forcedId : WMSGen.getTrueMonID(baseId, female);
-  const name = forced ? getMonName(forcedId) : monNameFromSelect(selectId, femaleId);
-
-  return {
-    label,
-    name,
-    meta,
-    image: getPokemonImage(monId || baseId, name)
-  };
-}
-
 function getItemPreviewData(selectId, label, meta, rewardStyle) {
   const select = document.getElementById(selectId);
   if (!select || !select.options[select.selectedIndex]) return null;
   const itemId = parseInt(select.value, 10);
-  const name = select.options[select.selectedIndex].text || 'Aucun';
+  const name = select.options[select.selectedIndex].text || t('noItem');
   return {
     label,
     name,
@@ -2841,74 +1500,6 @@ function updateMissionFieldVisibility() {
   setFieldVisibility('eggHelpCard', eggGlitch);
 }
 
-function updateEntityPreviews() {
-  const typeData = getCurrentTypeData();
-  if (!typeData) return;
-
-  const clientMeta = hasOwn(typeData, 'forceClient')
-    ? 'Pokemon impose par la mission'
-    : (document.getElementById('clientF')?.checked ? 'Version femelle active' : 'Selection active');
-
-  renderEntityPreview('clientPreview', getPokemonPreviewData(
-    'clientBox',
-    'clientF',
-    typeData.forceClient,
-    'Client',
-    clientMeta
-  ));
-
-  const targetMeta = typeData.clientIsTarget
-    ? 'Meme Pokemon que le client'
-    : hasOwn(typeData, 'forceTarget')
-      ? 'Pokemon impose par la mission'
-      : (document.getElementById('targetF')?.checked ? 'Version femelle active' : 'Selection active');
-
-  const targetPreview = typeData.clientIsTarget
-    ? getPokemonPreviewData('clientBox', 'clientF', typeData.forceClient, 'Cible', targetMeta)
-    : getPokemonPreviewData('targetBox', 'targetF', typeData.forceTarget, 'Cible', targetMeta);
-
-  renderEntityPreview('targetPreview', targetPreview);
-
-  renderEntityPreview(
-    'target2Preview',
-    typeData.useTarget2
-      ? getPokemonPreviewData(
-        'target2Box',
-        'target2F',
-        undefined,
-        'Cible sup.',
-        document.getElementById('target2F')?.checked ? 'Version femelle active' : 'Selection active'
-      )
-      : null
-  );
-
-  renderEntityPreview(
-    'targetItemPreview',
-    typeData.useTargetItem
-      ? getItemPreviewData('targetItemBox', 'Objet cible', 'Objet actuellement selectionne', false)
-      : null
-  );
-
-  const rewardType = parseInt(document.getElementById('rewardTypeBox')?.value || '0', 10);
-  renderEntityPreview(
-    'rewardItemPreview',
-    !typeData.noReward && rewardType >= 1 && rewardType <= 4
-      ? getItemPreviewData('rewardItemBox', 'Recompense', 'Objet actuellement selectionne', true)
-      : null
-  );
-
-  renderEntityPreview(
-    'eggPokemonPreview',
-    isEggGlitchEnabled()
-      ? getEggPokemonPreviewData(
-        'eggPokemonBox',
-        getCurrentLanguage() === 'en' ? 'Egg' : 'Oeuf',
-        getCurrentLanguage() === 'en' ? 'Species forced by the glitch' : 'Espece forcee par le glitch'
-      )
-      : null
-  );
-}
-
 function getPokemonPreviewData(selectId, femaleId, forcedId, label, meta) {
   const select = document.getElementById(selectId);
   const female = !!(femaleId && document.getElementById(femaleId)?.checked);
@@ -2948,24 +1539,8 @@ function refreshMissionUi() {
   syncDungeonFloorLimit();
   updateMissionDifficultyHint();
   updateEntityPreviews();
-}
-
-function populateMemoSelector() {
-  const select = document.getElementById('memoPreset');
-  if (!select || select.options.length) return;
-
-  const values = getMemoSelectorFloors();
-  const auto = document.createElement('option');
-  auto.value = '';
-  auto.text = 'Automatique';
-  select.add(auto);
-
-  values.forEach((value, index) => {
-    const option = document.createElement('option');
-    option.value = String(value);
-    option.text = `Variante ${index + 1} (étage spécial ${value})`;
-    select.add(option);
-  });
+  // I menu cambiati dal codice (preset, lettura di una password) non avvisano i campi di ricerca.
+  refreshSearchBoxSelections();
 }
 
 function isTreasureMemoType(typeData) {
@@ -2986,32 +1561,6 @@ function getMemoRoomBySpecialFloor(specialFloor) {
   return getMemoGallery().find((entry) => entry.specialFloor === specialFloor) || null;
 }
 
-function getMemoSelectorFloors() {
-  return getMemoGallery()
-    .filter((entry) => !entry.expertOnly)
-    .map((entry) => entry.specialFloor)
-    .filter((value) => Number.isFinite(value))
-    .sort((a, b) => a - b);
-}
-
-function getMemoDungeonName(dungeonId) {
-  return getLocalizedDungeonName(dungeonId, '');
-}
-
-function getMemoFlagLabels(room) {
-  if (!room || !room.flags) return [];
-
-  const labels = [];
-  if (room.flags.player) labels.push('depart P');
-  if (room.flags.key) labels.push('cle requise');
-  if (room.flags.water) labels.push('zone bleue');
-  if (room.flags.breakWall) labels.push('mur traversable');
-  if (room.flags.chestnut) labels.push('piege chestnut');
-  if (room.flags.wind) labels.push('piege vent');
-  if (room.flags.warp) labels.push('piege warp');
-  return labels;
-}
-
 function findMemoToken(room, token) {
   if (!room || !Array.isArray(room.grid)) return null;
   for (let y = 0; y < room.grid.length; y += 1) {
@@ -3028,452 +1577,43 @@ function countMemoTokens(room, token) {
   ), 0);
 }
 
-function describeMemoPosition(point, room) {
-  if (!point || !room || !room.width || !room.height) return '';
-
-  const horizontal = point.x < room.width / 3 ? 'a gauche'
-    : point.x >= (room.width * 2) / 3 ? 'a droite'
-      : 'au centre';
-  const vertical = point.y < room.height / 3 ? 'en haut'
-    : point.y >= (room.height * 2) / 3 ? 'en bas'
-      : 'au milieu';
-
-  return `${vertical}, ${horizontal}`;
-}
-
-function buildMemoDescription(room) {
-  if (!room) {
-    return 'Choisis une variante pour afficher sa salle.';
-  }
-  if (room.missingMap) {
-    const parts = ["La source japonaise utilisee ne montre pas cette variante, donc on n'a pas encore sa forme exacte."];
-    if (room.observedLoot) {
-      parts.push(`Releve joueur: ${room.observedLoot}`);
-    }
-    return parts.join(' ');
-  }
-
-  const parts = [`Carte ${room.width} x ${room.height}.`];
-  const treasure = findMemoToken(room, 'T');
-  const stairs = findMemoToken(room, 'S');
-  const player = findMemoToken(room, 'P');
-  const luxuryChestCount = countMemoTokens(room, 'L');
-  const flags = getMemoFlagLabels(room);
-
-  if (treasure) parts.push(`Tresor ${describeMemoPosition(treasure, room)}.`);
-  if (stairs) parts.push(`Escalier ${describeMemoPosition(stairs, room)}.`);
-  if (player) parts.push(`Zone P ${describeMemoPosition(player, room)}.`);
-  if (luxuryChestCount) parts.push(`${luxuryChestCount} coffres luxe visibles au centre de la salle.`);
-  if (flags.length) {
-    parts.push(`Repere source: ${flags.join(', ')}.`);
-  } else {
-    parts.push('Aucun repere special signale dans le tableau source.');
-  }
-
-  return parts.join(' ');
-}
-
 function getMemoWarning(room) {
   if (!room) return '';
   if (room.warningKey) return t(room.warningKey);
   return room.warning || '';
 }
 
-function renderMemoFeatureList(container, room) {
-  if (!container) return;
-  container.innerHTML = '';
-
-  const labels = room && !room.missingMap
-    ? getMemoFlagLabels(room)
-    : ['source incomplete'];
-
-  if (room && room.observedLoot) {
-    labels.push(room.observedLoot);
-  }
-
-  labels.forEach((label) => {
-    const chip = document.createElement('span');
-    chip.className = 'memo-feature';
-    chip.textContent = label;
-    container.appendChild(chip);
-  });
+function resolveInitialLanguage() {
+  const available = getAvailableLanguages();
+  const fromUrl = getUrlLanguage();
+  const stored = getStoredLanguage();
+  if (available.includes(fromUrl)) return fromUrl;
+  if (available.includes(stored)) return stored;
+  return getDefaultLanguage();
 }
 
-function renderMemoMap(container, room, large) {
-  if (!container) return;
-  container.innerHTML = '';
-  container.classList.toggle('memo-map-empty', !room || room.missingMap || !room.grid || !room.grid.length);
-
-  if (!room || room.missingMap || !room.grid || !room.grid.length) {
-    container.textContent = room && room.missingMap ? 'Carte absente de la source JP' : 'Choisis une variante';
-    return;
-  }
-
-  const size = large ? (room.width >= 20 ? 14 : 18) : (room.width >= 20 ? 9 : 11);
-  container.style.setProperty('--memo-cols', String(room.width));
-  container.style.setProperty('--memo-cell-size', `${size}px`);
-
-  const labels = {
-    '#': { className: 'wall', text: '', label: 'Mur' },
-    '.': { className: 'floor', text: '', label: 'Sol' },
-    '~': { className: 'water', text: '', label: 'Eau' },
-    'S': { className: 'stairs', text: 'S', label: 'Escalier' },
-    'T': { className: 'treasure', text: 'T', label: 'Tresor' },
-    'L': { className: 'luxurychest', text: 'L', label: 'Coffre luxe' },
-    'P': { className: 'player', text: 'P', label: 'Depart joueur' },
-    'K': { className: 'key', text: 'K', label: 'Cle requise' },
-    'B': { className: 'breakwall', text: 'B', label: 'Mur traversable' },
-    'C': { className: 'chestnut', text: 'C', label: 'Piege chestnut' },
-    'F': { className: 'wind', text: 'V', label: 'Piege vent' },
-    'W': { className: 'warp', text: 'W', label: 'Piege warp' }
-  };
-
-  room.grid.forEach((row) => {
-    row.split('').forEach((token) => {
-      const info = labels[token] || labels['.'];
-      const cell = document.createElement('span');
-      const tooltip = info.label;
-      cell.className = `memo-tile memo-tile-${info.className}`;
-      cell.textContent = info.text;
-      cell.title = tooltip;
-      cell.setAttribute('aria-label', tooltip);
-      cell.dataset.tooltip = tooltip;
-      container.appendChild(cell);
-    });
-  });
-}
-
-function applyMemoSpecialFloor(specialFloor) {
-  const memoSelect = document.getElementById('memoPreset');
-  const specialFloorInput = document.getElementById('specialFloor');
-  if (!specialFloorInput) return;
-
-  specialFloorInput.value = specialFloor ? String(specialFloor) : '';
-  if (memoSelect) {
-    if (!specialFloor || !setSelectByValue(memoSelect, String(specialFloor))) {
-      memoSelect.selectedIndex = 0;
-    }
-  }
-
-  WMSGen.update();
-  updateSummary();
-  updateMemoVisuals();
-}
-
-function renderMemoGallery(selectedFloor) {
-  const grid = document.getElementById('memoGalleryGrid');
-  if (!grid) return;
-
-  grid.innerHTML = '';
-  getMemoGallery().forEach((entry) => {
-    const article = document.createElement('article');
-    article.className = 'memo-card';
-    article.tabIndex = 0;
-    if (entry.specialFloor === selectedFloor) {
-      article.classList.add('active');
-    }
-
-    const map = document.createElement('div');
-    map.className = 'memo-map memo-map-card';
-    renderMemoMap(map, entry, false);
-
-    const body = document.createElement('div');
-    body.className = 'memo-card-body';
-
-    const title = document.createElement('h3');
-    title.textContent = `Salle ${entry.specialFloor}`;
-
-    const meta = document.createElement('p');
-    meta.className = 'memo-card-meta';
-    meta.textContent = entry.missingMap
-      ? 'Carte non documentee sur la source JP'
-      : `Etage special ${entry.specialFloor}`;
-
-    const description = document.createElement('p');
-    description.textContent = buildMemoDescription(entry);
-
-    const features = document.createElement('div');
-    features.className = 'memo-feature-list';
-    renderMemoFeatureList(features, entry);
-
-    body.appendChild(title);
-    body.appendChild(meta);
-    body.appendChild(description);
-    body.appendChild(features);
-    article.appendChild(map);
-    article.appendChild(body);
-    grid.appendChild(article);
-
-    const activate = () => applyMemoSpecialFloor(entry.specialFloor);
-    article.addEventListener('click', activate);
-    article.addEventListener('keydown', (event) => {
-      if (event.key === 'Enter' || event.key === ' ') {
-        event.preventDefault();
-        activate();
-      }
-    });
-  });
-}
-
-function updateMemoVisuals() {
-  const section = document.getElementById('memoVisuals');
-  const lead = document.getElementById('memoVisualLead');
-  const badge = document.getElementById('memoSpotlightBadge');
-  const title = document.getElementById('memoSpotlightTitle');
-  const description = document.getElementById('memoSpotlightDescription');
-  const meta = document.getElementById('memoSpotlightMeta');
-  const warning = document.getElementById('memoSpotlightWarning');
-  const location = document.getElementById('memoSpotlightLocation');
-  const code = document.getElementById('memoSpotlightCode');
-  const map = document.getElementById('memoSpotlightMap');
-  const features = document.getElementById('memoSpotlightFeatures');
-  const grid = document.getElementById('memoGalleryGrid');
-  if (!section || !lead || !badge || !title || !description || !meta || !warning || !location || !code || !map || !features || !grid) return;
-
-  const enabled = isTreasureMemoType(getCurrentTypeData());
-  section.classList.toggle('hidden', !enabled);
-  if (!enabled) return;
-
-  const specialFloor = getMemoSpecialFloor();
-  const entry = specialFloor ? getMemoRoomBySpecialFloor(specialFloor) : null;
-  const memoSelect = document.getElementById('memoPreset');
-  const currentLabel = memoSelect && memoSelect.selectedIndex > 0
-    ? memoSelect.options[memoSelect.selectedIndex].text
-    : (specialFloor ? `Etage special ${specialFloor}` : 'Automatique');
-
-  grid.innerHTML = '';
-  grid.classList.add('hidden');
-
-  if (!specialFloor) {
-    lead.textContent = 'Selectionne un etage special de Memo tresor pour afficher sa carte.';
-    badge.textContent = 'En attente';
-    title.textContent = 'Aucune salle selectionnee';
-    description.textContent = 'La carte exacte ne s affiche que quand tu choisis une variante ou un etage special.';
-    meta.textContent = '';
-    warning.textContent = '';
-    warning.classList.add('hidden');
-    location.textContent = '';
-    code.textContent = '';
-    code.classList.add('hidden');
-    features.innerHTML = '';
-    renderMemoMap(map, null, true);
-    return;
-  }
-
-  if (!entry) {
-    lead.textContent = `${currentLabel} reference bien un etage special, mais je n ai pas trouve de carte correspondante dans les donnees chargees.`;
-    badge.textContent = 'Source manquante';
-    title.textContent = `Salle ${specialFloor}`;
-    description.textContent = 'Aucune carte exploitable pour cet etage special pour le moment.';
-    meta.textContent = '';
-    warning.textContent = '';
-    warning.classList.add('hidden');
-    location.textContent = '';
-    code.textContent = '';
-    code.classList.add('hidden');
-    features.innerHTML = '';
-    renderMemoMap(map, null, true);
-    return;
-  }
-
-  lead.textContent = `${currentLabel} utilise la salle ${entry.specialFloor}. La carte ci-dessous suit la forme referencee sur la wiki japonaise.`;
-  badge.textContent = specialFloor ? `Etage special ${specialFloor}` : 'Source JP';
-  title.textContent = `Salle ${entry.specialFloor}`;
-  description.textContent = buildMemoDescription(entry);
-  meta.textContent = entry.missingMap
-    ? 'Cette variante est absente de la page de formes japonaise.'
-    : entry.reconstructedFromScreens
-      ? `Reconstitution depuis captures joueur · format ${entry.width} x ${entry.height}`
-      : `Format ${entry.width} x ${entry.height}`;
-  warning.textContent = getMemoWarning(entry);
-  warning.classList.toggle('hidden', !getMemoWarning(entry));
-
-  if (entry.sample) {
-    const dungeonName = getMemoDungeonName(entry.sample.dungeon);
-    location.textContent = dungeonName
-      ? `Exemple de code retrouve sur ${dungeonName}, etage ${entry.sample.floor}.`
-      : `Exemple de code retrouve sur le donjon ${entry.sample.dungeon}, etage ${entry.sample.floor}.`;
-    code.textContent = entry.sample.code;
-    code.classList.remove('hidden');
-  } else {
-    location.textContent = 'Aucun exemple de code automatique retrouve sur la page japonaise pour cette variante.';
-    code.textContent = '';
-    code.classList.add('hidden');
-  }
-
-  renderMemoMap(map, entry, true);
-  renderMemoFeatureList(features, entry);
-}
-
-function syncMemoSelectorFromSpecialFloor() {
-  const memoSelect = document.getElementById('memoPreset');
-  const specialFloor = document.getElementById('specialFloor');
-  if (!memoSelect || !specialFloor) return;
-
-  const current = String(specialFloor.value || '');
-  if (setSelectByValue(memoSelect, current)) return;
-  memoSelect.selectedIndex = 0;
-}
-
-function updateSummary() {
-  const summary = document.getElementById('summaryText');
-  if (!summary) return;
-
-  const typeData = getCurrentTypeData();
-  if (!typeData) {
-    summary.textContent = 'Choisis une mission pour voir le résumé.';
-    return;
-  }
-
-  const mission = textOfSelected('missionTypeBox');
-  const subWrap = document.getElementById('subType');
-  const subtype = subWrap && subWrap.style.display !== 'none' ? textOfSelected('missionSubTypeBox') : '';
-  const dungeon = textOfSelected('dungeonBox');
-  const floor = document.getElementById('floor').value || '1';
-  const region = document.getElementById('useEUswap').checked ? 'Europe' : 'US/AUS';
-  const client = monNameFromSelect('clientBox', 'clientF', typeData.forceClient);
-  const target = typeData.clientIsTarget
-    ? client
-    : monNameFromSelect('targetBox', 'targetF', typeData.forceTarget);
-
-  const parts = [`${mission}${subtype && subtype !== '—' ? ` — ${subtype}` : ''}`, `région ${region}`, `${dungeon} étage ${floor}`, `client : ${client}`];
-
-  if (!typeData.clientIsTarget || typeData.forceTarget !== undefined) {
-    parts.push(`cible : ${target}`);
-  }
-  if (typeData.useTarget2) {
-    parts.push(`cible sup. : ${monNameFromSelect('target2Box', 'target2F')}`);
-  }
-  if (typeData.useTargetItem) {
-    parts.push(`objet cible : ${textOfSelected('targetItemBox')}`);
-  }
-  if (!typeData.noReward) {
-    parts.push(`récompense : ${textOfSelected('rewardTypeBox')}`);
-  }
-  if (isTreasureMemoType(typeData)) {
-    const memoPreset = document.getElementById('memoPreset');
-    const specialFloor = document.getElementById('specialFloor').value || '';
-    const label = memoPreset && memoPreset.selectedIndex > 0
-      ? memoPreset.options[memoPreset.selectedIndex].text
-      : (specialFloor ? `étage spécial ${specialFloor}` : 'Automatique');
-    parts.push(`mémo : ${label}`);
-  }
-
-  summary.textContent = parts.join(' · ');
-}
-
-function generateCode() {
-  const output = document.getElementById('outputbox');
-  const compact = document.getElementById('compactOutput');
-  const status = document.getElementById('statusLine');
-
-  const errors = WMSGen.verify();
-  if (errors.length) {
-    output.value = errors.map((e) => `• ${e}`).join('\n');
-    compact.value = '';
-    status.textContent = 'Le générateur a bloqué la combinaison choisie.';
-    return;
-  }
-
-  const pretty = WMSGen.generate();
-  output.value = pretty;
-  compact.value = compactCode(pretty);
-  status.textContent = document.getElementById('useEUswap').checked
-    ? 'Code généré pour la version européenne.'
-    : 'Code généré pour la version US/AUS.';
-}
-
-async function copyFrom(id) {
-  const el = document.getElementById(id);
-  const status = document.getElementById('statusLine');
-  if (!el || !el.value.trim()) {
-    status.textContent = 'Aucun code à copier.';
-    return;
-  }
-  try {
-    await navigator.clipboard.writeText(el.value.trim());
-    status.textContent = id === 'compactOutput' ? 'Version compacte copiée.' : 'Code copié.';
-  } catch (e) {
-    status.textContent = 'Copie impossible dans ce navigateur.';
-  }
-}
-
-function applyPreset(kind) {
-  const typeSelect = document.getElementById('missionTypeBox');
-  const subSelect = document.getElementById('missionSubTypeBox');
-  const eu = document.getElementById('useEUswap');
-  const eggGlitch = document.getElementById('eggGlitch');
-  eu.checked = true;
-  if (eggGlitch) eggGlitch.checked = kind === 'egg';
-
-  const specialMap = {
-    standard: () => {
-      setSelectByValue(typeSelect, findMissionTypeIndex(0));
-    },
-    memo: () => {
-      setSelectByValue(typeSelect, findMissionTypeIndex(12));
-    },
-    egg: () => {
-      applyEggGlitchPreset();
-    },
-    mewtwo: () => {
-      setSelectByValue(typeSelect, findMissionTypeIndex(11));
-      WMSGen.fillSubTypeList();
-      setSelectByValue(subSelect, findSubtypeIndex(findMissionTypeIndex(11), 'Mewtwo'));
-    },
-    entei: () => {
-      setSelectByValue(typeSelect, findMissionTypeIndex(11));
-      WMSGen.fillSubTypeList();
-      setSelectByValue(subSelect, findSubtypeIndex(findMissionTypeIndex(11), 'Entei'));
-    },
-    raikou: () => {
-      setSelectByValue(typeSelect, findMissionTypeIndex(11));
-      WMSGen.fillSubTypeList();
-      setSelectByValue(subSelect, findSubtypeIndex(findMissionTypeIndex(11), 'Raikou'));
-    },
-    suicune: () => {
-      setSelectByValue(typeSelect, findMissionTypeIndex(11));
-      WMSGen.fillSubTypeList();
-      setSelectByValue(subSelect, findSubtypeIndex(findMissionTypeIndex(11), 'Suicune'));
-    },
-    jirachi: () => {
-      setSelectByValue(typeSelect, findMissionTypeIndex(11));
-      WMSGen.fillSubTypeList();
-      setSelectByValue(subSelect, findSubtypeIndex(findMissionTypeIndex(11), 'Jirachi'));
-    }
-  };
-
-  if (specialMap[kind]) {
-    specialMap[kind]();
-    if (kind === 'memo') {
-      document.getElementById('memoPreset').selectedIndex = 0;
-      document.getElementById('specialFloor').value = '';
-    }
-    WMSGen.fillSubTypeList();
-    WMSGen.update();
-    document.getElementById('memoSelectorWrap').classList.toggle('hidden', kind !== 'memo');
-    syncMemoSelectorFromSpecialFloor();
-    refreshMissionUi();
-    updateSummary();
-    updateMemoVisuals();
-  }
-}
+// Mela: ricompensa predefinita, così la combinazione iniziale è subito valida.
+const DEFAULT_REWARD_ITEM = 109;
 
 onReady(() => {
+  currentLanguage = resolveInitialLanguage();
+
   WMSGen.advanced = false;
+  WMSGen.translate = t;
+  WMSGen.getFloorLimit = getDungeonFloorLimit;
   WMSGen.setup(document.getElementById('genForm'));
   WMSGen.showAllPokemon = !!document.getElementById('allPokemonForms')?.checked;
   populateEggPokemonList();
   relabelItemSelect('targetItemBox');
   relabelItemSelect('rewardItemBox');
-  document.getElementById('useEUswap').checked = true;
+  setSelectByValue(document.getElementById('rewardItemBox'), DEFAULT_REWARD_ITEM);
+  setSelectedRegion('eu');
   populateMemoSelector();
-  refreshFlavorTextPresetOptions();
 
   const watchedIds = [
     'missionTypeBox', 'missionSubTypeBox', 'dungeonBox', 'floor', 'clientBox', 'clientF',
     'targetBox', 'targetF', 'target2Box', 'target2F', 'targetItemBox', 'rewardTypeBox',
-    'rewardItemBox', 'useEUswap', 'flavorText', 'specialFloor', 'eggPokemonBox'
+    'rewardItemBox', 'regionBox', 'flavorText', 'specialFloor', 'eggPokemonBox'
   ];
 
   watchedIds.forEach((id) => {
@@ -3488,14 +1628,10 @@ onReady(() => {
       }
       if (id === 'missionTypeBox') {
         WMSGen.fillSubTypeList();
-      }
-      if (id === 'flavorText') {
-        syncFlavorTextPresetFromInput();
+        // La stanza speciale dipende dal tipo di missione: non portarla da un tipo all'altro.
+        document.getElementById('specialFloor').value = '';
       }
       WMSGen.update();
-      if (id === 'missionTypeBox' || id === 'missionSubTypeBox') {
-        refreshFlavorTextPresetOptions();
-      }
 
       const typeData = getCurrentTypeData();
       const memoWrap = document.getElementById('memoSelectorWrap');
@@ -3512,16 +1648,13 @@ onReady(() => {
       scheduleLiveGeneration();
     });
     node.addEventListener('input', () => {
-      if (id === 'flavorText') {
-        syncFlavorTextPresetFromInput();
-      }
       if (id === 'specialFloor') {
         syncMemoSelectorFromSpecialFloor();
       }
       refreshMissionUi();
       updateSummary();
       updateMemoVisuals();
-      scheduleLiveGeneration(id === 'floor' || id === 'specialFloor' ? 220 : 120);
+      scheduleLiveGeneration(['floor', 'specialFloor', 'flavorText'].includes(id) ? 220 : 120);
     });
   });
 
@@ -3553,10 +1686,9 @@ onReady(() => {
     scheduleLiveGeneration();
   });
 
-  document.getElementById('flavorTextHead')?.addEventListener('change', () => {
-    applyFlavorTextPresetSelection();
-    refreshMissionUi();
-    updateSummary();
+  document.getElementById('randomSeedBtn')?.addEventListener('click', () => {
+    const flavor = document.getElementById('flavorText');
+    flavor.value = '';
     scheduleLiveGeneration();
   });
 
@@ -3568,6 +1700,12 @@ onReady(() => {
 
   document.getElementById('generateBtn').addEventListener('click', generateCode);
   document.getElementById('importCodeBtn')?.addEventListener('click', importCode);
+  document.getElementById('importCode')?.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      importCode();
+    }
+  });
   document.getElementById('copyPrettyBtn').addEventListener('click', () => copyFrom('outputbox'));
   document.getElementById('copyCompactBtn').addEventListener('click', () => copyFrom('compactOutput'));
 
@@ -3575,38 +1713,11 @@ onReady(() => {
   WMSGen.update();
   document.getElementById('memoSelectorWrap').classList.add('hidden');
   syncMemoSelectorFromSpecialFloor();
-  refreshFlavorTextPresetOptions();
   refreshMissionUi();
   updateSummary();
   updateMemoVisuals();
   generateCode();
 });
-
-function populateMemoSelector() {
-  const select = document.getElementById('memoPreset');
-  if (!select || select.options.length) return;
-
-  const values = (WMSGenData && WMSGenData.staticLists && WMSGenData.staticLists.treasurehunt) || [];
-  const auto = document.createElement('option');
-  auto.value = '';
-  auto.text = 'Automatique';
-  auto.dataset.shortLabel = 'Automatique';
-  auto.dataset.floorLabel = 'Auto';
-  auto.dataset.previewTitle = 'Automatique';
-  select.add(auto);
-
-  values.forEach((value, index) => {
-    const option = document.createElement('option');
-    option.value = String(value);
-    option.text = `Variante ${index + 1} (etage special ${value})`;
-    option.dataset.shortLabel = `Variante ${index + 1}`;
-    option.dataset.floorLabel = String(value);
-    option.dataset.previewTitle = `Variante ${index + 1} · Etage ${value}`;
-    select.add(option);
-  });
-
-  renderMemoPresetPicker();
-}
 
 function getMemoPresetOption(optionOrValue) {
   const select = document.getElementById('memoPreset');
@@ -3622,39 +1733,6 @@ function getMemoPresetOption(optionOrValue) {
   }
 
   return optionOrValue;
-}
-
-function renderMemoPresetPreview(optionOrValue) {
-  const option = getMemoPresetOption(optionOrValue);
-  const badge = document.getElementById('memoPresetPreviewBadge');
-  const title = document.getElementById('memoPresetPreviewTitle');
-  const text = document.getElementById('memoPresetPreviewText');
-  const warning = document.getElementById('memoPresetPreviewWarning');
-  const map = document.getElementById('memoPresetPreviewMap');
-  const features = document.getElementById('memoPresetPreviewFeatures');
-  if (!option || !badge || !title || !text || !warning || !map || !features) return;
-
-  const specialFloor = parseInt(option.value || '', 10);
-  const room = Number.isFinite(specialFloor) ? getMemoRoomBySpecialFloor(specialFloor) : null;
-
-  if (!Number.isFinite(specialFloor)) {
-    badge.textContent = 'Apercu auto';
-    title.textContent = 'Automatique';
-    text.textContent = 'Le generateur choisit une variante automatiquement. Passe la souris sur un etage pour voir sa forme ici.';
-    warning.textContent = '';
-    warning.classList.add('hidden');
-    features.innerHTML = '';
-    renderMemoMap(map, null, false);
-    return;
-  }
-
-  badge.textContent = `Etage special ${specialFloor}`;
-  title.textContent = option.dataset.previewTitle || option.text;
-  text.textContent = buildMemoDescription(room);
-  warning.textContent = getMemoWarning(room);
-  warning.classList.toggle('hidden', !getMemoWarning(room));
-  renderMemoFeatureList(features, room);
-  renderMemoMap(map, room, false);
 }
 
 function closeMemoPresetMenu() {
@@ -3688,26 +1766,6 @@ function toggleMemoPresetMenu(forceOpen) {
   }
 }
 
-function updateMemoPresetPicker() {
-  const select = document.getElementById('memoPreset');
-  const title = document.getElementById('memoPresetTitle');
-  const subtitle = document.getElementById('memoPresetSubtitle');
-  const optionsWrap = document.getElementById('memoPresetOptions');
-  if (!select || !title || !subtitle || !optionsWrap) return;
-
-  const option = select.options[select.selectedIndex] || select.options[0];
-  if (!option) return;
-
-  title.textContent = option.dataset.shortLabel || option.text;
-  subtitle.textContent = option.value ? `Etage ${option.value}` : 'Aucune variante forcee';
-
-  optionsWrap.querySelectorAll('.memo-picker-option').forEach((button) => {
-    button.classList.toggle('active', button.dataset.value === option.value);
-  });
-
-  renderMemoPresetPreview(option);
-}
-
 function applyMemoPresetValue(value) {
   const select = document.getElementById('memoPreset');
   if (!select) return;
@@ -3719,49 +1777,6 @@ function applyMemoPresetValue(value) {
   updateMemoPresetPicker();
   select.dispatchEvent(new Event('change', { bubbles: true }));
   closeMemoPresetMenu();
-}
-
-function renderMemoPresetPicker() {
-  const wrap = document.getElementById('memoSelectorWrap');
-  const select = document.getElementById('memoPreset');
-  const optionsWrap = document.getElementById('memoPresetOptions');
-  if (!wrap || !select || !optionsWrap) return;
-
-  const label = wrap.querySelector('label');
-  const hint = wrap.querySelector('.hint');
-  if (label) {
-    label.htmlFor = 'memoPresetToggle';
-    label.textContent = 'Selecteur Memo mystere';
-  }
-  if (hint) {
-    hint.textContent = "Survole un etage pour voir l'apercu a droite, puis clique pour le choisir.";
-  }
-
-  optionsWrap.innerHTML = '';
-  Array.from(select.options).forEach((option, index) => {
-    const button = document.createElement('button');
-    const name = document.createElement('span');
-    const floor = document.createElement('span');
-
-    button.type = 'button';
-    button.className = 'memo-picker-option';
-    button.dataset.value = option.value;
-
-    name.className = 'memo-picker-option-name';
-    name.textContent = option.value ? `V${index}` : 'Auto';
-
-    floor.className = 'memo-picker-option-floor';
-    floor.textContent = option.dataset.floorLabel || 'Auto';
-
-    button.append(name, floor);
-    button.addEventListener('mouseenter', () => renderMemoPresetPreview(option));
-    button.addEventListener('focus', () => renderMemoPresetPreview(option));
-    button.addEventListener('click', () => applyMemoPresetValue(option.value));
-    optionsWrap.appendChild(button);
-  });
-
-  optionsWrap.addEventListener('mouseleave', updateMemoPresetPicker);
-  updateMemoPresetPicker();
 }
 
 function syncMemoSelectorFromSpecialFloor() {
@@ -3871,11 +1886,7 @@ function updateEntityPreviews() {
   renderEntityPreview(
     'eggPokemonPreview',
     isEggGlitchEnabled()
-      ? getEggPokemonPreviewData(
-        'eggPokemonBox',
-        getCurrentLanguage() === 'en' ? 'Egg' : 'Oeuf',
-        getCurrentLanguage() === 'en' ? 'Species forced by the glitch' : 'Espece forcee par le glitch'
-      )
+      ? getEggPokemonPreviewData('eggPokemonBox', t('eggPreviewLabel'), t('eggPreviewMeta'))
       : null
   );
 }
@@ -3897,14 +1908,14 @@ function getMemoFlagLabels(room) {
 function describeMemoPosition(point, room) {
   if (!point || !room || !room.width || !room.height) return '';
 
-  const horizontal = point.x < room.width / 3 ? t('left')
-    : point.x >= (room.width * 2) / 3 ? t('right')
-      : t('center');
-  const vertical = point.y < room.height / 3 ? t('top')
-    : point.y >= (room.height * 2) / 3 ? t('bottom')
-      : t('middle');
+  const horizontal = point.x < room.width / 3 ? 'left'
+    : point.x >= (room.width * 2) / 3 ? 'right'
+      : 'center';
+  const vertical = point.y < room.height / 3 ? 'top'
+    : point.y >= (room.height * 2) / 3 ? 'bottom'
+      : 'middle';
 
-  return `${vertical}, ${horizontal}`;
+  return t(`pos_${vertical}_${horizontal}`);
 }
 
 function buildMemoDescription(room) {
@@ -3913,8 +1924,8 @@ function buildMemoDescription(room) {
   }
   if (room.missingMap) {
     const parts = [t('missingRoomDescription')];
-    if (room.observedLoot) {
-      parts.push(room.observedLoot);
+    if (room.observedLootKey) {
+      parts.push(t(room.observedLootKey));
     }
     return parts.join(' ');
   }
@@ -3947,8 +1958,8 @@ function renderMemoFeatureList(container, room) {
   container.innerHTML = '';
 
   const labels = room && !room.missingMap ? getMemoFlagLabels(room) : [t('sourceIncomplete')];
-  if (room && room.observedLoot) {
-    labels.push(room.observedLoot);
+  if (room && room.observedLootKey) {
+    labels.push(t(room.observedLootKey));
   }
   if (room && room.noteKey) {
     labels.push(t(room.noteKey));
@@ -4020,7 +2031,7 @@ function updateSummary() {
   const subtype = subWrap && subWrap.style.display !== 'none' ? textOfSelected('missionSubTypeBox') : '';
   const dungeon = textOfSelected('dungeonBox');
   const floor = document.getElementById('floor').value || '1';
-  const region = document.getElementById('useEUswap').checked ? t('regionEurope') : t('regionUs');
+  const region = getRegionName(getSelectedRegion());
   const client = monNameFromSelect('clientBox', 'clientF', typeData.forceClient);
   const target = typeData.clientIsTarget ? client : monNameFromSelect('targetBox', 'targetF', typeData.forceTarget);
   const difficulty = isEggGlitchEnabled() ? null : getMissionDifficultyInfo(typeData);
@@ -4069,18 +2080,33 @@ function generateCode() {
   const compact = document.getElementById('compactOutput');
   const status = document.getElementById('statusLine');
 
-  const errors = WMSGen.verify();
-  if (errors.length) {
+  const showErrors = (errors) => {
     output.value = errors.map((error) => `• ${error}`).join('\n');
     compact.value = '';
     status.textContent = t('blockedCombination');
+  };
+
+  const errors = WMSGen.verify();
+  if (errors.length) {
+    showErrors(errors);
     return;
   }
 
-  const pretty = WMSGen.generate();
+  let pretty;
+  try {
+    pretty = WMSGen.generate();
+  } catch (error) {
+    // Un campo non entra nei bit della password, oppure la verifica finale non è andata a buon fine.
+    const fieldErrors = error && error.errors
+      ? error.errors.map((entry) => t('errorFieldRange', { field: t(`field_${entry.field}`), max: entry.max }))
+      : [t('errorSelfCheck')];
+    showErrors(fieldErrors);
+    return;
+  }
+
   output.value = pretty;
   compact.value = compactCode(pretty);
-  status.textContent = document.getElementById('useEUswap').checked ? t('generatedEu') : t('generatedUs');
+  status.textContent = t('generatedFor', { region: getRegionName(getSelectedRegion()) });
 }
 
 let liveGenerateTimer = null;
@@ -4115,9 +2141,10 @@ function importCode() {
   }
 
   const fullyMapped = importDecodedStruct(decoded);
+  const region = getRegionName(decoded.region);
   status.textContent = fullyMapped
-    ? (decoded.useEuSwap ? t('importCodeEu') : t('importCodeUs'))
-    : t('importCodePartial');
+    ? t('importCodeOk', { region })
+    : t('importCodePartial', { region });
 }
 
 async function copyFrom(id) {
@@ -4165,9 +2192,7 @@ function updateMemoVisuals() {
   grid.classList.add('hidden');
 
   if (!specialFloor) {
-    lead.textContent = getCurrentLanguage() === 'en'
-      ? 'Choose a Treasure Memo special floor to display its map.'
-      : 'Selectionne un etage special de Memo tresor pour afficher sa carte.';
+    lead.textContent = t('memoChooseFloor');
     badge.textContent = t('waiting');
     title.textContent = t('noRoomSelected');
     description.textContent = t('roomMapAppears');
@@ -4212,9 +2237,15 @@ function updateMemoVisuals() {
   warning.textContent = getMemoWarning(entry);
   warning.classList.toggle('hidden', !getMemoWarning(entry));
 
-  if (entry.sample) {
-    location.textContent = t('memoSampleAvailable');
-    code.textContent = entry.sample.code;
+  const example = getMemoRealExample(entry.specialFloor);
+  if (example) {
+    const region = getSelectedRegion();
+    location.textContent = t('memoExample', {
+      dungeon: getDungeonName(example.dungeon),
+      floor: example.floor,
+      region: getRegionName(region)
+    });
+    code.textContent = prettyMailString(WMSParser.convertRegion(example.code, example.region, region), 2, 7);
     code.classList.remove('hidden');
   } else {
     location.textContent = t('memoNoSample');
@@ -4224,6 +2255,12 @@ function updateMemoVisuals() {
 
   renderMemoMap(map, entry, true);
   renderMemoFeatureList(features, entry);
+}
+
+// Missione reale del gioco (codice giapponese) che usa questa stanza.
+function getMemoRealExample(specialFloor) {
+  const examples = Array.isArray(window.MemoRealExamples) ? window.MemoRealExamples : [];
+  return examples.find((example) => example.specialFloor === specialFloor) || null;
 }
 
 function renderMemoPresetPreview(optionOrValue) {
@@ -4345,9 +2382,7 @@ function populateMemoSelector() {
 function applyPreset(kind) {
   const typeSelect = document.getElementById('missionTypeBox');
   const subSelect = document.getElementById('missionSubTypeBox');
-  const eu = document.getElementById('useEUswap');
   const eggGlitch = document.getElementById('eggGlitch');
-  eu.checked = true;
   if (eggGlitch) eggGlitch.checked = kind === 'egg';
 
   const specialMap = {
@@ -4389,15 +2424,14 @@ function applyPreset(kind) {
 
   if (specialMap[kind]) {
     specialMap[kind]();
+    document.getElementById('specialFloor').value = '';
     if (kind === 'memo') {
       document.getElementById('memoPreset').selectedIndex = 0;
-      document.getElementById('specialFloor').value = '';
     }
     WMSGen.fillSubTypeList();
     relabelMissionTypeSelect();
     relabelMissionSubTypeSelect();
     WMSGen.update();
-    refreshFlavorTextPresetOptions();
     document.getElementById('memoSelectorWrap').classList.toggle('hidden', kind !== 'memo');
     syncMemoSelectorFromSpecialFloor();
     refreshMissionUi();
@@ -4407,14 +2441,6 @@ function applyPreset(kind) {
 }
 
 onReady(() => {
-  const urlLanguage = getUrlLanguage();
-  const storedLanguage = getStoredLanguage();
-  if (getAvailableLanguages().includes(urlLanguage)) {
-    currentLanguage = urlLanguage;
-  } else {
-    currentLanguage = getAvailableLanguages().includes(storedLanguage) ? storedLanguage : getDefaultLanguage();
-  }
-
   const picker = document.getElementById('languagePicker');
   const toggle = document.getElementById('languagePickerToggle');
   renderLanguagePicker();
@@ -4437,9 +2463,11 @@ onReady(() => {
   document.getElementById('missionTypeBox')?.addEventListener('change', () => {
     relabelMissionTypeSelect();
     relabelMissionSubTypeSelect();
-    refreshFlavorTextPresetOptions();
     updateSummary();
   });
 
-  applyLanguage(currentLanguage);
+  // Cambiando regione cambia anche il codice d'esempio del Memo tesoro.
+  document.getElementById('regionBox')?.addEventListener('change', updateMemoVisuals);
+
+  applyLanguage(currentLanguage, { persist: false });
 });

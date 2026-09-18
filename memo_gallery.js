@@ -1,3 +1,4 @@
+// Stanze dei Memo tesoro (forme dalla wiki giapponese Grovyle, stanza 114 ricostruita da schermate).
 window.MemoRoomGallery = [
   {
     "specialFloor": 114,
@@ -33,16 +34,8 @@ window.MemoRoomGallery = [
     "reconstructedFromScreens": true,
     "missingMap": false,
     "noteKey": "memo114ResearchNote",
-    "observedLoot": "4 coffres luxe, chacun contenant un Resugraine.",
     "warningKey": "memo114Warning",
-    "sample": {
-      "location": "かいがんのどうくつB2F",
-      "difficulty": "E(10)",
-      "dungeon": 157,
-      "floor": 81,
-      "reward": "ごうかなはこ×1\n(クラボのみ)",
-      "code": "H6JHJY79KYHQ-5R+Q\n-K#5QFY&@6=WJ#X+J"
-    }
+    "observedLootKey": "memo114ObservedLoot"
   },
   {
     "specialFloor": 115,
@@ -100,14 +93,6 @@ window.MemoRoomGallery = [
       "chestnut": false,
       "wind": true,
       "warp": false
-    },
-    "sample": {
-      "location": "しめったいわばB6F",
-      "difficulty": "D(15)",
-      "dungeon": 39,
-      "floor": 244,
-      "reward": "ごうかなはこ×1\n(オレンのみ)",
-      "code": "T#N76P1Q9NP=MT905\n911C5KF85F1R3PT12"
     }
   },
   {
@@ -136,14 +121,6 @@ window.MemoRoomGallery = [
       "chestnut": false,
       "wind": false,
       "warp": false
-    },
-    "sample": {
-      "location": "しめったいわばB6F",
-      "difficulty": "D(15)",
-      "dungeon": 52,
-      "floor": 4,
-      "reward": "ごうかなはこ×1 ポケ\n(ものみのたま)",
-      "code": "314-C99K3=3%NWXN7\n2&%K1WKR7@XR1TX00"
     }
   },
   {
@@ -182,14 +159,6 @@ window.MemoRoomGallery = [
       "chestnut": true,
       "wind": true,
       "warp": false
-    },
-    "sample": {
-      "location": "ツノやま14F",
-      "difficulty": "B(30)",
-      "dungeon": 127,
-      "floor": 23,
-      "reward": "ごうかなはこ×1 ポケ\n(ふしぎなグミ)",
-      "code": "#1%K@C##M#31Q7Q3X\n1W=PC678W8Q9W+3T5"
     }
   },
   {
@@ -296,14 +265,6 @@ window.MemoRoomGallery = [
       "chestnut": false,
       "wind": false,
       "warp": false
-    },
-    "sample": {
-      "location": "たきつぼのどうくつB8F",
-      "difficulty": "B(30)",
-      "dungeon": 251,
-      "floor": 95,
-      "reward": "ごうかなはこ×1 ポケ\n(ふしぎなグミ)",
-      "code": "HT62JCMX#7K56PK4P\n8X597J0&3#9-WY21#"
     }
   },
   {
@@ -361,14 +322,6 @@ window.MemoRoomGallery = [
       "chestnut": false,
       "wind": false,
       "warp": false
-    },
-    "sample": {
-      "location": "いそのどうくつB6F",
-      "difficulty": "★2(250)",
-      "dungeon": 160,
-      "floor": 15,
-      "reward": "ごうかなはこ×1 ポケ\n(ふしぎなグミ)",
-      "code": "N7QHFCR4#08-9F8H0\nQHHS1@+RH+@FJ9SSP"
     }
   },
   {
@@ -407,14 +360,6 @@ window.MemoRoomGallery = [
       "chestnut": true,
       "wind": false,
       "warp": true
-    },
-    "sample": {
-      "location": "ねっすいのどうくつ6F",
-      "difficulty": "A(60)",
-      "dungeon": 21,
-      "floor": 196,
-      "reward": "ごうかなはこ×1 ポケ\n(ふしぎなグミ)",
-      "code": "Y6M61-63MPK+=7WNR\n7+1FQ#Q&7S50TQ&-C"
     }
   },
   {
@@ -453,14 +398,6 @@ window.MemoRoomGallery = [
       "chestnut": false,
       "wind": true,
       "warp": false
-    },
-    "sample": {
-      "location": "しめったいわばB3F",
-      "difficulty": "D(15)",
-      "dungeon": 200,
-      "floor": 19,
-      "reward": "ごうかなはこ×1 ポケ\n(ふっかつのタネ)",
-      "code": "KNFSCK@2CC4T4&F@%\n1YP%%H@790PM7JPF9"
     }
   },
   {
@@ -497,14 +434,6 @@ window.MemoRoomGallery = [
       "chestnut": true,
       "wind": false,
       "warp": true
-    },
-    "sample": {
-      "location": "えんがんのいわばB9F",
-      "difficulty": "B(30)",
-      "dungeon": 102,
-      "floor": 25,
-      "reward": "ごうかなはこ×1\n(ふしぎなグミ)",
-      "code": "TF%01W8&JPP91K=3+\n-8X#JHM88401Q@H+N"
     }
   },
   {
@@ -543,14 +472,6 @@ window.MemoRoomGallery = [
       "chestnut": false,
       "wind": true,
       "warp": false
-    },
-    "sample": {
-      "location": "のうむのもり7F",
-      "difficulty": "A(60)",
-      "dungeon": 223,
-      "floor": 119,
-      "reward": "ごうかなはこ×1\n(ふしぎなグミ)",
-      "code": "SN133-Q#F5-8QQ+8X\n7#4W42+RXM%TJ%@WS"
     }
   },
   {
@@ -625,14 +546,6 @@ window.MemoRoomGallery = [
       "chestnut": false,
       "wind": false,
       "warp": true
-    },
-    "sample": {
-      "location": "リンゴのもり10F",
-      "difficulty": "B(30)",
-      "dungeon": 99,
-      "floor": 153,
-      "reward": "ごうかなはこ×1 ポケ\n(ふしぎなグミ)",
-      "code": "N184WJM-T@6&7W%T%\nR20N3=&R7T2-S45#2"
     }
   },
   {
@@ -667,14 +580,6 @@ window.MemoRoomGallery = [
       "chestnut": true,
       "wind": true,
       "warp": false
-    },
-    "sample": {
-      "location": "エレキへいげん8F",
-      "difficulty": "A(60)",
-      "dungeon": 109,
-      "floor": 228,
-      "reward": "ごうかなはこ×1 ポケ\n(ふしぎなグミ)",
-      "code": "QTMK=N1043Y5+X%-N\nJF9SWYTP1-J8%&X#1"
     }
   },
   {
@@ -752,14 +657,6 @@ window.MemoRoomGallery = [
       "chestnut": true,
       "wind": false,
       "warp": false
-    },
-    "sample": {
-      "location": "のうむのもり6F",
-      "difficulty": "A(60)",
-      "dungeon": 231,
-      "floor": 64,
-      "reward": "ごうかなはこ×1 ポケ\n(ふしぎなグミ)",
-      "code": "0QYM&1T=+@W5@WYRK\n46QYQ9%R5TRXHH5##"
     }
   },
   {
@@ -794,14 +691,6 @@ window.MemoRoomGallery = [
       "chestnut": true,
       "wind": false,
       "warp": false
-    },
-    "sample": {
-      "location": "しめったいわばB5F",
-      "difficulty": "D(15)",
-      "dungeon": 253,
-      "floor": 167,
-      "reward": "ごうかなはこ×1 ポケ\n(バクスイだま)",
-      "code": "T5JK&C21FFSFF+X1@\nC+118C0NN2QC0Y4F1"
     }
   },
   {
@@ -874,14 +763,6 @@ window.MemoRoomGallery = [
       "chestnut": false,
       "wind": true,
       "warp": false
-    },
-    "sample": {
-      "location": "たきつぼのどうくつB6F",
-      "difficulty": "C(20)",
-      "dungeon": 164,
-      "floor": 6,
-      "reward": "ごうかなはこ×1 ポケ\n(ふしぎなグミ)",
-      "code": "@%X7826K+N&1CP5F5\nK6K1YJQN4JP#=M0Q7"
     }
   },
   {
@@ -918,14 +799,6 @@ window.MemoRoomGallery = [
       "chestnut": true,
       "wind": false,
       "warp": false
-    },
-    "sample": {
-      "location": "のうむのもり9F",
-      "difficulty": "A(60)",
-      "dungeon": 180,
-      "floor": 65,
-      "reward": "ごうかなはこ×1\n(ふしぎなグミ)",
-      "code": "X+#34&NPC8N@3X8@7\nY&&J20W9=-XP6R-PM"
     }
   },
   {
@@ -1030,14 +903,6 @@ window.MemoRoomGallery = [
       "chestnut": false,
       "wind": true,
       "warp": true
-    },
-    "sample": {
-      "location": "リンゴのもり6F",
-      "difficulty": "B(30)",
-      "dungeon": 83,
-      "floor": 81,
-      "reward": "ごうかなはこ×1 ポケ\n(ふしぎなグミ)",
-      "code": "QH9YP8R#4-SHMHP%W\n7P1&@9%&=XS+#TH#M"
     }
   },
   {
@@ -1095,14 +960,6 @@ window.MemoRoomGallery = [
       "chestnut": true,
       "wind": false,
       "warp": false
-    },
-    "sample": {
-      "location": "リンゴのもり10F",
-      "difficulty": "B(30)",
-      "dungeon": 245,
-      "floor": 124,
-      "reward": "ごうかなはこ×1\n(ふしぎなグミ)",
-      "code": "%+QFMM&YTHYJSQX8F\n#69TP%#73R=H951RC"
     }
   },
   {
@@ -1140,14 +997,6 @@ window.MemoRoomGallery = [
       "chestnut": true,
       "wind": false,
       "warp": false
-    },
-    "sample": {
-      "location": "きたのさばく13F",
-      "difficulty": "S(90)",
-      "dungeon": 19,
-      "floor": 212,
-      "reward": "ごうかなはこ×1\n(ふしぎなグミ)",
-      "code": "N-#YXWP7#32=4-S6R\nRN17NR&&T+T7Q5PPC"
     }
   },
   {
@@ -1227,5 +1076,162 @@ window.MemoRoomGallery = [
       "warp": false
     },
     "sample": null
+  }
+];
+
+// Missioni Memo tesoro reali generate dal gioco giapponese (wiki Grovyle), lette con la tabella JP.
+// Il gioco vale per tutte le regioni: la pagina le converte nella regione scelta.
+window.MemoRealExamples = [
+  {
+    "code": "H6JHJY79KYHQ-5R+Q-K#5QFY&@6=WJ#X+J",
+    "region": "jp",
+    "specialFloor": 115,
+    "dungeon": 1,
+    "floor": 2,
+    "source": "wiki.grovyle.net"
+  },
+  {
+    "code": "@%X7826K+N&1CP5F5K6K1YJQN4JP#=M0Q7",
+    "region": "jp",
+    "specialFloor": 116,
+    "dungeon": 6,
+    "floor": 6,
+    "source": "wiki.grovyle.net"
+  },
+  {
+    "code": "T5JK&C21FFSFF+X1@C+118C0NN2QC0Y4F1",
+    "region": "jp",
+    "specialFloor": 117,
+    "dungeon": 3,
+    "floor": 5,
+    "source": "wiki.grovyle.net"
+  },
+  {
+    "code": "N184WJM-T@6&7W%T%R20N3=&R7T2-S45#2",
+    "region": "jp",
+    "specialFloor": 117,
+    "dungeon": 7,
+    "floor": 10,
+    "source": "wiki.grovyle.net"
+  },
+  {
+    "code": "%+QFMM&YTHYJSQX8F#69TP%#73R=H951RC",
+    "region": "jp",
+    "specialFloor": 118,
+    "dungeon": 7,
+    "floor": 10,
+    "source": "wiki.grovyle.net"
+  },
+  {
+    "code": "TF%01W8&JPP91K=3+-8X#JHM88401Q@H+N",
+    "region": "jp",
+    "specialFloor": 118,
+    "dungeon": 8,
+    "floor": 9,
+    "source": "wiki.grovyle.net"
+  },
+  {
+    "code": "N-#YXWP7#32=4-S6RRN17NR&&T+T7Q5PPC",
+    "region": "jp",
+    "specialFloor": 118,
+    "dungeon": 20,
+    "floor": 13,
+    "source": "wiki.grovyle.net"
+  },
+  {
+    "code": "SN133-Q#F5-8QQ+8X7#4W42+RXM%TJ%@WS",
+    "region": "jp",
+    "specialFloor": 119,
+    "dungeon": 12,
+    "floor": 7,
+    "source": "wiki.grovyle.net"
+  },
+  {
+    "code": "HT62JCMX#7K56PK4P8X597J0&3#9-WY21#",
+    "region": "jp",
+    "specialFloor": 120,
+    "dungeon": 6,
+    "floor": 8,
+    "source": "wiki.grovyle.net"
+  },
+  {
+    "code": "X+#34&NPC8N@3X8@7Y&&J20W9=-XP6R-PM",
+    "region": "jp",
+    "specialFloor": 122,
+    "dungeon": 12,
+    "floor": 9,
+    "source": "wiki.grovyle.net"
+  },
+  {
+    "code": "N7QHFCR4#08-9F8H0QHHS1@+RH+@FJ9SSP",
+    "region": "jp",
+    "specialFloor": 124,
+    "dungeon": 35,
+    "floor": 6,
+    "source": "wiki.grovyle.net"
+  },
+  {
+    "code": "314-C99K3=3%NWXN72&%K1WKR7@XR1TX00",
+    "region": "jp",
+    "specialFloor": 125,
+    "dungeon": 3,
+    "floor": 6,
+    "source": "wiki.grovyle.net"
+  },
+  {
+    "code": "QH9YP8R#4-SHMHP%W7P1&@9%&=XS+#TH#M",
+    "region": "jp",
+    "specialFloor": 126,
+    "dungeon": 7,
+    "floor": 6,
+    "source": "wiki.grovyle.net"
+  },
+  {
+    "code": "QTMK=N1043Y5+X%-NJF9SWYTP1-J8%&X#1",
+    "region": "jp",
+    "specialFloor": 126,
+    "dungeon": 17,
+    "floor": 8,
+    "source": "wiki.grovyle.net"
+  },
+  {
+    "code": "T#N76P1Q9NP=MT905911C5KF85F1R3PT12",
+    "region": "jp",
+    "specialFloor": 127,
+    "dungeon": 3,
+    "floor": 6,
+    "source": "wiki.grovyle.net"
+  },
+  {
+    "code": "#1%K@C##M#31Q7Q3X1W=PC678W8Q9W+3T5",
+    "region": "jp",
+    "specialFloor": 127,
+    "dungeon": 10,
+    "floor": 14,
+    "source": "wiki.grovyle.net"
+  },
+  {
+    "code": "KNFSCK@2CC4T4&F@%1YP%%H@790PM7JPF9",
+    "region": "jp",
+    "specialFloor": 129,
+    "dungeon": 3,
+    "floor": 3,
+    "source": "wiki.grovyle.net"
+  },
+  {
+    "code": "0QYM&1T=+@W5@WYRK46QYQ9%R5TRXHH5##",
+    "region": "jp",
+    "specialFloor": 129,
+    "dungeon": 12,
+    "floor": 6,
+    "source": "wiki.grovyle.net"
+  },
+  {
+    "code": "Y6M61-63MPK+=7WNR7+1FQ#Q&7S50TQ&-C",
+    "region": "jp",
+    "specialFloor": 129,
+    "dungeon": 14,
+    "floor": 6,
+    "source": "wiki.grovyle.net"
   }
 ];
