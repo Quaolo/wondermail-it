@@ -1,109 +1,126 @@
-https://redcoal27.github.io/wondermail_pdm/
+# Generatore di Missioni Speciali C (Wonder Mail S)
 
-# Wonder Mail S Generator
+Generatore e lettore di password **Missioni Speciali C** per *Pokémon Mystery Dungeon: Esploratori del Cielo*,
+in italiano e inglese, con i **nomi e le descrizioni ufficiali del gioco**.
 
-Wonder Mail S generator for **Pokemon Mystery Dungeon: Explorers of Sky**.
+È una variante di [wondermail_pdm](https://github.com/RedCoal27/wondermail_pdm) di RedCoal27.
 
-The site can generate several Sky mission types, with visual helpers for **Treasure Memos**, a FR/EN interface, and shortcuts for special cases.
+## Uso
 
-## Features
+È un sito statico: nessun server e nessuna compilazione.
 
-- Wonder Mail S generation for Explorers of Sky
-- support for standard missions, Treasure Memos, and Challenge Letters
-- French and English interface
-- visual previews for Pokemon, items, and Treasure Memo rooms
-- fully static website, no backend
+- Apri `index.html` con il browser, oppure
+- dalla cartella del progetto: `python -m http.server 8000` e vai su <http://localhost:8000>.
 
-## Local usage
+La lingua si cambia dal menu in alto a destra, oppure con `?lang=en` nell'indirizzo.
+Funziona anche senza internet: senza rete mancano solo le immagini dei Pokémon (restano le iniziali).
 
-Open `index.html` directly in a modern browser.
+La cartuccia europea è una sola per tutte le lingue: le password della versione "Europa"
+valgono anche per il gioco in italiano, ed è il gioco a mostrare i testi della missione in italiano.
 
-## Quick structure
+## Cosa cambia rispetto all'originale
 
-- `index.html`: main page
-- `app.js`: UI logic
-- `style.css`: styles
-- `lmgenerate.js`: code generation
-- `memo_gallery.js`: Treasure Memo room data and maps
-- `lang/`: language system
-- `assets/`: sprites and images
+**Testi ufficiali**
+- Nomi di strumenti, dungeon e Pokémon e descrizioni degli strumenti presi dai file di testo del gioco
+  (versione europea, italiano e inglese). Esempi: Mela, Baccarancia, Grotta Marina, Gabitesquama.
+- Terminologia del gioco italiano: *Missioni Speciali C*, *Memo tesoro*, *Sala Proibita*, *Sala d'Oro*,
+  *committente*, *strumento*, *ricercato*, *covo di Pokémon*.
+- La ricerca trova anche il nome nell'altra lingua (scrivi "Oran" e trovi Baccarancia).
 
-## Credits and sources
+**Correzioni**
+- Lettura delle password con verifica del **checksum CRC32**: prima circa una stringa a caso su nove veniva
+  accettata come password valida.
+- Aggiunta la **regione giapponese**. I 19 esempi di Memo tesoro presi dalla wiki giapponese erano password
+  giapponesi, non utilizzabili su una cartuccia europea, ed erano associati alle stanze sbagliate:
+  ora sono associati alla stanza giusta e convertiti nella regione scelta.
+- Il **secondo Pokémon** (terzo membro delle Lettere di sfida, complice nei covi) veniva ignorato e
+  sostituito dal Pokémon obiettivo.
+- **Arbok** maschio veniva codificato come Nidoran♂ e Nidoran♀ "femmina" produceva un ID inesistente
+  (costante sbagliata nel generatore storico). Ora la casella "Femmina" usa i dati di genere del gioco
+  (`monster.md`) e si disattiva per le specie senza forma femminile separata.
+- **Controllo dei limiti**: un valore che non entra nella password (per esempio stanza 300) produceva una
+  password sbagliata senza avviso. Ora viene segnalato, e ogni password viene riletta prima di mostrarla.
+- La combinazione iniziale dava un errore (nessuno strumento come ricompensa); i messaggi di errore
+  erano in francese anche in inglese; le varianti dei Memo tesoro erano numerate a partire da 2;
+  l'ultima stanza di ogni elenco non veniva mai scelta a caso; scegliendo un preset la regione tornava
+  sempre Europa; la stanza speciale di una password letta restava attiva cambiando tipo di missione.
+- Pulizia del codice: 21 funzioni definite due o tre volte (valeva solo l'ultima), codice copiato da
+  web.archive.org, caratteri corrotti nella pagina, funzioni mai eseguite.
 
-The site was made by **RedCoal** with help from GPT-5.4.
+**Novità**
+- Seme del testo della missione visibile nelle opzioni avanzate: leggendo una password viene
+  riportato lì, così rigenerando si ottiene la stessa missione.
+- Test automatici del codificatore e dell'interfaccia.
 
-Possible mistakes may still exist in:
+## Aggiornare i testi ufficiali
 
-- text
-- labels
-- some room interpretations
-- some visual mappings
+I file in `data/` sono generati da `tools/estrai_testi.py` a partire dalla decompilazione
+[pret/pmd-sky](https://github.com/pret/pmd-sky), che contiene i file di testo del gioco. Non serve nessuna ROM.
 
-Main sources:
+```
+python tools/estrai_testi.py                       # scarica i 3 file necessari (commit fissato)
+python tools/estrai_testi.py --pmd-sky ../pmd-sky  # oppure usa una copia locale del repo
+```
 
-- [SombrAbsol.github.io](https://sombrabsol.github.io/)
-- [SombrAbsol.github.io - lmiracles](https://sombrabsol.github.io/EdC/lmiracles.html)
-- [Bulbapedia - Wonder Mail](https://bulbapedia.bulbagarden.net/wiki/Wonder_Mail)
-- [Bulbapedia - Job (Mystery Dungeon)](https://bulbapedia.bulbagarden.net/wiki/Job_%28Mystery_Dungeon%29)
-- [Bulbapedia - Explorers of the Sky](https://bulbapedia.bulbagarden.net/wiki/Pokemon_Mystery_Dungeon%3A_Explorers_of_the_Sky)
-- [Bulbapedia - North American and Australian Wonder Mail S distributions](https://bulbapedia.bulbagarden.net/wiki/List_of_North_American_and_Australian_Wonder_Mail_S_distributions_in_Pok%C3%A9mon_Mystery_Dungeon%3A_Explorers_of_Sky)
-- [Bulbapedia - Wonder Mail distributions in Time and Darkness](https://bulbapedia.bulbagarden.net/wiki/List_of_Wonder_Mail_distributions_in_Pok%C3%A9mon_Mystery_Dungeon%3A_Explorers_of_Time_and_Explorers_of_Darkness)
-- [The Warp Point](https://the-warp-point.blogspot.com/2009/12/pokemon-mystery-dungeon-explorers-of.html)
-- [Wiki Grovyle JP - o-takara memo](https://wiki.grovyle.net/pokedun3/?%E3%81%8A%E3%81%9F%E3%81%8B%E3%82%89%E3%83%A1%E3%83%A2#content_1_2)
-- [Wiki Grovyle JP - fushigi na mail S / o-takara memo](https://wiki.grovyle.net/pokedun3/?%E3%81%B5%E3%81%97%E3%81%8E%E3%81%AA%E3%83%A1%E3%83%BC%E3%83%ABS/%E3%81%8A%E3%81%9F%E3%81%8B%E3%82%89%E3%83%A1%E3%83%A2#content_1_1)
-- [Baumifstory](https://baumifstory.blog.fc2.com/blog-entry-453.html)
+Serve solo Python 3.9 o successivo, senza librerie esterne. Lo script controlla l'impronta SHA-1 dei file
+e avvisa se la fonte è cambiata.
+
+## Test
+
+```
+node --test                        # codificatore e traduzioni (Node 18 o successivo)
+python tests/ui_smoke.py           # pagina in un browser vero (richiede Playwright)
+```
+
+Il test del codificatore confronta 60 password con quelle prodotte dal generatore originale:
+per EU e NA i codici sono identici bit per bit.
+
+## Struttura
+
+| File | Contenuto |
+|---|---|
+| `index.html`, `style.css` | pagina |
+| `app.js` | interfaccia |
+| `lm.js` | codifica e decodifica delle password (EU, NA, JP) |
+| `lmgenerate.js` | tipi di missione e lettura del modulo |
+| `lmutils.js` | formattazione e nomi nella lingua corrente |
+| `lang/it.js`, `lang/en.js` | testi dell'interfaccia |
+| `data/` | testi e dati ufficiali del gioco (generati) |
+| `memo_gallery.js` | mappe dei Memo tesoro ed esempi reali |
+| `tools/estrai_testi.py` | estrazione dei testi da pret/pmd-sky |
+| `tests/` | test |
+
+## Da verificare
+
+- Il significato dei tipi di ricompensa 4-6 non coincide del tutto con la documentazione del gioco
+  ([pmdsky-debug](https://github.com/UsernameFodder/pmdsky-debug): 4 = strumento esclusivo, 5 = denaro nascosto,
+  6 = uovo o nuovo membro). Le etichette sono quelle del generatore originale.
+- Le stanze delle Lettere di sfida (145-160) e dei covi dei ricercati (161-165) vengono dal generatore storico,
+  che le indicava come "a memoria, potrebbe essere sbagliato".
+- Le password sono controllate matematicamente, non in gioco: una password valida può comunque essere
+  rifiutata se il dungeon non è sbloccato o se la combinazione non è ammessa.
+
+## Crediti
+
+- [RedCoal27/wondermail_pdm](https://github.com/RedCoal27/wondermail_pdm): interfaccia, mappe dei Memo tesoro, glitch dell'uovo.
+- Generatore storico di Wonder Mail S (codice di pubblico dominio) e la versione francese di [SombrAbsol](https://github.com/SombrAbsol/SombrAbsol.github.io).
+- [pret/pmd-sky](https://github.com/pret/pmd-sky): file di testo e dati del gioco.
+- [SkyTemple](https://github.com/SkyTemple/skytemple-files): posizione dei blocchi di testo nella versione europea.
+- [pmdsky-debug](https://github.com/UsernameFodder/pmdsky-debug): documentazione delle funzioni del gioco.
+- [Lai-brary](https://laioxy.github.io/wondermail/): tabella della regione giapponese, glitch dell'uovo.
+- [Pokémon Central Wiki](https://wiki.pokemoncentral.it/): nomi italiani delle forme alternative.
+
+*Pokémon Mystery Dungeon: Esploratori del Cielo* © Nintendo, Creatures, GAME FREAK, Spike Chunsoft.
+Progetto amatoriale senza scopo di lucro, non affiliato con i detentori dei diritti.
+I testi del gioco in `data/` restano di proprietà dei rispettivi titolari.
 
 ---
 
-# Generateur FR - Lettres Miracle S
+## English
 
-Generateur de Lettres Miracle S pour **Pokemon Donjon Mystere : Explorateurs du Ciel**.
-
-Le site permet de generer plusieurs types de missions Sky, avec des aides visuelles pour les **Memos tresor**, une interface FR/EN, et divers raccourcis pour les cas speciaux.
-
-## Fonctionnalites
-
-- generation de Lettres Miracle S pour Explorateurs du Ciel
-- prise en charge des missions normales, Memos tresor et Lettres de defi
-- interface en francais et en anglais
-- apercus visuels pour les Pokemon, objets et salles Memo tresor
-- site 100% statique, sans backend
-
-## Utilisation locale
-
-Ouvre `index.html` directement dans un navigateur moderne.
-
-## Structure rapide
-
-- `index.html` : page principale
-- `app.js` : logique UI
-- `style.css` : styles
-- `lmgenerate.js` : generation des codes
-- `memo_gallery.js` : donnees et cartographie des salles Memo tresor
-- `lang/` : systeme de langues
-- `assets/` : sprites et images
-
-## Credits et sources
-
-Le site a ete concu par **RedCoal** avec l'aide de GPT-5.4.
-
-Des erreurs peuvent encore etre presentes dans :
-
-- les textes
-- les labels
-- certaines interpretations de salles
-- certaines associations visuelles
-
-Sources principales :
-
-- [SombrAbsol.github.io](https://sombrabsol.github.io/)
-- [SombrAbsol.github.io - lmiracles](https://sombrabsol.github.io/EdC/lmiracles.html)
-- [Bulbapedia - Wonder Mail](https://bulbapedia.bulbagarden.net/wiki/Wonder_Mail)
-- [Bulbapedia - Job (Mystery Dungeon)](https://bulbapedia.bulbagarden.net/wiki/Job_%28Mystery_Dungeon%29)
-- [Bulbapedia - Explorers of the Sky](https://bulbapedia.bulbagarden.net/wiki/Pokemon_Mystery_Dungeon%3A_Explorers_of_the_Sky)
-- [Bulbapedia - North American and Australian Wonder Mail S distributions](https://bulbapedia.bulbagarden.net/wiki/List_of_North_American_and_Australian_Wonder_Mail_S_distributions_in_Pok%C3%A9mon_Mystery_Dungeon%3A_Explorers_of_Sky)
-- [Bulbapedia - Wonder Mail distributions in Time and Darkness](https://bulbapedia.bulbagarden.net/wiki/List_of_Wonder_Mail_distributions_in_Pok%C3%A9mon_Mystery_Dungeon%3A_Explorers_of_Time_and_Explorers_of_Darkness)
-- [The Warp Point](https://the-warp-point.blogspot.com/2009/12/pokemon-mystery-dungeon-explorers-of.html)
-- [Wiki Grovyle JP - o-takara memo](https://wiki.grovyle.net/pokedun3/?%E3%81%8A%E3%81%9F%E3%81%8B%E3%82%89%E3%83%A1%E3%83%A2#content_1_2)
-- [Wiki Grovyle JP - fushigi na mail S / o-takara memo](https://wiki.grovyle.net/pokedun3/?%E3%81%B5%E3%81%97%E3%81%8E%E3%81%AA%E3%83%A1%E3%83%BC%E3%83%ABS/%E3%81%8A%E3%81%9F%E3%81%8B%E3%82%89%E3%83%A1%E3%83%A2#content_1_1)
-- [Baumifstory](https://baumifstory.blog.fc2.com/blog-entry-453.html)
+Wonder Mail S password generator and reader for *Pokémon Mystery Dungeon: Explorers of Sky*, in Italian and
+English, using the official in-game names and descriptions extracted from the
+[pret/pmd-sky](https://github.com/pret/pmd-sky) decompilation (`tools/estrai_testi.py`, no ROM needed).
+Based on [RedCoal27/wondermail_pdm](https://github.com/RedCoal27/wondermail_pdm), with CRC-verified decoding,
+Japanese region support, field range checks and several bug fixes. Open `index.html` or run
+`python -m http.server`; run the tests with `node --test`.
