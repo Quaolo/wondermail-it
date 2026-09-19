@@ -297,7 +297,7 @@ window.WMSkyRegisterLocale('it', {
     sourceGrovyle: 'Wiki Grovyle: missioni Memo tesoro reali',
     sourceSombrAbsol: 'SombrAbsol: generatore francese storico',
     legalText: 'Pokémon Mystery Dungeon: Esploratori del Cielo © Nintendo, Creatures, GAME FREAK, Spike Chunsoft. I ritratti sono di Spike Chunsoft e degli artisti di PMDCollab (CC BY-NC 4.0). Progetto amatoriale senza scopo di lucro, non affiliato con i detentori dei diritti.',
-    originText: 'Nato da <a href="https://github.com/RedCoal27/wondermail_pdm" target="_blank" rel="noopener">wondermail_pdm</a> di RedCoal27, a sua volta basato sul generatore storico di Wonder Mail S di pubblico dominio.'
+    originText: 'Nato da <a href="https://github.com/RedCoal27/wondermail_pdm" target="_blank" rel="noopener">wondermail_pdm</a> di RedCoal27, a sua volta basato sul vecchio generatore di Wonder Mail S di pubblico dominio. Codice con <a href="LICENSE" target="_blank" rel="noopener">licenza MIT</a>.'
   },
 
   // Etichette dei tipi di missione, nell'ordine di WMSGenData.missionTypes.

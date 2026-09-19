@@ -297,7 +297,7 @@ window.WMSkyRegisterLocale('en', {
     sourceGrovyle: 'Grovyle wiki: real Treasure Memo missions',
     sourceSombrAbsol: 'SombrAbsol: historical French generator',
     legalText: 'Pokémon Mystery Dungeon: Explorers of Sky © Nintendo, Creatures, GAME FREAK, Spike Chunsoft. Portraits by Spike Chunsoft and the PMDCollab artists (CC BY-NC 4.0). Non-profit fan project, not affiliated with the rights holders.',
-    originText: 'Grown out of <a href="https://github.com/RedCoal27/wondermail_pdm" target="_blank" rel="noopener">wondermail_pdm</a> by RedCoal27, itself based on the historical public-domain Wonder Mail S generator.'
+    originText: 'Grown out of <a href="https://github.com/RedCoal27/wondermail_pdm" target="_blank" rel="noopener">wondermail_pdm</a> by RedCoal27, itself based on the old public-domain Wonder Mail S generator. Code under the <a href="LICENSE" target="_blank" rel="noopener">MIT license</a>.'
   },
 
   // Mission type labels, in the order of WMSGenData.missionTypes.
