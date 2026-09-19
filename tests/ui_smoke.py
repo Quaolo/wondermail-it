@@ -79,6 +79,14 @@ def generate(page):
     return page.input_value("#outputbox"), page.text_content("#statusLine")
 
 
+def rooms_generated(page, times: int = 15) -> set[int]:
+    rooms = set()
+    for _ in range(times):
+        generate(page)
+        rooms.add(decode_output(page, "eu")["struct"]["specialFloor"])
+    return rooms
+
+
 def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
     with sync_playwright() as p:
         browser = p.chromium.launch()
@@ -94,9 +102,13 @@ def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
         page.wait_for_timeout(800)
         label = " (senza rete)" if offline else ""
 
-        # Avvio in italiano
+        # Avvio in italiano, con la nuova disposizione
         check(page.evaluate("document.documentElement.lang") == "it", f"lingua predefinita italiana{label}")
         check("Missioni Speciali C" in page.title(), f"titolo italiano: {page.title()}")
+        check(page.is_hidden("#repoLink"), "pulsante del repository nascosto finché config.js non ha un indirizzo")
+        check("wondermail_pdm" in page.inner_html(".origin"), "riferimento al progetto originale in fondo alla pagina")
+        check(page.evaluate("!!(document.getElementById('readerCard').compareDocumentPosition(document.getElementById('genForm')) & Node.DOCUMENT_POSITION_FOLLOWING)"),
+              "«Leggi una password» viene prima del generatore")
         code, status = generate(page)
         check(code.count("\n") == 1 and len(code.replace("\n", "").replace(" ", "")) == 34, f"password generata subito: {code!r}")
         check("Europa" in status, f"stato: {status!r}")
@@ -104,6 +116,7 @@ def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
         check(bool(decoded and decoded["crcOk"]), "la password generata supera il controllo CRC (EU)")
         check(page.evaluate("getItemName(109)") == "Mela", "nomi ufficiali italiani (Mela)")
         check(page.evaluate("getDungeonName(1)") == "Grotta Marina", "dungeon ufficiali italiani (Grotta Marina)")
+        check(page.text_content("#jobTitle") == "Info missione", "anteprima con le frasi ufficiali (Info missione)")
 
         # Arbok resta Arbok (prima diventava Nidoran♂)
         set_select(page, "missionTypeBox", 0)
@@ -115,12 +128,13 @@ def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
         page.dispatch_event("#clientF", "change")
         generate(page)
         check(decode_output(page, "eu")["struct"]["client"] == 624, "Arbok femmina codificato come 624")
+        check(page.text_content("#jobObjective") == "Soccorri Arbok ♀.", f"obiettivo ufficiale: {page.text_content('#jobObjective')!r}")
 
         # Chansey non ha forma femminile separata: casella disattivata
         set_select(page, "clientBox", 113)
         check(page.is_disabled("#clientF"), "casella Femmina disattivata per Chansey")
 
-        # Lettera di sfida normale: il secondo Pokémon ora arriva nel codice
+        # Lettera di sfida normale: il secondo Pokémon arriva nel codice, la stanza è tra 150 e 154
         set_select(page, "missionTypeBox", 12)
         set_select(page, "missionSubTypeBox", 0)
         set_select(page, "clientBox", 6)
@@ -130,6 +144,17 @@ def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
         struct = decode_output(page, "eu")["struct"]
         check((struct["client"], struct["target"], struct["target2"]) == (6, 9, 3),
               f"Charizard/Blastoise/Venusaur nel codice: {(struct['client'], struct['target'], struct['target2'])}")
+        rooms = rooms_generated(page)
+        check(rooms <= set(range(150, 155)), f"stanze delle Lettere di sfida dal gioco (150-154): {sorted(rooms)}")
+        check(page.is_visible("#roomCard") and page.locator("#roomMap .mark-boss .cell-portrait").count() == 1,
+              "mappa della sfida con il ritratto dello sfidante")
+
+        # Covo del ricercato: stanze 160-164
+        set_select(page, "missionTypeBox", 10)
+        set_select(page, "missionSubTypeBox", 2)
+        rooms = rooms_generated(page)
+        check(rooms <= set(range(160, 165)), f"stanze dei covi dal gioco (160-164): {sorted(rooms)}")
+        check(page.locator("#roomPicker .room-option").count() == 6, "scelta tra «A caso» e 5 covi")
 
         # Valori fuori dai limiti: errore invece di un codice sbagliato
         set_select(page, "missionTypeBox", 0)
@@ -137,6 +162,7 @@ def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
         set_input(page, "specialFloor", 300)
         code, status = generate(page)
         check("255" in code and page.input_value("#compactOutput") == "", f"stanza 300 rifiutata: {code!r}")
+        check("non valida" in page.text_content("#jobObjective").lower(), "anteprima segnala la combinazione non valida")
         set_input(page, "specialFloor", "")
         set_select(page, "dungeonBox", 1)
         set_input(page, "floor", 50)
@@ -148,7 +174,7 @@ def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
         check("da 1 a 4" in code, f"piano non numerico rifiutato: {code!r}")
         set_input(page, "floor", 2)
 
-        # Preset: glitch dell'uovo (ricetta di Lai-brary) e Lettera di sfida di Mewtwo
+        # Preset: glitch dell'uovo (ricetta di Lai-brary)
         page.click('.preset-btn[data-preset="egg"]')
         set_select(page, "eggPokemonBox", 25)
         generate(page)
@@ -156,56 +182,80 @@ def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
         recipe = {k: struct[k] for k in ("missionType", "rewardType", "reward", "client", "target", "dungeon", "floor", "targetItem", "specialFloor")}
         check(recipe == {"missionType": 6, "rewardType": 5, "reward": 25, "client": 286, "target": 286,
                          "dungeon": 91, "floor": 0, "targetItem": 92, "specialFloor": 0}, f"ricetta dell'uovo di Pikachu: {recipe}")
+
+        # Preset di Mewtwo: la password si aggiorna da sola
         page.click('.preset-btn[data-preset="mewtwo"]')
-        generate(page)
+        page.wait_for_timeout(150)
         struct = decode_output(page, "eu")["struct"]
         check((struct["missionType"], struct["missionSpecial"], struct["client"], struct["specialFloor"]) == (11, 1, 150, 145),
-              f"Lettera di sfida di Mewtwo: {(struct['missionType'], struct['missionSpecial'], struct['client'], struct['specialFloor'])}")
+              f"Lettera di sfida di Mewtwo senza premere Genera: {(struct['missionType'], struct['missionSpecial'], struct['client'], struct['specialFloor'])}")
         check("Mewtwo" in page.text_content('.preset-btn[data-preset="mewtwo"]'), "etichetta del preset con il nome del boss")
+        check(page.text_content("#jobObjective") == "Sconfiggi Mewtwo.", f"obiettivo: {page.text_content('#jobObjective')!r}")
+        cells = page.locator("#roomMap .cell").count()
+        expected = page.evaluate("(() => { const r = WMSkyRooms.getRoom(145); return r.map.length * r.map[0].length; })()")
+        check(cells == expected, f"mappa della stanza 145 disegnata dai dati del gioco ({cells} caselle)")
 
         # Lettura di una password giapponese
         page.fill("#importCode", JP_CODES[0])
         page.click("#importCodeBtn")
-        status = page.text_content("#statusLine")
+        status = page.text_content("#importStatus")
         check("Giappone" in status, f"password JP riconosciuta: {status!r}")
         check(page.input_value("#regionBox") == "jp", "regione impostata su Giappone")
         check(page.evaluate("document.getElementById('missionTypeBox').value") == "13", "missione Memo tesoro riconosciuta")
         synced = page.evaluate("""() => {
-            const pairs = [['clientSearch', 'clientBox'], ['rewardItemSearch', 'rewardItemBox'], ['dungeonSearch', 'dungeonBox']];
+            const pairs = [['clientSearch', 'clientBox'], ['rewardItemSearch', 'rewardItemBox'], ['dungeonSearch', 'dungeonBox'], ['targetItemSearch', 'targetItemBox']];
             return pairs.every(([input, select]) => {
                 const box = document.getElementById(select);
                 return document.getElementById(input).value === box.options[box.selectedIndex].text;
             });
         }""")
         check(synced, "i campi di ricerca mostrano i valori letti dalla password")
+        check("Stanza 115" in page.text_content("#roomTitle"), f"stanza della password letta: {page.text_content('#roomTitle')!r}")
         page.fill("#importCode", "AAAA BBBB CCCC")
         page.click("#importCodeBtn")
-        check("non valida" in page.text_content("#statusLine"), "password inventata rifiutata")
+        check("non valida" in page.text_content("#importStatus"), "password inventata rifiutata")
 
-        # Memo tesoro: esempio reale convertito per la regione scelta
+        # Memo tesoro: committente libero, tesoro scelto, 30 stanze, esempio reale convertito
         set_select(page, "regionBox", "eu")
         page.click('.preset-btn[data-preset="memo"]')
-        page.evaluate("applyMemoPresetValue('115')")
-        page.wait_for_timeout(100)
-        example = page.text_content("#memoSpotlightCode") or ""
+        page.wait_for_timeout(150)
+        check(page.locator("#roomPicker .room-option").count() == 31, "scelta tra «A caso» e 30 stanze dei Memo tesoro")
+        page.evaluate("pickRoom('115')")
+        page.wait_for_timeout(150)
+        struct = decode_output(page, "eu")["struct"]
+        check(struct["targetItem"] == 136 and struct["client"] == struct["target"] and struct["client"] != 422,
+              f"Memo tesoro come quelli veri (tesoro {struct['targetItem']}, committente {struct['client']})")
+        example = page.text_content("#roomExampleCode") or ""
         converted = page.evaluate("(c) => { const r = WMSParser.decode(c); return r && { region: r.region, room: r.struct.specialFloor }; }", example)
         check(converted == {"region": "eu", "room": 115}, f"esempio della stanza 115 convertito in EU: {converted}")
+        page.evaluate("pickRoom('116')")
+        page.wait_for_timeout(150)
+        legend = page.text_content("#roomLegend")
+        check("Rafficotrappola" in legend and "Tecalusso con Gommaincanto" in legend, f"legenda con i nomi ufficiali: {legend[:80]!r}")
+
+        if screenshot_dir:
+            page.evaluate("document.getElementById('roomCard').scrollIntoView()")
+            page.screenshot(path=str(screenshot_dir / f"memo_it{'_offline' if offline else ''}.png"), full_page=False)
 
         # Ricerca con il nome inglese
-        page.click("#rewardItemSearch") if page.is_visible("#rewardItemSearch") else None
         results = page.evaluate("getSearchSuggestions(document.getElementById('rewardItemBox'), 'oran').map(s => s.text)")
         check("Baccarancia" in results, f"cercando 'oran' si trova Baccarancia: {results[:5]}")
 
-        if screenshot_dir:
-            page.evaluate("document.getElementById('memoVisuals').scrollIntoView()")
-            page.screenshot(path=str(screenshot_dir / f"memo_it{'_offline' if offline else ''}.png"), full_page=False)
-
         page.click('.preset-btn[data-preset="standard"]')
         check(page.input_value("#specialFloor") == "", "il preset azzera la stanza speciale")
+        check(page.is_hidden("#roomCard"), "nessuna stanza per le missioni normali")
 
         if screenshot_dir:
             page.evaluate("window.scrollTo(0, 0)")
             page.screenshot(path=str(screenshot_dir / f"pagina_it{'_offline' if offline else ''}.png"), full_page=True)
+
+        # Schermo di un telefono: niente scorrimento orizzontale
+        page.set_viewport_size({"width": 360, "height": 800})
+        page.click('.preset-btn[data-preset="memo"]')
+        page.wait_for_timeout(200)
+        overflow = page.evaluate("document.documentElement.scrollWidth - document.documentElement.clientWidth")
+        check(overflow <= 0, f"nessuno scorrimento orizzontale su telefono ({overflow}px)")
+        page.set_viewport_size({"width": 1280, "height": 900})
 
         # Passaggio all'inglese
         page.evaluate("applyLanguage('en')")
@@ -213,6 +263,7 @@ def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
         check(page.evaluate("getItemName(109)") == "Apple", "nomi ufficiali inglesi (Apple)")
         check("Wonder Mail S" in page.title(), f"titolo inglese: {page.title()}")
         check(page.evaluate("document.querySelector('[data-i18n=\"missionSection\"]').textContent") == "Mission", "testi statici in inglese")
+        check(page.text_content("#jobTitle") == "Job Summary", "anteprima con le frasi ufficiali inglesi")
         if screenshot_dir:
             page.evaluate("window.scrollTo(0, 0)")
             page.screenshot(path=str(screenshot_dir / "pagina_en.png"), full_page=False)

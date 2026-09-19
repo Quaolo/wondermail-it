@@ -20,14 +20,17 @@ function usedKeys() {
     for (const match of text.matchAll(regex)) keys.add(match[1]);
   };
   add(/\bt\('(\w+)'/g, read('app.js'));
+  add(/\bt\('(\w+)'/g, read('stanze.js'));
+  // setStatus('id', 'chiave', ...) e setStatus('id', condizione ? 'chiave1' : 'chiave2', ...)
+  for (const match of read('app.js').matchAll(/setStatus\('\w+',\s*([^,)]+)/g)) {
+    for (const key of match[1].matchAll(/'(\w+)'/g)) keys.add(key[1]);
+  }
   add(/translate\('(\w+)'|tr\('(\w+)'/g, read('lmgenerate.js'));
   for (const match of read('lmgenerate.js').matchAll(/tr\('(\w+)'/g)) keys.add(match[1]);
   add(/getLocaleMessage\('(\w+)'\)/g, read('lmutils.js'));
   add(/data-i18n(?:-html|-placeholder|-title)?="(\w+)"/g, read('index.html'));
   for (const field of window.WMSStruct) if (!field.noinclude) keys.add(`field_${field.name}`);
   for (const region of window.WMSParser.regions) keys.add(`region_${region}`);
-  for (const v of ['top', 'middle', 'bottom']) for (const h of ['left', 'center', 'right']) keys.add(`pos_${v}_${h}`);
-  for (const match of read('memo_gallery.js').matchAll(/"(?:noteKey|warningKey|observedLootKey)": "(\w+)"/g)) keys.add(match[1]);
   keys.delete(undefined);
   return keys;
 }

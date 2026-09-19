@@ -1,48 +1,9 @@
-
-
-const EXTRA_POKEMON_IMAGE_URLS = {
-  279: 'assets/pokemon-extra/celebi-shiny.png',
-  384: 'assets/pokemon-extra/kecleon-purple.png',
-  552: 'assets/pokemon-extra/primal-dialga.png',
-  535: 'https://img.pokemondb.net/sprites/home/normal/shaymin-sky.png',
-  536: 'https://img.pokemondb.net/sprites/home/normal/giratina-origin.png'
-};
-
-const EXTRA_POKEMON_IMAGE_BASE_IDS = {
-  552: 525,
-  555: 174,
-  556: 528,
-  557: 479,
-  558: 106,
-  559: 390,
-  560: 174,
-  561: 522,
-  562: 524,
-  563: 523,
-  564: 192,
-  565: 50,
-  566: 51,
-  567: 369,
-  568: 322,
-  569: 434,
-  570: 483,
-  571: 281,
-  572: 519,
-  573: 330,
-  574: 533,
-  575: 174,
-  576: 281,
-  577: 519,
-  578: 519,
-  579: 161,
-  580: 182
-};
-
+// Esegue fn a pagina pronta, dopo il resto di questo file (le costanti più in basso esistono già).
 function onReady(fn) {
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', fn);
   } else {
-    fn();
+    window.setTimeout(fn, 0);
   }
 }
 
@@ -241,6 +202,7 @@ function createSearchSuggestionImage(selectId, suggestion) {
   const image = document.createElement('img');
   image.className = 'search-suggestion-icon';
   image.alt = '';
+  image.loading = 'lazy';
   const payload = getSearchOptionImage(selectId, suggestion.value, suggestion.text);
   setImageElementSource(image, payload);
   image.addEventListener('error', () => {
@@ -550,74 +512,6 @@ function normalizePokemonId(monId) {
   return numeric >= 600 ? numeric - 600 : numeric;
 }
 
-function getPokemonImageOverride(monId) {
-  const normalized = normalizePokemonId(monId);
-  if (!Number.isFinite(normalized) || normalized < 0) return null;
-  if (EXTRA_POKEMON_IMAGE_URLS[normalized]) {
-    return {
-      type: 'url',
-      value: EXTRA_POKEMON_IMAGE_URLS[normalized]
-    };
-  }
-  if (EXTRA_POKEMON_IMAGE_BASE_IDS[normalized]) {
-    return {
-      type: 'base',
-      value: EXTRA_POKEMON_IMAGE_BASE_IDS[normalized]
-    };
-  }
-  return null;
-}
-
-function getPokemonSpriteDexId(monId) {
-  const override = getPokemonImageOverride(monId);
-  const normalized = override && override.type === 'base'
-    ? normalizePokemonId(override.value)
-    : normalizePokemonId(monId);
-  if (!Number.isFinite(normalized) || normalized < 1) return null;
-  if (window.WMSkyPokemonSpriteDex && window.WMSkyPokemonSpriteDex[normalized]) {
-    return window.WMSkyPokemonSpriteDex[normalized];
-  }
-  if (normalized <= 493) return normalized;
-  return null;
-}
-
-function getPokemonSpriteAsset(monId) {
-  const override = getPokemonImageOverride(monId);
-  if (override && override.type === 'url') return override.value;
-
-  const normalized = override && override.type === 'base'
-    ? normalizePokemonId(override.value)
-    : normalizePokemonId(monId);
-  if (!Number.isFinite(normalized) || normalized < 1) return null;
-  if (normalized === 201) return '201';
-  if (normalized >= 202 && normalized <= 226) {
-    const letter = String.fromCharCode(97 + (normalized - 201));
-    return `201-${letter}`;
-  }
-  if (normalized === 227) return '201-exclamation';
-  if (normalized === 228) return '201-question';
-  return String(getPokemonSpriteDexId(normalized));
-}
-
-function getPokemonImage(monId, label) {
-  const spriteAsset = getPokemonSpriteAsset(monId);
-  const fallback = buildPreviewBadge(label, 'pokemon');
-  const spriteSource = String(spriteAsset || '');
-  const isDirectAsset = spriteSource.startsWith('http')
-    || spriteSource.startsWith('assets/')
-    || spriteSource.startsWith('./')
-    || spriteSource.startsWith('/')
-    || spriteSource.startsWith('data:');
-  return {
-    src: spriteAsset
-      ? (isDirectAsset
-        ? spriteAsset
-        : `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${spriteAsset}.png`)
-      : fallback,
-    fallback
-  };
-}
-
 function getLocalizedDungeonName(dungeonId, fallbackLabel) {
   const numeric = parseInt(dungeonId, 10);
   if (!Number.isFinite(numeric)) return String(fallbackLabel || '');
@@ -891,10 +785,7 @@ function importDecodedStruct(result) {
 
   WMSGen.update();
   syncDungeonFloorLimit(true);
-  syncMemoSelectorFromSpecialFloor();
   refreshMissionUi();
-  updateSummary();
-  updateMemoVisuals();
 
   if (output) {
     output.value = prettyMailString(result.clean, 2, 7);
@@ -902,6 +793,7 @@ function importDecodedStruct(result) {
   if (compact) {
     compact.value = result.clean;
   }
+  updateOutputCards();
 
   // Le restrizioni di squadra non sono gestite dal modulo: rigenerando andrebbero perse.
   const hasRestriction = struct.restriction !== 0 || struct.restrictionType !== 0;
@@ -1132,32 +1024,6 @@ function relabelRewardTypeSelect() {
   });
 }
 
-function localizeMemoOption(option, index, value) {
-  if (!option) return;
-  if (!value) {
-    option.text = t('auto');
-    option.dataset.shortLabel = t('auto');
-    option.dataset.floorLabel = 'Auto';
-    option.dataset.previewTitle = t('auto');
-    return;
-  }
-
-  option.text = t('previewOption', { variant: index + 1, floor: value });
-  option.dataset.shortLabel = `V${index + 1}`;
-  option.dataset.floorLabel = String(value);
-  option.dataset.previewTitle = t('previewTitle', { variant: index + 1, floor: value });
-}
-
-function relabelMemoSelectorOptions() {
-  const select = document.getElementById('memoPreset');
-  if (!select) return;
-
-  // La prima opzione è "Automatico": le varianti partono dalla seconda.
-  Array.from(select.options).forEach((option, index) => {
-    localizeMemoOption(option, index - 1, option.value);
-  });
-}
-
 function updateLanguagePicker() {
   const picker = document.getElementById('languagePicker');
   const toggle = document.getElementById('languagePickerToggle');
@@ -1286,7 +1152,8 @@ function applyStaticTranslations() {
 
   // Pulsanti delle Lettere di sfida: il nome del leggendario è quello ufficiale del gioco.
   document.querySelectorAll('.preset-btn[data-boss]').forEach((button) => {
-    button.textContent = t('presetChallenge', { boss: getMonName(parseInt(button.dataset.boss, 10)) });
+    const label = button.querySelector('.preset-label');
+    if (label) label.textContent = t('presetChallenge', { boss: getMonName(parseInt(button.dataset.boss, 10)) });
   });
 
   updateLanguagePicker();
@@ -1300,7 +1167,6 @@ function relabelLocalizedControls() {
   ['clientBox', 'targetBox', 'target2Box'].forEach(relabelPokemonSelect);
   relabelEggPokemonSelect();
   ['targetItemBox', 'rewardItemBox'].forEach(relabelItemSelect);
-  relabelMemoSelectorOptions();
   refreshSearchBoxSelections();
 }
 
@@ -1318,16 +1184,10 @@ function applyLanguage(nextLanguage, options = {}) {
   renderLanguagePicker();
   applyStaticTranslations();
   relabelLocalizedControls();
-  renderMemoPresetPicker();
-  updateMemoPresetPicker();
+  decoratePresetButtons();
   refreshMissionUi();
-  updateSummary();
-  updateMemoVisuals();
-
-  const status = document.getElementById('statusLine');
-  if (status && !document.getElementById('outputbox')?.value.trim()) {
-    status.textContent = t('statusDefault');
-  }
+  updateOutputCards();
+  Object.keys(statusMessages).forEach(renderStatus);
 }
 
 // Icona indicativa a partire dal nome inglese ufficiale (le parole chiave sono in inglese).
@@ -1478,12 +1338,15 @@ function updateMissionFieldVisibility() {
   const rewardType = parseInt(document.getElementById('rewardTypeBox')?.value || '0', 10);
   const eggGlitch = isEggGlitchEnabled();
   const clientFixed = hasOwn(typeData, 'forceClient');
-  const targetFixed = !!typeData.clientIsTarget || hasOwn(typeData, 'forceTarget');
+  const targetFixed = hasOwn(typeData, 'forceTarget');
+  // Se il bersaglio coincide con il committente il campo non serve.
+  const targetSameAsClient = !!typeData.clientIsTarget || (targetFixed && typeData.forceTarget === typeData.forceClient);
 
   setFieldVisibility('missionTypeField', !eggGlitch);
   setFieldVisibility('dungeonField', !eggGlitch);
   setFieldVisibility('floorField', !eggGlitch);
-  setFieldVisibility('memoSelectorWrap', !eggGlitch && isTreasureMemoType(typeData));
+  setFieldVisibility('floorLimitHint', !eggGlitch);
+  setFieldVisibility('missionDifficultyHint', !eggGlitch);
   const advancedPanel = document.getElementById('advancedOptionsPanel');
   if (advancedPanel) advancedPanel.classList.toggle('hidden', eggGlitch);
   const targetSection = document.getElementById('targetSectionCard');
@@ -1491,6 +1354,7 @@ function updateMissionFieldVisibility() {
 
   setFieldVisibility('allPokemonFormsField', !eggGlitch);
   setFieldPreviewOnly('clientField', !eggGlitch && clientFixed);
+  setFieldVisibility('targetField', !eggGlitch && !targetSameAsClient);
   setFieldPreviewOnly('targetField', !eggGlitch && targetFixed);
   setFieldVisibility('target2', !eggGlitch && !!typeData.useTarget2);
   setFieldVisibility('targetItemField', !eggGlitch && !!typeData.useTargetItem);
@@ -1498,6 +1362,7 @@ function updateMissionFieldVisibility() {
   setFieldVisibility('rewardItemField', !eggGlitch && !typeData.noReward && rewardType >= 1 && rewardType <= 4);
   setFieldVisibility('eggPokemonField', eggGlitch);
   setFieldVisibility('eggHelpCard', eggGlitch);
+  updateTargetItemLabel(typeData);
 }
 
 function getPokemonPreviewData(selectId, femaleId, forcedId, label, meta) {
@@ -1539,48 +1404,9 @@ function refreshMissionUi() {
   syncDungeonFloorLimit();
   updateMissionDifficultyHint();
   updateEntityPreviews();
+  updateRoomPicker();
   // I menu cambiati dal codice (preset, lettura di una password) non avvisano i campi di ricerca.
   refreshSearchBoxSelections();
-}
-
-function isTreasureMemoType(typeData) {
-  return !!typeData && typeData.mainType === 12;
-}
-
-function getMemoGallery() {
-  return Array.isArray(window.MemoRoomGallery) ? window.MemoRoomGallery : [];
-}
-
-function getMemoSpecialFloor() {
-  const specialFloor = document.getElementById('specialFloor');
-  const value = parseInt(specialFloor && specialFloor.value ? specialFloor.value : '', 10);
-  return Number.isFinite(value) ? value : null;
-}
-
-function getMemoRoomBySpecialFloor(specialFloor) {
-  return getMemoGallery().find((entry) => entry.specialFloor === specialFloor) || null;
-}
-
-function findMemoToken(room, token) {
-  if (!room || !Array.isArray(room.grid)) return null;
-  for (let y = 0; y < room.grid.length; y += 1) {
-    const x = room.grid[y].indexOf(token);
-    if (x >= 0) return { x, y };
-  }
-  return null;
-}
-
-function countMemoTokens(room, token) {
-  if (!room || !Array.isArray(room.grid)) return 0;
-  return room.grid.reduce((total, row) => (
-    total + row.split('').filter((cell) => cell === token).length
-  ), 0);
-}
-
-function getMemoWarning(room) {
-  if (!room) return '';
-  if (room.warningKey) return t(room.warningKey);
-  return room.warning || '';
 }
 
 function resolveInitialLanguage() {
@@ -1594,6 +1420,8 @@ function resolveInitialLanguage() {
 
 // Mela: ricompensa predefinita, così la combinazione iniziale è subito valida.
 const DEFAULT_REWARD_ITEM = 109;
+// Gommaincanto: il tesoro più comune nei Memo tesoro reali.
+const DEFAULT_TREASURE_ITEM = 136;
 
 onReady(() => {
   currentLanguage = resolveInitialLanguage();
@@ -1607,8 +1435,8 @@ onReady(() => {
   relabelItemSelect('targetItemBox');
   relabelItemSelect('rewardItemBox');
   setSelectByValue(document.getElementById('rewardItemBox'), DEFAULT_REWARD_ITEM);
+  setSelectByValue(document.getElementById('targetItemBox'), DEFAULT_TREASURE_ITEM);
   setSelectedRegion('eu');
-  populateMemoSelector();
 
   const watchedIds = [
     'missionTypeBox', 'missionSubTypeBox', 'dungeonBox', 'floor', 'clientBox', 'clientF',
@@ -1630,30 +1458,18 @@ onReady(() => {
         WMSGen.fillSubTypeList();
         // La stanza speciale dipende dal tipo di missione: non portarla da un tipo all'altro.
         document.getElementById('specialFloor').value = '';
+        // Uno strumento da lancio non può essere lo strumento obiettivo: meglio partire da uno valido.
+        const targetItem = document.getElementById('targetItemBox');
+        if (targetItem && WMSGenData.badTargetItems.includes(parseInt(targetItem.value, 10))) {
+          setSelectByValue(targetItem, DEFAULT_TREASURE_ITEM);
+        }
       }
       WMSGen.update();
-
-      const typeData = getCurrentTypeData();
-      const memoWrap = document.getElementById('memoSelectorWrap');
-      if (memoWrap) {
-        memoWrap.classList.toggle('hidden', !isTreasureMemoType(typeData));
-      }
-      if (id === 'specialFloor' || id === 'missionTypeBox' || id === 'missionSubTypeBox') {
-        syncMemoSelectorFromSpecialFloor();
-      }
-
       refreshMissionUi();
-      updateSummary();
-      updateMemoVisuals();
       scheduleLiveGeneration();
     });
     node.addEventListener('input', () => {
-      if (id === 'specialFloor') {
-        syncMemoSelectorFromSpecialFloor();
-      }
       refreshMissionUi();
-      updateSummary();
-      updateMemoVisuals();
       scheduleLiveGeneration(['floor', 'specialFloor', 'flavorText'].includes(id) ? 220 : 120);
     });
   });
@@ -1663,7 +1479,6 @@ onReady(() => {
     rebuildPokemonLists();
     WMSGen.update();
     refreshMissionUi();
-    updateSummary();
     scheduleLiveGeneration();
   });
 
@@ -1673,16 +1488,6 @@ onReady(() => {
     }
     WMSGen.update();
     refreshMissionUi();
-    updateSummary();
-    scheduleLiveGeneration();
-  });
-
-  document.getElementById('memoPreset').addEventListener('change', (event) => {
-    const specialFloor = document.getElementById('specialFloor');
-    specialFloor.value = event.target.value;
-    refreshMissionUi();
-    updateSummary();
-    updateMemoVisuals();
     scheduleLiveGeneration();
   });
 
@@ -1711,167 +1516,27 @@ onReady(() => {
 
   applyPreset('standard');
   WMSGen.update();
-  document.getElementById('memoSelectorWrap').classList.add('hidden');
-  syncMemoSelectorFromSpecialFloor();
   refreshMissionUi();
-  updateSummary();
-  updateMemoVisuals();
   generateCode();
-});
-
-function getMemoPresetOption(optionOrValue) {
-  const select = document.getElementById('memoPreset');
-  if (!select) return null;
-
-  if (!optionOrValue) {
-    return select.options[select.selectedIndex] || select.options[0] || null;
-  }
-
-  if (typeof optionOrValue === 'string' || typeof optionOrValue === 'number') {
-    const value = String(optionOrValue);
-    return Array.from(select.options).find((option) => option.value === value) || null;
-  }
-
-  return optionOrValue;
-}
-
-function closeMemoPresetMenu() {
-  const toggle = document.getElementById('memoPresetToggle');
-  const panel = document.getElementById('memoPresetMenu');
-  if (!toggle || !panel) return;
-  toggle.setAttribute('aria-expanded', 'false');
-  panel.classList.add('hidden');
-  panel.closest('section')?.classList.remove('memo-picker-open');
-  panel.style.removeProperty('top');
-  panel.style.removeProperty('left');
-  panel.style.removeProperty('right');
-  panel.style.removeProperty('max-height');
-  renderMemoPresetPreview();
-}
-
-function toggleMemoPresetMenu(forceOpen) {
-  const toggle = document.getElementById('memoPresetToggle');
-  const panel = document.getElementById('memoPresetMenu');
-  if (!toggle || !panel) return;
-
-  const shouldOpen = typeof forceOpen === 'boolean'
-    ? forceOpen
-    : toggle.getAttribute('aria-expanded') !== 'true';
-
-  toggle.setAttribute('aria-expanded', shouldOpen ? 'true' : 'false');
-  panel.classList.toggle('hidden', !shouldOpen);
-  panel.closest('section')?.classList.toggle('memo-picker-open', shouldOpen);
-  if (shouldOpen) {
-    renderMemoPresetPreview();
-  }
-}
-
-function applyMemoPresetValue(value) {
-  const select = document.getElementById('memoPreset');
-  if (!select) return;
-
-  if (!setSelectByValue(select, String(value || ''))) {
-    select.selectedIndex = 0;
-  }
-
-  updateMemoPresetPicker();
-  select.dispatchEvent(new Event('change', { bubbles: true }));
-  closeMemoPresetMenu();
-}
-
-function syncMemoSelectorFromSpecialFloor() {
-  const memoSelect = document.getElementById('memoPreset');
-  const specialFloor = document.getElementById('specialFloor');
-  if (!memoSelect || !specialFloor) return;
-
-  const current = String(specialFloor.value || '');
-  if (!setSelectByValue(memoSelect, current)) {
-    memoSelect.selectedIndex = 0;
-  }
-
-  updateMemoPresetPicker();
-}
-
-onReady(() => {
-  const picker = document.getElementById('memoPresetPicker');
-  const toggle = document.getElementById('memoPresetToggle');
-  const select = document.getElementById('memoPreset');
-
-  renderMemoPresetPicker();
-  updateMemoPresetPicker();
-
-  if (toggle) {
-    toggle.addEventListener('click', () => toggleMemoPresetMenu());
-  }
-
-  if (select) {
-    select.addEventListener('change', updateMemoPresetPicker);
-  }
-
-  document.addEventListener('click', (event) => {
-    if (!picker || picker.contains(event.target)) return;
-    closeMemoPresetMenu();
-  });
-
-  document.addEventListener('keydown', (event) => {
-    if (event.key === 'Escape') {
-      closeMemoPresetMenu();
-    }
-  });
-
-  ['missionTypeBox', 'missionSubTypeBox', 'specialFloor'].forEach((id) => {
-    const node = document.getElementById(id);
-    if (!node) return;
-    node.addEventListener('change', closeMemoPresetMenu);
-    node.addEventListener('input', closeMemoPresetMenu);
-  });
 });
 
 function updateEntityPreviews() {
   const typeData = getCurrentTypeData();
   if (!typeData) return;
 
-  const clientMeta = hasOwn(typeData, 'forceClient')
-    ? t('forcedMissionPokemon')
-    : (document.getElementById('clientF')?.checked ? t('activeFemaleVersion') : t('activeSelection'));
-
-  renderEntityPreview('clientPreview', getPokemonPreviewData(
-    'clientBox',
-    'clientF',
-    typeData.forceClient,
-    t('clientLabel'),
-    clientMeta
-  ));
-
-  const targetMeta = typeData.clientIsTarget
-    ? t('samePokemonAsClient')
-    : hasOwn(typeData, 'forceTarget')
-      ? t('forcedMissionPokemon')
-      : (document.getElementById('targetF')?.checked ? t('activeFemaleVersion') : t('activeSelection'));
-
-  const targetPreview = typeData.clientIsTarget
-    ? getPokemonPreviewData('clientBox', 'clientF', typeData.forceClient, t('targetLabel'), targetMeta)
-    : getPokemonPreviewData('targetBox', 'targetF', typeData.forceTarget, t('targetLabel'), targetMeta);
-
-  renderEntityPreview('targetPreview', targetPreview);
-
-  renderEntityPreview(
-    'target2Preview',
-    typeData.useTarget2
-      ? getPokemonPreviewData(
-        'target2Box',
-        'target2F',
-        undefined,
-        t('target2PreviewLabel'),
-        document.getElementById('target2F')?.checked ? t('activeFemaleVersion') : t('activeSelection')
-      )
-      : null
-  );
+  // Pokémon: l'anteprima serve solo quando il Pokémon è imposto dalla missione (il campo di ricerca è
+  // nascosto); negli altri casi c'è già il ritratto accanto al campo e nell'anteprima della missione.
+  renderEntityPreview('clientPreview', hasOwn(typeData, 'forceClient')
+    ? getPokemonPreviewData('clientBox', 'clientF', typeData.forceClient, t('clientLabel'), t('forcedMissionPokemon'))
+    : null);
+  renderEntityPreview('targetPreview', hasOwn(typeData, 'forceTarget')
+    ? getPokemonPreviewData('targetBox', 'targetF', typeData.forceTarget, t('targetLabel'), t('forcedMissionPokemon'))
+    : null);
 
   renderEntityPreview(
     'targetItemPreview',
     typeData.useTargetItem
-      ? getItemPreviewData('targetItemBox', t('targetItemLabel'), t('currentSelectedItem'), false)
+      ? getItemPreviewData('targetItemBox', getTargetItemLabel(typeData), t('currentSelectedItem'), false)
       : null
   );
 
@@ -1891,199 +1556,17 @@ function updateEntityPreviews() {
   );
 }
 
-function getMemoFlagLabels(room) {
-  if (!room || !room.flags) return [];
-
-  const labels = [];
-  if (room.flags.player) labels.push(t('flagPlayer'));
-  if (room.flags.key) labels.push(t('flagKey'));
-  if (room.flags.water) labels.push(t('flagWater'));
-  if (room.flags.breakWall) labels.push(t('flagBreakWall'));
-  if (room.flags.chestnut) labels.push(t('flagChestnut'));
-  if (room.flags.wind) labels.push(t('flagWind'));
-  if (room.flags.warp) labels.push(t('flagWarp'));
-  return labels;
-}
-
-function describeMemoPosition(point, room) {
-  if (!point || !room || !room.width || !room.height) return '';
-
-  const horizontal = point.x < room.width / 3 ? 'left'
-    : point.x >= (room.width * 2) / 3 ? 'right'
-      : 'center';
-  const vertical = point.y < room.height / 3 ? 'top'
-    : point.y >= (room.height * 2) / 3 ? 'bottom'
-      : 'middle';
-
-  return t(`pos_${vertical}_${horizontal}`);
-}
-
-function buildMemoDescription(room) {
-  if (!room) {
-    return t('chooseVariantToShow');
-  }
-  if (room.missingMap) {
-    const parts = [t('missingRoomDescription')];
-    if (room.observedLootKey) {
-      parts.push(t(room.observedLootKey));
-    }
-    return parts.join(' ');
-  }
-
-  const parts = [t('mapSize', { width: room.width, height: room.height })];
-  const treasure = findMemoToken(room, 'T');
-  const stairs = findMemoToken(room, 'S');
-  const player = findMemoToken(room, 'P');
-  const luxuryChestCount = countMemoTokens(room, 'L');
-  const flags = getMemoFlagLabels(room);
-
-  if (treasure) parts.push(t('treasurePosition', { position: describeMemoPosition(treasure, room) }));
-  if (stairs) parts.push(t('stairsPosition', { position: describeMemoPosition(stairs, room) }));
-  if (player) parts.push(t('playerPosition', { position: describeMemoPosition(player, room) }));
-  if (luxuryChestCount) parts.push(t('luxuryChestCount', { count: luxuryChestCount }));
-  if (flags.length) {
-    parts.push(t('sourceMarker', { flags: flags.join(', ') }));
-  } else {
-    parts.push(t('noSpecialMarker'));
-  }
-  if (room.noteKey) {
-    parts.push(t(room.noteKey));
-  }
-
-  return parts.join(' ');
-}
-
-function renderMemoFeatureList(container, room) {
-  if (!container) return;
-  container.innerHTML = '';
-
-  const labels = room && !room.missingMap ? getMemoFlagLabels(room) : [t('sourceIncomplete')];
-  if (room && room.observedLootKey) {
-    labels.push(t(room.observedLootKey));
-  }
-  if (room && room.noteKey) {
-    labels.push(t(room.noteKey));
-  }
-
-  labels.forEach((label) => {
-    const chip = document.createElement('span');
-    chip.className = 'memo-feature';
-    chip.textContent = label;
-    container.appendChild(chip);
-  });
-}
-
-function renderMemoMap(container, room, large) {
-  if (!container) return;
-  container.innerHTML = '';
-  container.classList.toggle('memo-map-empty', !room || room.missingMap || !room.grid || !room.grid.length);
-
-  if (!room || room.missingMap || !room.grid || !room.grid.length) {
-    container.textContent = room && room.missingMap ? t('mapMissing') : t('chooseVariant');
-    return;
-  }
-
-  const size = large ? (room.width >= 20 ? 14 : 18) : (room.width >= 20 ? 9 : 11);
-  container.style.setProperty('--memo-cols', String(room.width));
-  container.style.setProperty('--memo-cell-size', `${size}px`);
-
-  const labels = {
-    '#': { className: 'wall', text: '', label: t('tileWall') },
-    '.': { className: 'floor', text: '', label: t('tileFloor') },
-    '~': { className: 'water', text: '', label: t('tileWater') },
-    'S': { className: 'stairs', text: 'S', label: t('tileStairs') },
-    'T': { className: 'treasure', text: 'T', label: t('tileTreasure') },
-    'L': { className: 'luxurychest', text: 'L', label: t('tileLuxuryChest') },
-    'P': { className: 'player', text: 'P', label: t('tilePlayer') },
-    'K': { className: 'key', text: 'K', label: t('tileKey') },
-    'B': { className: 'breakwall', text: 'B', label: t('tileBreakWall') },
-    'C': { className: 'chestnut', text: 'C', label: t('tileChestnut') },
-    'F': { className: 'wind', text: 'V', label: t('tileWind') },
-    'W': { className: 'warp', text: 'W', label: t('tileWarp') }
-  };
-
-  room.grid.forEach((row) => {
-    row.split('').forEach((token) => {
-      const info = labels[token] || labels['.'];
-      const cell = document.createElement('span');
-      cell.className = `memo-tile memo-tile-${info.className}`;
-      cell.textContent = info.text;
-      cell.title = info.label;
-      cell.setAttribute('aria-label', info.label);
-      cell.dataset.tooltip = info.label;
-      container.appendChild(cell);
-    });
-  });
-}
-
-function updateSummary() {
-  const summary = document.getElementById('summaryText');
-  if (!summary) return;
-
-  const typeData = getCurrentTypeData();
-  if (!typeData) {
-    summary.textContent = t('summaryEmpty');
-    return;
-  }
-
-  const mission = textOfSelected('missionTypeBox');
-  const subWrap = document.getElementById('subType');
-  const subtype = subWrap && subWrap.style.display !== 'none' ? textOfSelected('missionSubTypeBox') : '';
-  const dungeon = textOfSelected('dungeonBox');
-  const floor = document.getElementById('floor').value || '1';
-  const region = getRegionName(getSelectedRegion());
-  const client = monNameFromSelect('clientBox', 'clientF', typeData.forceClient);
-  const target = typeData.clientIsTarget ? client : monNameFromSelect('targetBox', 'targetF', typeData.forceTarget);
-  const difficulty = isEggGlitchEnabled() ? null : getMissionDifficultyInfo(typeData);
-
-  const parts = [`${mission}${subtype && subtype !== '-' ? ` - ${subtype}` : ''}`, `${t('regionLabel')} ${region}`];
-
-  if (isEggGlitchEnabled()) {
-    parts.push(t('eggGlitchRecipe'));
-  } else {
-    parts.push(t('floorSummary', { dungeon, floor }));
-    parts.push(t('clientSummary', { name: client }));
-    if (difficulty) {
-      parts.push(t('difficultySummary', { rank: difficulty.rank, points: difficulty.points }));
-    }
-  }
-
-  if (!isEggGlitchEnabled() && (!typeData.clientIsTarget || typeData.forceTarget !== undefined)) {
-    parts.push(t('targetSummary', { name: target }));
-  }
-  if (!isEggGlitchEnabled() && typeData.useTarget2) {
-    parts.push(t('target2Summary', { name: monNameFromSelect('target2Box', 'target2F') }));
-  }
-  if (!isEggGlitchEnabled() && typeData.useTargetItem) {
-    parts.push(t('targetItemSummary', { name: textOfSelected('targetItemBox') }));
-  }
-  if (!isEggGlitchEnabled() && !typeData.noReward) {
-    parts.push(t('rewardSummary', { name: textOfSelected('rewardTypeBox') }));
-  }
-  if (isEggGlitchEnabled()) {
-    parts.push(t('eggGlitchSummary', { name: textOfSelected('eggPokemonBox') }));
-  }
-  if (isTreasureMemoType(typeData)) {
-    const memoPreset = document.getElementById('memoPreset');
-    const specialFloor = document.getElementById('specialFloor').value || '';
-    const label = memoPreset && memoPreset.selectedIndex > 0
-      ? memoPreset.options[memoPreset.selectedIndex].text
-      : (specialFloor ? t('specialFloorFull', { floor: specialFloor }) : t('auto'));
-    parts.push(t('memoSummary', { name: label }));
-  }
-
-  summary.textContent = parts.join(' · ');
-}
-
 function generateCode() {
   const output = document.getElementById('outputbox');
   const compact = document.getElementById('compactOutput');
-  const status = document.getElementById('statusLine');
+  const card = document.getElementById('resultCard');
 
   const showErrors = (errors) => {
     output.value = errors.map((error) => `• ${error}`).join('\n');
     compact.value = '';
-    status.textContent = t('blockedCombination');
+    setStatus('statusLine', 'blockedCombination', null, 'error');
+    if (card) card.classList.add('has-errors');
+    updateOutputCards();
   };
 
   const errors = WMSGen.verify();
@@ -2106,7 +1589,10 @@ function generateCode() {
 
   output.value = pretty;
   compact.value = compactCode(pretty);
-  status.textContent = t('generatedFor', { region: getRegionName(getSelectedRegion()) });
+  const region = getSelectedRegion();
+  setStatus('statusLine', 'generatedFor', () => ({ region: getRegionName(region) }));
+  if (card) card.classList.remove('has-errors');
+  updateOutputCards();
 }
 
 let liveGenerateTimer = null;
@@ -2123,260 +1609,65 @@ function scheduleLiveGeneration(delay = 0) {
   }, Math.max(0, delay));
 }
 
+// Messaggi di stato: si ricordano chiave e valori, così cambiando lingua vengono ritradotti.
+const statusMessages = {};
+
+function renderStatus(id) {
+  const node = document.getElementById(id);
+  const entry = statusMessages[id];
+  if (!node) return;
+  node.textContent = entry ? t(entry.key, typeof entry.values === 'function' ? entry.values() : entry.values) : '';
+  node.dataset.state = (entry && entry.state) || '';
+}
+
+function setStatus(id, key, values, state) {
+  statusMessages[id] = key ? { key, values, state } : null;
+  renderStatus(id);
+}
+
 function importCode() {
   const input = document.getElementById('importCode');
-  const status = document.getElementById('statusLine');
-  if (!input || !status) return;
+  if (!input) return;
 
   const raw = input.value.trim();
   if (!raw) {
-    status.textContent = t('importCodeEmpty');
+    setStatus('importStatus', 'importCodeEmpty', null, 'error');
     return;
   }
 
   const decoded = detectWonderMailCode(raw);
   if (!decoded) {
-    status.textContent = t('importCodeInvalid');
+    setStatus('importStatus', 'importCodeInvalid', null, 'error');
     return;
   }
 
   const fullyMapped = importDecodedStruct(decoded);
-  const region = getRegionName(decoded.region);
-  status.textContent = fullyMapped
-    ? t('importCodeOk', { region })
-    : t('importCodePartial', { region });
+  const values = () => ({ region: getRegionName(decoded.region) });
+  setStatus('importStatus', fullyMapped ? 'importCodeOk' : 'importCodePartial', values, fullyMapped ? 'ok' : 'warning');
+  setStatus('statusLine', null);
+  const card = document.getElementById('resultCard');
+  if (card) card.classList.remove('has-errors');
+  const job = document.getElementById('jobCard');
+  if (job) {
+    job.classList.remove('flash');
+    void job.offsetWidth;
+    job.classList.add('flash');
+  }
 }
 
 async function copyFrom(id) {
   const el = document.getElementById(id);
-  const status = document.getElementById('statusLine');
   if (!el || !el.value.trim()) {
-    status.textContent = t('nothingToCopy');
+    setStatus('statusLine', 'nothingToCopy', null, 'error');
     return;
   }
+  const compact = id === 'compactOutput';
   try {
     await navigator.clipboard.writeText(el.value.trim());
-    status.textContent = id === 'compactOutput' ? t('compactCopied') : t('codeCopied');
+    setStatus('statusLine', compact ? 'compactCopied' : 'codeCopied', null, 'ok');
   } catch (e) {
-    status.textContent = t('copyFailed');
+    setStatus('statusLine', 'copyFailed', null, 'error');
   }
-}
-
-function updateMemoVisuals() {
-  const section = document.getElementById('memoVisuals');
-  const lead = document.getElementById('memoVisualLead');
-  const badge = document.getElementById('memoSpotlightBadge');
-  const title = document.getElementById('memoSpotlightTitle');
-  const description = document.getElementById('memoSpotlightDescription');
-  const meta = document.getElementById('memoSpotlightMeta');
-  const warning = document.getElementById('memoSpotlightWarning');
-  const location = document.getElementById('memoSpotlightLocation');
-  const code = document.getElementById('memoSpotlightCode');
-  const map = document.getElementById('memoSpotlightMap');
-  const features = document.getElementById('memoSpotlightFeatures');
-  const grid = document.getElementById('memoGalleryGrid');
-  if (!section || !lead || !badge || !title || !description || !meta || !warning || !location || !code || !map || !features || !grid) return;
-
-  const enabled = isTreasureMemoType(getCurrentTypeData());
-  section.classList.toggle('hidden', !enabled);
-  if (!enabled) return;
-
-  const specialFloor = getMemoSpecialFloor();
-  const entry = specialFloor ? getMemoRoomBySpecialFloor(specialFloor) : null;
-  const memoSelect = document.getElementById('memoPreset');
-  const currentLabel = memoSelect && memoSelect.selectedIndex > 0
-    ? memoSelect.options[memoSelect.selectedIndex].text
-    : (specialFloor ? t('specialFloorFull', { floor: specialFloor }) : t('auto'));
-
-  grid.innerHTML = '';
-  grid.classList.add('hidden');
-
-  if (!specialFloor) {
-    lead.textContent = t('memoChooseFloor');
-    badge.textContent = t('waiting');
-    title.textContent = t('noRoomSelected');
-    description.textContent = t('roomMapAppears');
-    meta.textContent = '';
-    warning.textContent = '';
-    warning.classList.add('hidden');
-    location.textContent = '';
-    code.textContent = '';
-    code.classList.add('hidden');
-    features.innerHTML = '';
-    renderMemoMap(map, null, true);
-    return;
-  }
-
-  if (!entry) {
-    lead.textContent = t('memoMissingInData', { label: currentLabel });
-    badge.textContent = t('missingSource');
-    title.textContent = t('roomTitle', { floor: specialFloor });
-    description.textContent = t('noUsableMap');
-    meta.textContent = '';
-    warning.textContent = '';
-    warning.classList.add('hidden');
-    location.textContent = '';
-    code.textContent = '';
-    code.classList.add('hidden');
-    features.innerHTML = '';
-    renderMemoMap(map, null, true);
-    return;
-  }
-
-  lead.textContent = entry.expertOnly
-    ? t('memoUsesRoomExpert', { label: currentLabel, floor: entry.specialFloor })
-    : t('memoUsesRoom', { label: currentLabel, floor: entry.specialFloor });
-  badge.textContent = t('specialFloorFull', { floor: specialFloor });
-  title.textContent = t('roomTitle', { floor: entry.specialFloor });
-  description.textContent = buildMemoDescription(entry);
-  meta.textContent = entry.missingMap
-    ? t('memoMissingPage')
-    : entry.reconstructedFromScreens
-      ? t('memoReconstructed', { width: entry.width, height: entry.height })
-      : t('memoFormat', { width: entry.width, height: entry.height });
-  warning.textContent = getMemoWarning(entry);
-  warning.classList.toggle('hidden', !getMemoWarning(entry));
-
-  const example = getMemoRealExample(entry.specialFloor);
-  if (example) {
-    const region = getSelectedRegion();
-    location.textContent = t('memoExample', {
-      dungeon: getDungeonName(example.dungeon),
-      floor: example.floor,
-      region: getRegionName(region)
-    });
-    code.textContent = prettyMailString(WMSParser.convertRegion(example.code, example.region, region), 2, 7);
-    code.classList.remove('hidden');
-  } else {
-    location.textContent = t('memoNoSample');
-    code.textContent = '';
-    code.classList.add('hidden');
-  }
-
-  renderMemoMap(map, entry, true);
-  renderMemoFeatureList(features, entry);
-}
-
-// Missione reale del gioco (codice giapponese) che usa questa stanza.
-function getMemoRealExample(specialFloor) {
-  const examples = Array.isArray(window.MemoRealExamples) ? window.MemoRealExamples : [];
-  return examples.find((example) => example.specialFloor === specialFloor) || null;
-}
-
-function renderMemoPresetPreview(optionOrValue) {
-  const option = getMemoPresetOption(optionOrValue);
-  const badge = document.getElementById('memoPresetPreviewBadge');
-  const title = document.getElementById('memoPresetPreviewTitle');
-  const text = document.getElementById('memoPresetPreviewText');
-  const warning = document.getElementById('memoPresetPreviewWarning');
-  const map = document.getElementById('memoPresetPreviewMap');
-  const features = document.getElementById('memoPresetPreviewFeatures');
-  if (!option || !badge || !title || !text || !warning || !map || !features) return;
-
-  const specialFloor = parseInt(option.value || '', 10);
-  const room = Number.isFinite(specialFloor) ? getMemoRoomBySpecialFloor(specialFloor) : null;
-
-  if (!Number.isFinite(specialFloor)) {
-    badge.textContent = t('autoPreviewBadge');
-    title.textContent = t('auto');
-    text.textContent = t('autoPreviewText');
-    warning.textContent = '';
-    warning.classList.add('hidden');
-    features.innerHTML = '';
-    renderMemoMap(map, null, false);
-    return;
-  }
-
-  badge.textContent = t('specialFloorFull', { floor: specialFloor });
-  title.textContent = option.dataset.previewTitle || option.text;
-  text.textContent = buildMemoDescription(room);
-  warning.textContent = getMemoWarning(room);
-  warning.classList.toggle('hidden', !getMemoWarning(room));
-  renderMemoFeatureList(features, room);
-  renderMemoMap(map, room, false);
-}
-
-function updateMemoPresetPicker() {
-  const select = document.getElementById('memoPreset');
-  const title = document.getElementById('memoPresetTitle');
-  const subtitle = document.getElementById('memoPresetSubtitle');
-  const optionsWrap = document.getElementById('memoPresetOptions');
-  if (!select || !title || !subtitle || !optionsWrap) return;
-
-  const option = select.options[select.selectedIndex] || select.options[0];
-  if (!option) return;
-
-  title.textContent = option.dataset.shortLabel || option.text;
-  subtitle.textContent = option.value ? t('specialFloorShort', { floor: option.value }) : t('noForcedVariant');
-
-  optionsWrap.querySelectorAll('.memo-picker-option').forEach((button) => {
-    button.classList.toggle('active', button.dataset.value === option.value);
-  });
-
-  renderMemoPresetPreview(option);
-}
-
-function renderMemoPresetPicker() {
-  const wrap = document.getElementById('memoSelectorWrap');
-  const select = document.getElementById('memoPreset');
-  const optionsWrap = document.getElementById('memoPresetOptions');
-  if (!wrap || !select || !optionsWrap) return;
-
-  const label = wrap.querySelector('label');
-  const hint = wrap.querySelector('.hint');
-  if (label) {
-    label.htmlFor = 'memoPresetToggle';
-    label.textContent = t('memoSelectorLabel');
-  }
-  if (hint) {
-    hint.textContent = t('memoPickerHint');
-  }
-
-  optionsWrap.innerHTML = '';
-  Array.from(select.options).forEach((option, index) => {
-    const button = document.createElement('button');
-    const name = document.createElement('span');
-    const floor = document.createElement('span');
-
-    button.type = 'button';
-    button.className = 'memo-picker-option';
-    button.dataset.value = option.value;
-
-    name.className = 'memo-picker-option-name';
-    name.textContent = option.value ? `V${index}` : 'Auto';
-
-    floor.className = 'memo-picker-option-floor';
-    floor.textContent = option.dataset.floorLabel || 'Auto';
-
-    button.append(name, floor);
-    button.addEventListener('mouseenter', () => renderMemoPresetPreview(option));
-    button.addEventListener('focus', () => renderMemoPresetPreview(option));
-    button.addEventListener('click', () => applyMemoPresetValue(option.value));
-    optionsWrap.appendChild(button);
-  });
-
-  optionsWrap.addEventListener('mouseleave', updateMemoPresetPicker);
-  updateMemoPresetPicker();
-}
-
-function populateMemoSelector() {
-  const select = document.getElementById('memoPreset');
-  if (!select || select.options.length) return;
-
-  const values = (WMSGenData && WMSGenData.staticLists && WMSGenData.staticLists.treasurehunt) || [];
-  const auto = document.createElement('option');
-  auto.value = '';
-  localizeMemoOption(auto, 0, '');
-  select.add(auto);
-
-  values.forEach((value, index) => {
-    const option = document.createElement('option');
-    option.value = String(value);
-    localizeMemoOption(option, index, value);
-    select.add(option);
-  });
-
-  renderMemoPresetPicker();
 }
 
 function applyPreset(kind) {
@@ -2391,6 +1682,8 @@ function applyPreset(kind) {
     },
     memo: () => {
       setSelectByValue(typeSelect, findMissionTypeIndex(12));
+      // Come nelle missioni vere: una Gommaincanto nel Tecalusso.
+      setSelectByValue(document.getElementById('targetItemBox'), DEFAULT_TREASURE_ITEM);
     },
     egg: () => {
       applyEggGlitchPreset();
@@ -2425,18 +1718,13 @@ function applyPreset(kind) {
   if (specialMap[kind]) {
     specialMap[kind]();
     document.getElementById('specialFloor').value = '';
-    if (kind === 'memo') {
-      document.getElementById('memoPreset').selectedIndex = 0;
-    }
     WMSGen.fillSubTypeList();
     relabelMissionTypeSelect();
     relabelMissionSubTypeSelect();
     WMSGen.update();
-    document.getElementById('memoSelectorWrap').classList.toggle('hidden', kind !== 'memo');
-    syncMemoSelectorFromSpecialFloor();
     refreshMissionUi();
-    updateSummary();
-    updateMemoVisuals();
+    // La password deve seguire subito il preset scelto.
+    scheduleLiveGeneration();
   }
 }
 
@@ -2463,11 +1751,469 @@ onReady(() => {
   document.getElementById('missionTypeBox')?.addEventListener('change', () => {
     relabelMissionTypeSelect();
     relabelMissionSubTypeSelect();
-    updateSummary();
   });
 
-  // Cambiando regione cambia anche il codice d'esempio del Memo tesoro.
-  document.getElementById('regionBox')?.addEventListener('change', updateMemoVisuals);
-
   applyLanguage(currentLanguage, { persist: false });
+});
+
+// ---------------------------------------------------------------------------
+// Ritratti dei Pokémon in stile Mystery Dungeon (PMDCollab SpriteCollab)
+// ---------------------------------------------------------------------------
+
+const PORTRAIT_BASE_URL = 'https://raw.githubusercontent.com/PMDCollab/SpriteCollab/master/portrait/';
+
+// Forme con un ritratto proprio in SpriteCollab: ID del gioco -> cartella.
+const PORTRAIT_FORMS = (() => {
+  const forms = {
+    279: '0251/0000/0001', // Celebi rosa (cromatico)
+    380: '0351/0001', 381: '0351/0002', 382: '0351/0003', // Castform Sole, Pioggia, Nuvola di Neve
+    384: '0352/0001', // Kecleon viola
+    419: '0386/0001', 420: '0386/0002', 421: '0386/0003', // Deoxys Attacco, Difesa, Velocità
+    447: '0412/0002', 449: '0412/0001', // Burmy Manto Scarti e Manto Sabbia
+    450: '0413/0001', 452: '0413/0002', // Wormadam Manto Sabbia e Manto Scarti
+    461: '0421/0001', // Cherrim Forma Splendore
+    463: '0422/0001', 465: '0423/0001', // Shellos e Gastrodon Mare Est
+    535: '0492/0001', 536: '0487/0001', // Shaymin Forma Cielo, Giratina Forma Originale
+    552: '0483/0002', // Dialga primordiale
+    575: '0040/0001' // Mamma
+  };
+  // Unown da B a Z, ! e ?
+  for (let index = 0; index < 27; index += 1) {
+    forms[202 + index] = `0201/${String(index + 1).padStart(4, '0')}`;
+  }
+  return forms;
+})();
+
+// Le forme della storia (ID da 552 in su) usano il ritratto della specie con lo stesso nome.
+function getPortraitSpecies(baseId) {
+  if (baseId < 552) return baseId;
+  const english = getGameText(FALLBACK_LANGUAGE);
+  const names = english && english.pokemon;
+  if (!names || !names[baseId]) return baseId;
+  const first = names.indexOf(names[baseId]);
+  return first > 0 ? first : baseId;
+}
+
+function getPortraitPath(monId) {
+  const baseId = normalizePokemonId(monId);
+  if (!Number.isFinite(baseId) || baseId < 1) return null;
+  if (PORTRAIT_FORMS[baseId]) return PORTRAIT_FORMS[baseId];
+  const species = getPortraitSpecies(baseId);
+  if (PORTRAIT_FORMS[species]) return PORTRAIT_FORMS[species];
+  const dex = window.WMSkyPokemonSpriteDex && window.WMSkyPokemonSpriteDex[species];
+  return dex ? String(dex).padStart(4, '0') : null;
+}
+
+// Ritratto del Pokémon; senza rete (o senza ritratto) un riquadro con le iniziali.
+function getPokemonImage(monId, label) {
+  const fallback = buildPreviewBadge(label, 'pokemon');
+  const path = getPortraitPath(monId);
+  return { src: path ? `${PORTRAIT_BASE_URL}${path}/Normal.png` : fallback, fallback };
+}
+
+function createFallbackImage(payload, className, alt = '') {
+  const image = document.createElement('img');
+  image.className = className;
+  image.alt = alt;
+  image.decoding = 'async';
+  image.src = payload.src;
+  image.addEventListener('error', () => {
+    if (payload.fallback && image.src !== payload.fallback) image.src = payload.fallback;
+  });
+  return image;
+}
+
+// Squadra decorativa in alto: Pokémon che si possono scegliere all'inizio del gioco.
+const HERO_TEAM_CHOICES = [1, 4, 7, 25, 37, 52, 54, 66, 104, 133, 152, 155, 158, 258, 280, 283, 286, 328, 422, 425, 428, 438, 488, 489];
+
+function renderHeroTeam() {
+  const team = document.getElementById('heroTeam');
+  if (!team || team.childElementCount) return;
+  const pool = HERO_TEAM_CHOICES.slice();
+  for (let index = 0; index < 4 && pool.length; index += 1) {
+    const [monId] = pool.splice(Math.floor(Math.random() * pool.length), 1);
+    const frame = document.createElement('span');
+    frame.className = 'portrait-frame hero-portrait';
+    frame.style.setProperty('--delay', `${index * 0.35}s`);
+    const image = document.createElement('img');
+    image.alt = '';
+    image.src = getPokemonImage(monId, '').src;
+    // Senza rete la squadra non compare: è solo una decorazione.
+    image.addEventListener('error', () => frame.remove());
+    frame.appendChild(image);
+    team.appendChild(frame);
+  }
+}
+
+// Pulsante del repository in alto: compare solo se config.js indica un indirizzo.
+function applyRepoLink() {
+  const link = document.getElementById('repoLink');
+  const url = window.WMSkyConfig && String(window.WMSkyConfig.repoUrl || '').trim();
+  if (!link) return;
+  if (url && /^https?:\/\//.test(url)) {
+    link.href = url;
+    link.hidden = false;
+  } else {
+    link.hidden = true;
+  }
+}
+
+// Ritratti dei leggendari sui pulsanti delle Lettere di sfida.
+function decoratePresetButtons() {
+  document.querySelectorAll('.preset-btn img[data-portrait]').forEach((image) => {
+    const monId = parseInt(image.dataset.portrait, 10);
+    if (image.dataset.loaded === String(monId)) return;
+    const payload = getPokemonImage(monId, getMonName(monId));
+    image.src = payload.src;
+    image.dataset.loaded = String(monId);
+    image.addEventListener('error', () => {
+      if (image.src !== payload.fallback) image.src = payload.fallback;
+    });
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Anteprima "Info missione" (con le frasi ufficiali del gioco)
+// ---------------------------------------------------------------------------
+
+// Frase dell'obiettivo per ogni tipo di missione del gioco (campo missionType della password).
+const JOB_OBJECTIVES = {
+  0: { text: 'rescue', subject: 'client' },
+  1: { text: 'rescue', subject: 'target' },
+  2: { text: 'escort', subject: 'target' },
+  3: { text: 'explore', subject: 'client' },
+  4: { text: 'prospect', subject: 'client' },
+  5: { text: 'guide', subject: 'client' },
+  6: { text: 'findItem', subject: 'item' },
+  7: { text: 'deliverItem', subject: 'item' },
+  8: { text: 'search', subject: 'target' },
+  9: { text: 'takeItem', subject: 'target' },
+  10: { text: 'arrest', subject: 'target' },
+  11: { text: 'defeat', subject: 'client' },
+  12: { text: 'findTreasure', subject: null }
+};
+
+function jobText(key) {
+  const text = getGameText();
+  const fallback = getGameText(FALLBACK_LANGUAGE);
+  return (text && text.job && text.job[key]) || (fallback && fallback.job && fallback.job[key]) || '';
+}
+
+// Missione contenuta nella password mostrata (generata o letta).
+function getOutputMission() {
+  const code = document.getElementById('compactOutput')?.value || '';
+  if (!code) return null;
+  return WMSParser.decodeWithRegion(code, getSelectedRegion());
+}
+
+function makePersonValue(monId) {
+  const wrap = document.createElement('span');
+  wrap.className = 'job-person';
+  const name = getLocalizedPokemonName(monId);
+  wrap.append(createFallbackImage(getPokemonImage(monId, name), 'job-mini-portrait'), document.createTextNode(name));
+  return wrap;
+}
+
+function makeItemValue(itemId, suffix) {
+  const wrap = document.createElement('span');
+  wrap.className = 'job-person';
+  const name = getItemDisplayName(itemId);
+  wrap.append(createFallbackImage(getItemImage(itemId, name, true), 'job-item-icon'), document.createTextNode(suffix ? `${name} ${suffix}` : name));
+  return wrap;
+}
+
+function getRewardValue(struct) {
+  const labels = getLocaleLabelMap('rewardTypes', getCurrentLanguage());
+  const label = labels[struct.rewardType] || String(struct.rewardType);
+  if (struct.rewardType >= 1 && struct.rewardType <= 4) {
+    const wrap = document.createElement('span');
+    wrap.className = 'job-reward';
+    wrap.append(document.createTextNode(`${label} · `), makeItemValue(struct.reward));
+    return wrap;
+  }
+  if (struct.rewardType === 5 && isEggGlitchStruct(struct)) {
+    return document.createTextNode(`${label} · ${getEggPokemonDisplayName(struct.reward)}`);
+  }
+  return document.createTextNode(label);
+}
+
+function addJobRow(list, label, value) {
+  const row = document.createElement('div');
+  row.className = 'job-row';
+  const term = document.createElement('dt');
+  term.textContent = label;
+  const detail = document.createElement('dd');
+  if (typeof value === 'string') detail.textContent = value;
+  else detail.appendChild(value);
+  row.append(term, detail);
+  list.appendChild(row);
+}
+
+function renderJobCard() {
+  const card = document.getElementById('jobCard');
+  const title = document.getElementById('jobTitle');
+  const objective = document.getElementById('jobObjective');
+  const portrait = document.getElementById('jobPortrait');
+  const rank = document.getElementById('jobRank');
+  const fields = document.getElementById('jobFields');
+  const note = document.getElementById('jobNote');
+  if (!card || !title || !objective || !portrait || !rank || !fields || !note) return;
+
+  title.textContent = jobText('title');
+  fields.innerHTML = '';
+  const result = getOutputMission();
+  card.classList.toggle('job-card-invalid', !result);
+  if (!result) {
+    objective.textContent = t('jobInvalid');
+    portrait.hidden = true;
+    rank.textContent = '';
+    rank.hidden = true;
+    note.textContent = t('jobInvalidHint');
+    return;
+  }
+
+  const struct = result.struct;
+  const egg = isEggGlitchStruct(struct);
+  const info = JOB_OBJECTIVES[struct.missionType];
+  const subjectName = info && info.subject === 'target'
+    ? getLocalizedPokemonName(struct.target)
+    : getLocalizedPokemonName(struct.client);
+  objective.textContent = info
+    ? jobText(info.text).replace('[name:0]', subjectName).replace('[item:0]', getItemDisplayName(struct.targetItem))
+    : t('jobUnknownType');
+
+  const clientName = getLocalizedPokemonName(struct.client);
+  const payload = getPokemonImage(struct.client, clientName);
+  portrait.hidden = false;
+  portrait.alt = clientName;
+  portrait.dataset.fallback = payload.fallback;
+  portrait.onerror = () => {
+    if (portrait.src !== portrait.dataset.fallback) portrait.src = portrait.dataset.fallback;
+  };
+  portrait.src = payload.src;
+
+  addJobRow(fields, struct.missionType === 11 ? jobText('challenger') : jobText('client'), makePersonValue(struct.client));
+  if (struct.missionType === 11 && struct.missionSpecial === 0) {
+    const team = document.createElement('span');
+    team.className = 'job-team';
+    [struct.target, struct.target2].filter((id) => id > 0).forEach((id) => team.appendChild(makePersonValue(id)));
+    addJobRow(fields, t('jobTeam'), team);
+  } else if (struct.target !== struct.client && ![11, 12].includes(struct.missionType)) {
+    addJobRow(fields, t('jobTarget'), makePersonValue(struct.target));
+  }
+  if (struct.missionType === 10 && struct.target2 > 0) {
+    addJobRow(fields, t('jobAccomplice'), makePersonValue(struct.target2));
+  }
+  if (struct.missionType === 12 || (struct.missionType === 3 && struct.missionSpecial === 1)) {
+    addJobRow(fields, struct.missionType === 12 ? t('jobTreasure') : t('jobChamberItem'), makeItemValue(struct.targetItem));
+  } else if ([4, 6, 7, 9].includes(struct.missionType) && !egg) {
+    addJobRow(fields, t('jobItem'), makeItemValue(struct.targetItem));
+  }
+
+  const place = `${getDungeonName(struct.dungeon)} · ${t('jobFloor', { floor: struct.floor })}`;
+  addJobRow(fields, jobText('place'), place);
+
+  const difficulty = egg ? null : getMissionDifficultyInfo();
+  rank.hidden = !difficulty;
+  rank.textContent = difficulty ? difficulty.rank : '';
+  rank.dataset.tier = difficulty ? String(difficulty.rankId) : '';
+  if (difficulty) {
+    addJobRow(fields, jobText('difficulty'), t('jobDifficulty', { rank: difficulty.rank, points: difficulty.points }));
+  }
+  addJobRow(fields, jobText('reward'), getRewardValue(struct));
+  addJobRow(fields, jobText('restrictions'), struct.restriction || struct.restrictionType ? t('jobRestrictionSet') : jobText('none'));
+
+  note.textContent = egg
+    ? t('jobNoteEgg')
+    : t('jobNote', { seed: struct.flavorText, region: getRegionName(result.region) });
+}
+
+// ---------------------------------------------------------------------------
+// Stanze speciali (stanze.js)
+// ---------------------------------------------------------------------------
+
+let roomPickerKey = '';
+
+function getFormRoomPlan() {
+  const typeData = getCurrentTypeData();
+  if (!typeData || isEggGlitchEnabled() || !window.WMSkyRooms) return null;
+  return WMSkyRooms.getRoomPlan(typeData);
+}
+
+function pickRoom(value) {
+  const input = document.getElementById('specialFloor');
+  if (!input) return;
+  input.value = value;
+  input.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
+function updateRoomPicker() {
+  const field = document.getElementById('roomField');
+  const picker = document.getElementById('roomPicker');
+  const label = document.getElementById('roomFieldLabel');
+  const hint = document.getElementById('roomHint');
+  const note = document.getElementById('specialFloorNote');
+  if (!field || !picker || !label || !hint) return;
+
+  const plan = getFormRoomPlan();
+  const value = String(document.getElementById('specialFloor')?.value || '').trim();
+  if (note) {
+    const ignored = !plan && value !== '' && !isEggGlitchEnabled();
+    note.textContent = ignored ? t('specialFloorIgnored') : '';
+    note.hidden = !ignored;
+  }
+  field.classList.toggle('hidden', !plan);
+  if (!plan) {
+    roomPickerKey = '';
+    picker.innerHTML = '';
+    return;
+  }
+
+  label.textContent = t('roomFieldLabel', { kind: WMSkyRooms.getKindLabel(plan.kind) });
+  if (plan.rooms) {
+    hint.textContent = plan.early ? t('roomHintMemo', { count: plan.early }) : t('roomHintList');
+  } else {
+    hint.textContent = plan.forced ? t('roomHintForced', { room: plan.fixed }) : t('roomHintFixed', { room: plan.fixed });
+  }
+
+  const key = `${plan.kind}|${plan.fixed || ''}|${value}|${getCurrentLanguage()}`;
+  if (key === roomPickerKey) return;
+  roomPickerKey = key;
+  if (plan.rooms) {
+    WMSkyRooms.renderPicker(picker, plan, value, pickRoom);
+  } else {
+    picker.innerHTML = '';
+  }
+}
+
+function getRoomContext(struct, kind) {
+  const person = (monId) => {
+    if (!(monId > 0)) return null;
+    const name = getLocalizedPokemonName(monId);
+    return { name, image: getPokemonImage(monId, name) };
+  };
+  const context = {};
+  if (kind === 'challenge' || kind === 'legendaryChallenge') {
+    context.boss = person(struct.client);
+    if (kind === 'challenge') {
+      context.minion1 = person(struct.target);
+      context.minion2 = person(struct.target2);
+      context.minionLabel1 = t('tileTeamMember');
+      context.minionLabel2 = t('tileTeamMember');
+    }
+  }
+  if (kind === 'outlawHideout') {
+    context.outlaw = person(struct.target);
+    context.minion1 = person(struct.target2);
+    context.minionLabel1 = t('tileAccomplice');
+  }
+  if (kind === 'treasureMemo' || kind === 'sealedChamber') {
+    const name = getItemDisplayName(struct.targetItem);
+    context.targetItem = { name, image: getItemImage(struct.targetItem, name, false) };
+  }
+  return context;
+}
+
+function renderRoomCard() {
+  const card = document.getElementById('roomCard');
+  if (!card || !window.WMSkyRooms) return;
+  const result = getOutputMission();
+  const struct = result && result.struct;
+  const plan = struct && !isEggGlitchStruct(struct)
+    ? WMSkyRooms.getRoomPlan({ mainType: struct.missionType, specialType: struct.missionSpecial })
+    : null;
+  card.classList.toggle('hidden', !plan);
+  if (!plan) return;
+
+  const roomId = plan.forced ? plan.fixed : struct.specialFloor;
+  const room = WMSkyRooms.getRoom(roomId);
+  const kind = document.getElementById('roomKind');
+  const title = document.getElementById('roomTitle');
+  const badge = document.getElementById('roomBadge');
+  const map = document.getElementById('roomMap');
+  const legend = document.getElementById('roomLegend');
+  const facts = document.getElementById('roomFacts');
+  const warning = document.getElementById('roomWarning');
+  const example = document.getElementById('roomExample');
+  const exampleText = document.getElementById('roomExampleText');
+  const exampleCode = document.getElementById('roomExampleCode');
+
+  kind.textContent = WMSkyRooms.getKindLabel(plan.kind);
+  const ordinal = room && plan.rooms && room.kind === plan.kind ? WMSkyRooms.getRoomOrdinal(room) : null;
+  title.textContent = ordinal
+    ? t('roomTitleOrdinal', { room: roomId, ordinal, total: plan.rooms ? plan.rooms.length : 1 })
+    : t('roomNumber', { room: roomId });
+
+  const typed = String(document.getElementById('specialFloor')?.value || '').trim() !== '';
+  badge.textContent = plan.forced || !plan.rooms
+    ? t('roomBadgeFixed')
+    : (typed ? t('roomBadgeChosen') : t('roomBadgeRandom'));
+
+  const context = struct ? getRoomContext(struct, plan.kind) : {};
+  WMSkyRooms.renderMap(map, room, context);
+  WMSkyRooms.renderLegend(legend, room, context);
+
+  facts.innerHTML = '';
+  const description = WMSkyRooms.describeRoom(room, plan, context);
+  if (!room) {
+    description.warning = roomId > 0 ? t('roomWarningUnknown', { room: roomId }) : t('roomWarningNone');
+  }
+  description.facts.forEach((fact) => {
+    const item = document.createElement('li');
+    item.textContent = fact;
+    facts.appendChild(item);
+  });
+  warning.textContent = description.warning;
+  warning.hidden = !description.warning;
+
+  const sample = room && plan.kind === 'treasureMemo' ? WMSkyRooms.getMemoExample(room.id) : null;
+  example.hidden = !sample;
+  if (sample) {
+    const region = getSelectedRegion();
+    exampleText.textContent = t('roomExample', {
+      dungeon: getDungeonName(sample.dungeon),
+      floor: sample.floor,
+      region: getRegionName(region)
+    });
+    exampleCode.textContent = prettyMailString(WMSParser.convertRegion(sample.code, sample.region, region), 2, 7);
+  }
+}
+
+// Anteprima e stanza seguono sempre la password mostrata.
+function updateOutputCards() {
+  renderJobCard();
+  renderRoomCard();
+}
+
+// Etichetta dello strumento obiettivo: nei Memo tesoro è il tesoro, nella Sala Proibita l'oggetto da trovare.
+function getTargetItemLabel(typeData) {
+  if (typeData && typeData.mainType === 12) return t('treasureItemLabel');
+  if (typeData && typeData.mainType === 3 && typeData.specialType === 1) return t('chamberItemLabel');
+  return t('targetItemLabel');
+}
+
+function updateTargetItemLabel(typeData) {
+  const label = document.querySelector('label[for="targetItemSearch"]');
+  if (label && typeData) label.textContent = getTargetItemLabel(typeData);
+}
+
+let roomResizeTimer = null;
+
+onReady(() => {
+  renderHeroTeam();
+  applyRepoLink();
+  // La mappa si adatta alla larghezza disponibile.
+  window.addEventListener('resize', () => {
+    window.clearTimeout(roomResizeTimer);
+    roomResizeTimer = window.setTimeout(renderRoomCard, 150);
+  });
+  document.getElementById('roomExampleCopy')?.addEventListener('click', async () => {
+    const code = compactCode(document.getElementById('roomExampleCode')?.textContent || '');
+    try {
+      await navigator.clipboard.writeText(code);
+      setStatus('roomExampleStatus', 'codeCopied', null, 'ok');
+    } catch (e) {
+      setStatus('roomExampleStatus', 'copyFailed', null, 'error');
+    }
+  });
 });

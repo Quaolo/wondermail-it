@@ -3,16 +3,20 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Generatore di Missioni Speciali C (Esploratori del Cielo)</title>
-  <meta name="description" content="Generatore di password Missioni Speciali C per Pokémon Mystery Dungeon: Esploratori del Cielo, con nomi e descrizioni ufficiali in italiano.">
+  <title>Missioni Speciali C · Esploratori del Cielo</title>
+  <meta name="description" content="Generatore e lettore di password Missioni Speciali C per Pokémon Mystery Dungeon: Esploratori del Cielo, con i testi ufficiali in italiano e le mappe delle stanze speciali.">
+  <meta name="theme-color" content="#0b1433">
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="style.css">
+  <script src="config.js"></script>
   <script src="lm.js"></script>
   <script src="lmutils.js"></script>
   <script src="lmgenerate.js"></script>
   <script src="data/dati_gioco.js"></script>
   <script src="data/testi_gioco_it.js"></script>
   <script src="data/testi_gioco_en.js"></script>
-  <script src="memo_gallery.js"></script>
+  <script src="data/stanze_fisse.js"></script>
+  <script src="data/esempi_memo.js"></script>
   <script src="item_icon_map.js"></script>
   <script src="pokemon_sprite_map.js"></script>
   <script src="dungeon_floor_map.js"></script>
@@ -20,372 +24,356 @@
   <script src="lang/locales.js"></script>
   <script src="lang/it.js"></script>
   <script src="lang/en.js"></script>
+  <script src="stanze.js" defer></script>
   <script src="app.js" defer></script>
 </head>
 <body>
+  <div class="sky" aria-hidden="true"></div>
   <main class="page">
-    <header class="hero card">
-      <div>
-        <p class="eyebrow" data-i18n="heroEyebrow">Pokémon Mystery Dungeon: Esploratori del Cielo</p>
-        <h1 data-i18n="heroTitle">Generatore di Missioni Speciali C</h1>
-        <p class="lead" data-i18n-html="heroLead">Crea e leggi le password delle <strong>Missioni Speciali C</strong> (Wonder Mail S), con nomi e descrizioni <strong>ufficiali del gioco</strong>.</p>
-      </div>
-      <div class="hero-badges">
-        <a class="repo-link" href="https://github.com/RedCoal27/wondermail_pdm" target="_blank" rel="noopener noreferrer" data-i18n-title="repoLinkTitle" title="Progetto originale su GitHub">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M12 2C6.48 2 2 6.58 2 12.24c0 4.53 2.87 8.37 6.84 9.73.5.09.66-.22.66-.49 0-.24-.01-1.03-.01-1.87-2.78.62-3.37-1.21-3.37-1.21-.46-1.18-1.11-1.49-1.11-1.49-.91-.64.07-.63.07-.63 1 .07 1.53 1.06 1.53 1.06.9 1.58 2.36 1.12 2.93.86.09-.67.35-1.12.63-1.38-2.22-.26-4.55-1.14-4.55-5.06 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.31.1-2.72 0 0 .85-.28 2.78 1.05A9.45 9.45 0 0 1 12 6.84c.85 0 1.71.12 2.51.35 1.92-1.33 2.77-1.05 2.77-1.05.55 1.41.21 2.46.11 2.72.64.72 1.03 1.63 1.03 2.75 0 3.93-2.33 4.8-4.56 5.05.36.32.68.94.68 1.9 0 1.37-.01 2.47-.01 2.81 0 .27.17.59.67.49A10.18 10.18 0 0 0 22 12.24C22 6.58 17.52 2 12 2Z"></path>
-          </svg>
-          <span>GitHub</span>
-        </a>
-        <div class="lang-picker" id="languagePicker">
-          <button type="button" class="lang-picker-trigger" id="languagePickerToggle" aria-expanded="false" aria-controls="languagePickerMenu">
-            <img id="languagePickerFlag" class="lang-picker-flag" src="assets/flags/it.svg" alt="">
-            <span class="lang-picker-label" id="languagePickerLabel">Italiano</span>
-            <span class="lang-picker-caret" aria-hidden="true"></span>
-          </button>
-          <div class="lang-picker-menu hidden" id="languagePickerMenu" role="listbox" aria-label="Lingua"></div>
+    <header class="masthead">
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true">
+          <rect x="6" y="14" width="52" height="38" rx="6" fill="#f6f1e3" stroke="#1b2750" stroke-width="3"/>
+          <path d="M8 18 L32 36 L56 18" fill="none" stroke="#1b2750" stroke-width="3" stroke-linejoin="round"/>
+          <circle cx="32" cy="37" r="9" fill="#e8483f" stroke="#1b2750" stroke-width="3"/>
+          <path d="M32 31.5 l1.7 3.5 3.8.5 -2.8 2.6.7 3.8 -3.4-1.8 -3.4 1.8.7-3.8 -2.8-2.6 3.8-.5z" fill="#ffd45c"/>
+        </svg>
+        <div class="brand-copy">
+          <p class="eyebrow" data-i18n="heroEyebrow">Pokémon Mystery Dungeon: Esploratori del Cielo</p>
+          <h1 data-i18n="heroTitle">Missioni Speciali C</h1>
+          <p class="lead" data-i18n-html="heroLead">Crea e leggi le password delle Missioni Speciali C.</p>
         </div>
+      </div>
+      <div class="masthead-side">
+        <div class="masthead-tools">
+          <a class="repo-link" id="repoLink" href="#" target="_blank" rel="noopener noreferrer" hidden data-i18n-title="repoLinkTitle" title="Codice sorgente su GitHub">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C6.48 2 2 6.58 2 12.24c0 4.53 2.87 8.37 6.84 9.73.5.09.66-.22.66-.49 0-.24-.01-1.03-.01-1.87-2.78.62-3.37-1.21-3.37-1.21-.46-1.18-1.11-1.49-1.11-1.49-.91-.64.07-.63.07-.63 1 .07 1.53 1.06 1.53 1.06.9 1.58 2.36 1.12 2.93.86.09-.67.35-1.12.63-1.38-2.22-.26-4.55-1.14-4.55-5.06 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.31.1-2.72 0 0 .85-.28 2.78 1.05A9.45 9.45 0 0 1 12 6.84c.85 0 1.71.12 2.51.35 1.92-1.33 2.77-1.05 2.77-1.05.55 1.41.21 2.46.11 2.72.64.72 1.03 1.63 1.03 2.75 0 3.93-2.33 4.8-4.56 5.05.36.32.68.94.68 1.9 0 1.37-.01 2.47-.01 2.81 0 .27.17.59.67.49A10.18 10.18 0 0 0 22 12.24C22 6.58 17.52 2 12 2Z"></path></svg>
+            <span>GitHub</span>
+          </a>
+          <div class="lang-picker" id="languagePicker">
+            <button type="button" class="lang-picker-trigger" id="languagePickerToggle" aria-expanded="false" aria-controls="languagePickerMenu">
+              <img id="languagePickerFlag" class="lang-picker-flag" src="assets/flags/it.svg" alt="">
+              <span class="lang-picker-label" id="languagePickerLabel">Italiano</span>
+              <span class="lang-picker-caret" aria-hidden="true"></span>
+            </button>
+            <div class="lang-picker-menu hidden" id="languagePickerMenu" role="listbox" aria-label="Lingua"></div>
+          </div>
+        </div>
+        <div class="hero-team" id="heroTeam" aria-hidden="true"></div>
       </div>
     </header>
 
-    <section class="card presets">
-      <h2 data-i18n="quickAccess">Accesso rapido</h2>
-      <div class="preset-grid">
-        <button type="button" class="preset-btn" data-preset="standard" data-i18n="presetStandard">Missione normale</button>
-        <button type="button" class="preset-btn" data-preset="memo" data-i18n="presetMemo">Memo tesoro</button>
-        <button type="button" class="preset-btn" data-preset="egg" data-i18n="presetEgg">Missione uovo (glitch)</button>
-        <button type="button" class="preset-btn" data-preset="mewtwo" data-boss="150">Sfida - Mewtwo</button>
-        <button type="button" class="preset-btn" data-preset="entei" data-boss="271">Sfida - Entei</button>
-        <button type="button" class="preset-btn" data-preset="raikou" data-boss="270">Sfida - Raikou</button>
-        <button type="button" class="preset-btn" data-preset="suicune" data-boss="272">Sfida - Suicune</button>
-        <button type="button" class="preset-btn" data-preset="jirachi" data-boss="417">Sfida - Jirachi</button>
+    <section class="window reader" id="readerCard" aria-labelledby="readerTitle">
+      <div class="window-head">
+        <h2 id="readerTitle" data-i18n="importCodeLabel">Leggi una password</h2>
+        <p class="hint" data-i18n="importCodeHint"></p>
       </div>
-      <p class="hint" data-i18n="presetsHint">Lettere di sfida e Memo tesoro esistono solo in Esploratori del Cielo.</p>
+      <div class="reader-row">
+        <label class="sr-only" for="importCode" data-i18n="importCodeLabel">Leggi una password</label>
+        <textarea id="importCode" rows="2" spellcheck="false" autocapitalize="characters" placeholder="Incolla qui una password..." data-i18n-placeholder="importCodePlaceholder"></textarea>
+        <button type="button" id="importCodeBtn" class="primary" data-i18n="importCodeButton">Leggi</button>
+      </div>
+      <p class="status" id="importStatus" role="status" aria-live="polite"></p>
     </section>
 
-    <form id="genForm" class="form-grid card" autocomplete="off">
-      <section id="missionSectionCard">
-        <h2 data-i18n="missionSection">Missione</h2>
-        <div class="field" id="missionTypeField">
-          <label for="missionTypeBox" data-i18n="missionTypeLabel">Tipo di missione</label>
-          <div class="inline-row">
-            <select name="missionTypeBox" id="missionTypeBox"></select>
-            <span id="subType" class="subtype-wrap hidden"><select name="missionSubTypeBox" id="missionSubTypeBox" data-i18n-title="missionSubtypeLabel"></select></span>
+    <section class="window presets" aria-labelledby="presetsTitle">
+      <div class="window-head">
+        <h2 id="presetsTitle" data-i18n="quickAccess">Accesso rapido</h2>
+        <p class="hint" data-i18n="presetsHint"></p>
+      </div>
+      <div class="preset-grid">
+        <button type="button" class="preset-btn" data-preset="standard"><img class="preset-icon" src="assets/item-icons-pmdo/Apple-Red.png" alt=""><span data-i18n="presetStandard">Missione normale</span></button>
+        <button type="button" class="preset-btn" data-preset="memo"><img class="preset-icon" src="assets/item-icons-pmdo/Box-Blue.png" alt=""><span data-i18n="presetMemo">Memo tesoro</span></button>
+        <button type="button" class="preset-btn" data-preset="egg"><img class="preset-icon" src="assets/item-icons-pmdo/Egg-Sea.png" alt=""><span data-i18n="presetEgg">Missione uovo (glitch)</span></button>
+        <button type="button" class="preset-btn" data-preset="mewtwo" data-boss="150"><img class="preset-icon preset-portrait" data-portrait="150" alt=""><span class="preset-label">Mewtwo</span></button>
+        <button type="button" class="preset-btn" data-preset="entei" data-boss="271"><img class="preset-icon preset-portrait" data-portrait="271" alt=""><span class="preset-label">Entei</span></button>
+        <button type="button" class="preset-btn" data-preset="raikou" data-boss="270"><img class="preset-icon preset-portrait" data-portrait="270" alt=""><span class="preset-label">Raikou</span></button>
+        <button type="button" class="preset-btn" data-preset="suicune" data-boss="272"><img class="preset-icon preset-portrait" data-portrait="272" alt=""><span class="preset-label">Suicune</span></button>
+        <button type="button" class="preset-btn" data-preset="jirachi" data-boss="417"><img class="preset-icon preset-portrait" data-portrait="417" alt=""><span class="preset-label">Jirachi</span></button>
+      </div>
+    </section>
+
+    <div class="workbench">
+      <form id="genForm" class="window form-panel" autocomplete="off">
+        <section class="form-section" id="missionSectionCard">
+          <h2 class="section-title"><span class="step">1</span><span data-i18n="missionSection">Missione</span></h2>
+          <div class="field" id="missionTypeField">
+            <label for="missionTypeBox" data-i18n="missionTypeLabel">Tipo di missione</label>
+            <div class="inline-row">
+              <select name="missionTypeBox" id="missionTypeBox"></select>
+              <span id="subType" class="subtype-wrap" style="display: none"><select name="missionSubTypeBox" id="missionSubTypeBox" data-i18n-title="missionSubtypeLabel"></select></span>
+            </div>
           </div>
-        </div>
 
-        <div class="field" id="dungeonField">
-          <label for="dungeonSearch" data-i18n="dungeonLabel">Dungeon</label>
-          <input id="dungeonSearch" type="search" class="searchbox" placeholder="Cerca un dungeon..." data-i18n-placeholder="dungeonPlaceholder" data-target="dungeonBox">
-          <select id="dungeonBox" name="dungeonBox"></select>
-        </div>
-
-        <div class="field small-field" id="floorField">
-          <label for="floor" data-i18n="floorLabel">Piano</label>
-          <input id="floor" name="floor" type="number" min="1" max="99" value="1">
+          <div class="field-pair">
+            <div class="field" id="dungeonField">
+              <label for="dungeonSearch" data-i18n="dungeonLabel">Dungeon</label>
+              <div class="field-control-group">
+                <input id="dungeonSearch" type="search" class="searchbox" placeholder="Cerca un dungeon..." data-i18n-placeholder="dungeonPlaceholder" data-target="dungeonBox">
+                <select id="dungeonBox" name="dungeonBox"></select>
+              </div>
+            </div>
+            <div class="field small-field" id="floorField">
+              <label for="floor" data-i18n="floorLabel">Piano</label>
+              <input id="floor" name="floor" type="number" min="1" max="99" value="1" inputmode="numeric">
+            </div>
+          </div>
           <p class="hint" id="floorLimitHint"></p>
           <p class="hint" id="missionDifficultyHint"></p>
-        </div>
 
-        <div class="field memo-selector hidden" id="memoSelectorWrap">
-          <label for="memoPresetToggle">Stanza del Memo tesoro</label>
-          <div class="memo-picker" id="memoPresetPicker">
-            <select id="memoPreset" name="memoPreset" class="sr-only" tabindex="-1" aria-hidden="true"></select>
-            <button type="button" class="memo-picker-trigger" id="memoPresetToggle" aria-expanded="false" aria-controls="memoPresetMenu">
-              <span class="memo-picker-copy">
-                <span class="memo-picker-title" id="memoPresetTitle">Automatico</span>
-                <span class="memo-picker-subtitle" id="memoPresetSubtitle"></span>
-              </span>
-              <span class="memo-picker-caret" aria-hidden="true"></span>
-            </button>
-            <div class="memo-picker-panel hidden" id="memoPresetMenu">
-              <div class="memo-picker-options" id="memoPresetOptions"></div>
-              <aside class="memo-picker-preview">
-                <p class="memo-picker-preview-badge" id="memoPresetPreviewBadge"></p>
-                <h3 class="memo-picker-preview-title" id="memoPresetPreviewTitle"></h3>
-                <p class="memo-picker-preview-text" id="memoPresetPreviewText"></p>
-                <p class="memo-warning hidden" id="memoPresetPreviewWarning"></p>
-                <div class="memo-map memo-map-card" id="memoPresetPreviewMap"></div>
-                <div class="memo-feature-list memo-picker-preview-features" id="memoPresetPreviewFeatures"></div>
-              </aside>
+          <div class="field room-field hidden" id="roomField">
+            <p class="field-label" id="roomFieldLabel">Stanza</p>
+            <div class="room-picker" id="roomPicker" role="listbox" aria-labelledby="roomFieldLabel"></div>
+            <p class="hint" id="roomHint"></p>
+          </div>
+
+          <input type="checkbox" name="eggGlitch" id="eggGlitch" value="1" hidden>
+          <div class="field hidden" id="eggPokemonField">
+            <label for="eggPokemonSearch" data-i18n="eggPokemonLabel">Specie dell'uovo</label>
+            <div class="field-control-group">
+              <input id="eggPokemonSearch" type="search" class="searchbox" placeholder="Cerca una specie..." data-i18n-placeholder="eggPokemonPlaceholder" data-target="eggPokemonBox">
+              <select name="eggPokemonBox" id="eggPokemonBox"></select>
             </div>
+            <p class="hint" data-i18n="eggPokemonHint"></p>
+            <div class="entity-preview" id="eggPokemonPreview"></div>
           </div>
-          <p class="hint"></p>
-        </div>
 
-        <input type="checkbox" name="eggGlitch" id="eggGlitch" value="1" hidden>
-        <div class="field hidden" id="eggPokemonField">
-          <label for="eggPokemonSearch" data-i18n="eggPokemonLabel">Specie dell'uovo</label>
-          <div class="field-control-group">
-            <input id="eggPokemonSearch" type="search" class="searchbox" placeholder="Cerca una specie..." data-i18n-placeholder="eggPokemonPlaceholder" data-target="eggPokemonBox">
-            <select name="eggPokemonBox" id="eggPokemonBox"></select>
-          </div>
-          <p class="hint" data-i18n="eggPokemonHint"></p>
-          <div class="entity-preview" id="eggPokemonPreview"></div>
-        </div>
-
-        <details class="advanced-panel" id="advancedOptionsPanel">
-          <summary data-i18n="advancedOptions">Opzioni avanzate</summary>
-          <div class="field">
-            <label for="specialFloor" data-i18n="specialFloorLabel">Stanza speciale</label>
-            <input id="specialFloor" name="specialFloor" type="number" min="0" max="255" placeholder="Automatica se vuota" data-i18n-placeholder="specialFloorPlaceholder">
-            <p class="hint" data-i18n="specialFloorHint"></p>
-          </div>
-          <div class="field">
-            <label for="flavorText" data-i18n="flavorTextLabel">Seme del testo della missione</label>
-            <div class="inline-row">
-              <input id="flavorText" name="flavorText" type="number" min="0" max="16777215" placeholder="Casuale se vuoto" data-i18n-placeholder="flavorTextPlaceholder">
-              <button type="button" id="randomSeedBtn" data-i18n="flavorTextRandom">Nuovo seme casuale</button>
+          <details class="advanced-panel" id="advancedOptionsPanel">
+            <summary data-i18n="advancedOptions">Opzioni avanzate</summary>
+            <div class="field">
+              <label for="specialFloor" data-i18n="specialFloorLabel">Stanza speciale</label>
+              <input id="specialFloor" name="specialFloor" type="number" min="0" max="255" inputmode="numeric" placeholder="Automatica se vuota" data-i18n-placeholder="specialFloorPlaceholder">
+              <p class="hint" data-i18n="specialFloorHint"></p>
+              <p class="hint hint-warning" id="specialFloorNote" hidden></p>
             </div>
-            <p class="hint" data-i18n="flavorTextHint"></p>
+            <div class="field">
+              <label for="flavorText" data-i18n="flavorTextLabel">Seme del testo della missione</label>
+              <div class="inline-row">
+                <input id="flavorText" name="flavorText" type="number" min="0" max="16777215" inputmode="numeric" placeholder="Casuale se vuoto" data-i18n-placeholder="flavorTextPlaceholder">
+                <button type="button" id="randomSeedBtn" data-i18n="flavorTextRandom">Nuovo seme casuale</button>
+              </div>
+              <p class="hint" data-i18n="flavorTextHint"></p>
+            </div>
+          </details>
+        </section>
+
+        <section class="form-section" id="targetSectionCard">
+          <h2 class="section-title"><span class="step">2</span><span data-i18n="targetSection">Pokémon e strumento</span></h2>
+          <div class="field" id="clientField">
+            <label for="clientSearch" data-i18n="clientLabel">Committente</label>
+            <div class="field-control-group">
+              <input id="clientSearch" type="search" class="searchbox" placeholder="Cerca un Pokémon..." data-i18n-placeholder="pokemonSearchPlaceholder" data-target="clientBox">
+              <div class="stack-on-mobile">
+                <select name="clientBox" id="clientBox"></select>
+                <label class="checkbox-inline"><input type="checkbox" name="clientF" id="clientF" value="600"> <span data-i18n="female">Femmina</span></label>
+              </div>
+            </div>
+            <div class="entity-preview" id="clientPreview"></div>
           </div>
+
+          <div class="field" id="targetField">
+            <label for="targetSearch" data-i18n="targetLabel">Obiettivo</label>
+            <div class="field-control-group">
+              <input id="targetSearch" type="search" class="searchbox" placeholder="Cerca un Pokémon..." data-i18n-placeholder="targetSearchPlaceholder" data-target="targetBox">
+              <div class="stack-on-mobile">
+                <select name="targetBox" id="targetBox"></select>
+                <label class="checkbox-inline"><input type="checkbox" name="targetF" id="targetF" value="600"> <span data-i18n="female">Femmina</span></label>
+              </div>
+            </div>
+            <div class="entity-preview" id="targetPreview"></div>
+          </div>
+
+          <div class="field" id="target2">
+            <label for="target2Search" data-i18n="target2Label">Secondo Pokémon</label>
+            <div class="field-control-group">
+              <input id="target2Search" type="search" class="searchbox" placeholder="Cerca un Pokémon..." data-i18n-placeholder="target2SearchPlaceholder" data-target="target2Box">
+              <div class="stack-on-mobile">
+                <select name="target2Box" id="target2Box"></select>
+                <label class="checkbox-inline"><input type="checkbox" name="target2F" id="target2F" value="600"> <span data-i18n="female">Femmina</span></label>
+              </div>
+            </div>
+            <p class="hint" data-i18n="target2Hint"></p>
+          </div>
+
+          <div class="field" id="targetItemField">
+            <label for="targetItemSearch" data-i18n="targetItemLabel">Strumento obiettivo</label>
+            <div class="field-control-group">
+              <input id="targetItemSearch" type="search" class="searchbox" placeholder="Cerca uno strumento..." data-i18n-placeholder="itemSearchPlaceholder" data-target="targetItemBox">
+              <select name="targetItemBox" id="targetItemBox"></select>
+            </div>
+            <div class="entity-preview" id="targetItemPreview"></div>
+          </div>
+
+          <div class="field toggle-field" id="allPokemonFormsField">
+            <label class="toggle" for="allPokemonForms">
+              <input type="checkbox" id="allPokemonForms" name="allPokemonForms">
+              <span data-i18n="allPokemonFormsLabel">Mostra tutti i Pokémon e le forme</span>
+            </label>
+            <p class="hint" data-i18n="allPokemonFormsHint"></p>
+          </div>
+        </section>
+
+        <section class="form-section" id="rewardSectionCard">
+          <h2 class="section-title"><span class="step">3</span><span data-i18n="rewardSection">Ricompensa e regione</span></h2>
+          <div class="field" id="rewardTypeField">
+            <label for="rewardTypeBox" data-i18n="rewardTypeLabel">Tipo di ricompensa</label>
+            <select name="rewardTypeBox" id="rewardTypeBox">
+              <option value="0">0</option>
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3" selected>3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+              <option value="6">6</option>
+            </select>
+          </div>
+
+          <div class="field" id="rewardItemField">
+            <label for="rewardItemSearch" data-i18n="rewardItemLabel">Strumento ricompensa</label>
+            <div class="field-control-group">
+              <input id="rewardItemSearch" type="search" class="searchbox" placeholder="Cerca uno strumento..." data-i18n-placeholder="rewardSearchPlaceholder" data-target="rewardItemBox">
+              <select name="rewardItemBox" id="rewardItemBox"></select>
+            </div>
+            <div class="entity-preview" id="rewardItemPreview"></div>
+          </div>
+
+          <div class="field" id="regionField">
+            <label for="regionBox" data-i18n="regionLabelField">Versione del gioco</label>
+            <select name="regionBox" id="regionBox">
+              <option value="eu" data-i18n="region_eu_option">Europa (anche italiano)</option>
+              <option value="na" data-i18n="region_na_option">Nord America e Australia</option>
+              <option value="jp" data-i18n="region_jp_option">Giappone</option>
+            </select>
+            <p class="hint" data-i18n="regionHint"></p>
+          </div>
+        </section>
+
+        <section class="form-section hidden" id="eggHelpCard">
+          <h2 class="section-title" data-i18n="eggHelpTitle">Istruzioni rapide</h2>
+          <div class="egg-help">
+            <p data-i18n="eggHelpLead"></p>
+            <ul>
+              <li data-i18n="eggHelpItem1"></li>
+              <li data-i18n="eggHelpItem2"></li>
+              <li data-i18n="eggHelpItem3"></li>
+              <li data-i18n="eggHelpItem4"></li>
+            </ul>
+            <p><a href="https://laioxy.github.io/wondermail/anyegg/" target="_blank" rel="noopener" data-i18n="eggHelpLink">Pagina dello scopritore del glitch</a></p>
+          </div>
+        </section>
+      </form>
+
+      <aside class="side-panel">
+        <section class="window job-card" id="jobCard" aria-live="polite">
+          <div class="job-head">
+            <span class="portrait-frame job-portrait-frame"><img id="jobPortrait" alt=""></span>
+            <div class="job-head-copy">
+              <p class="eyebrow" id="jobTitle">Info missione</p>
+              <h2 id="jobObjective"></h2>
+            </div>
+            <span class="rank-badge" id="jobRank" hidden></span>
+          </div>
+          <dl class="job-fields" id="jobFields"></dl>
+          <p class="job-note" id="jobNote"></p>
+        </section>
+
+        <section class="window result-card" id="resultCard">
+          <div class="result-header">
+            <h2 data-i18n="resultTitle">Password</h2>
+            <button type="button" id="generateBtn" class="ghost" data-i18n="generate">Rigenera</button>
+          </div>
+          <label class="sr-only" for="outputbox" data-i18n="resultTitle">Password</label>
+          <textarea id="outputbox" class="password" rows="2" readonly placeholder="Qui comparirà la password..." data-i18n-placeholder="outputPlaceholder"></textarea>
+          <div class="result-actions">
+            <button type="button" id="copyPrettyBtn" class="primary" data-i18n="copy">Copia</button>
+            <button type="button" id="copyCompactBtn" data-i18n="copyCompact">Copia senza spazi</button>
+          </div>
+          <div class="field compact-output">
+            <label for="compactOutput" data-i18n="compactLabel">Versione compatta</label>
+            <input id="compactOutput" type="text" readonly>
+          </div>
+          <p id="statusLine" class="status" role="status"></p>
+        </section>
+
+        <section class="window room-card hidden" id="roomCard" aria-labelledby="roomTitle">
+          <div class="room-head">
+            <div>
+              <p class="eyebrow" id="roomKind"></p>
+              <h2 id="roomTitle"></h2>
+            </div>
+            <span class="badge" id="roomBadge"></span>
+          </div>
+          <div class="room-map" id="roomMap"></div>
+          <ul class="room-legend" id="roomLegend"></ul>
+          <p class="room-warning" id="roomWarning" hidden></p>
+          <ul class="room-facts" id="roomFacts"></ul>
+          <div class="room-example" id="roomExample" hidden>
+            <p id="roomExampleText"></p>
+            <div class="room-example-row">
+              <code id="roomExampleCode"></code>
+              <button type="button" id="roomExampleCopy" data-i18n="copy">Copia</button>
+            </div>
+            <p class="status" id="roomExampleStatus" role="status"></p>
+          </div>
+          <p class="hint room-source" data-i18n="roomSource"></p>
+        </section>
+      </aside>
+    </div>
+
+    <section class="window guide" aria-labelledby="guideTitle">
+      <h2 id="guideTitle" data-i18n="guideTitle">Da sapere</h2>
+      <div class="guide-grid">
+        <details open>
+          <summary data-i18n="warningTitle">Prima di usare le password</summary>
+          <p data-i18n="warningLead"></p>
+          <p data-i18n="warningHint"></p>
         </details>
-      </section>
-
-      <section id="targetSectionCard">
-        <h2 data-i18n="targetSection">Pokémon e strumento</h2>
-        <div class="field toggle-field" id="allPokemonFormsField">
-          <label class="toggle" for="allPokemonForms">
-            <input type="checkbox" id="allPokemonForms" name="allPokemonForms">
-            <span data-i18n="allPokemonFormsLabel">Mostra tutti i Pokémon e le forme</span>
-          </label>
-          <p class="hint" data-i18n="allPokemonFormsHint"></p>
-        </div>
-
-        <div class="field" id="clientField">
-          <label for="clientSearch" data-i18n="clientLabel">Committente</label>
-          <div class="field-control-group">
-            <input id="clientSearch" type="search" class="searchbox" placeholder="Cerca un Pokémon..." data-i18n-placeholder="pokemonSearchPlaceholder" data-target="clientBox">
-            <div class="stack-on-mobile">
-              <select name="clientBox" id="clientBox"></select>
-              <label class="checkbox-inline"><input type="checkbox" name="clientF" id="clientF" value="600"> <span data-i18n="female">Femmina</span></label>
-            </div>
-          </div>
-          <div class="entity-preview" id="clientPreview"></div>
-        </div>
-
-        <div class="field" id="targetField">
-          <label for="targetSearch" data-i18n="targetLabel">Obiettivo</label>
-          <div class="field-control-group">
-            <input id="targetSearch" type="search" class="searchbox" placeholder="Cerca un Pokémon..." data-i18n-placeholder="targetSearchPlaceholder" data-target="targetBox">
-            <div class="stack-on-mobile">
-              <select name="targetBox" id="targetBox"></select>
-              <label class="checkbox-inline"><input type="checkbox" name="targetF" id="targetF" value="600"> <span data-i18n="female">Femmina</span></label>
-            </div>
-          </div>
-          <div class="entity-preview" id="targetPreview"></div>
-        </div>
-
-        <div class="field" id="target2">
-          <label for="target2Search" data-i18n="target2Label">Secondo obiettivo</label>
-          <div class="field-control-group">
-            <input id="target2Search" type="search" class="searchbox" placeholder="Cerca un Pokémon..." data-i18n-placeholder="target2SearchPlaceholder" data-target="target2Box">
-            <div class="stack-on-mobile">
-              <select name="target2Box" id="target2Box"></select>
-              <label class="checkbox-inline"><input type="checkbox" name="target2F" id="target2F" value="600"> <span data-i18n="female">Femmina</span></label>
-            </div>
-          </div>
-          <p class="hint" data-i18n="target2Hint"></p>
-          <div class="entity-preview" id="target2Preview"></div>
-        </div>
-
-        <div class="field" id="targetItemField">
-          <label for="targetItemSearch" data-i18n="targetItemLabel">Strumento obiettivo</label>
-          <div class="field-control-group">
-            <input id="targetItemSearch" type="search" class="searchbox" placeholder="Cerca uno strumento..." data-i18n-placeholder="itemSearchPlaceholder" data-target="targetItemBox">
-            <select name="targetItemBox" id="targetItemBox"></select>
-          </div>
-          <div class="entity-preview" id="targetItemPreview"></div>
-        </div>
-      </section>
-
-      <section>
-        <h2 data-i18n="rewardSection">Ricompensa e regione</h2>
-        <div class="field" id="rewardTypeField">
-          <label for="rewardTypeBox" data-i18n="rewardTypeLabel">Tipo di ricompensa</label>
-          <select name="rewardTypeBox" id="rewardTypeBox">
-            <option value="0">0</option>
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3" selected>3</option>
-            <option value="4">4</option>
-            <option value="5">5</option>
-            <option value="6">6</option>
-          </select>
-        </div>
-
-        <div class="field" id="rewardItemField">
-          <label for="rewardItemSearch" data-i18n="rewardItemLabel">Strumento ricompensa</label>
-          <div class="field-control-group">
-            <input id="rewardItemSearch" type="search" class="searchbox" placeholder="Cerca uno strumento..." data-i18n-placeholder="rewardSearchPlaceholder" data-target="rewardItemBox">
-            <select name="rewardItemBox" id="rewardItemBox"></select>
-          </div>
-          <div class="entity-preview" id="rewardItemPreview"></div>
-        </div>
-
-        <div class="field" id="regionField">
-          <label for="regionBox" data-i18n="regionLabelField">Versione del gioco</label>
-          <select name="regionBox" id="regionBox">
-            <option value="eu" data-i18n="region_eu_option">Europa (anche italiano)</option>
-            <option value="na" data-i18n="region_na_option">Nord America e Australia</option>
-            <option value="jp" data-i18n="region_jp_option">Giappone</option>
-          </select>
-          <p class="hint" data-i18n="regionHint"></p>
-        </div>
-
-        <div class="summary-box" id="summaryBox">
-          <h3 data-i18n="summaryTitle">Riepilogo</h3>
-          <p id="summaryText"></p>
-        </div>
-      </section>
-
-      <section class="hidden" id="eggHelpCard">
-        <h2 data-i18n="eggHelpTitle">Istruzioni rapide</h2>
-        <div class="egg-help egg-help-standalone">
-          <p class="egg-help-lead" data-i18n="eggHelpLead"></p>
-          <ul class="egg-help-list">
-            <li data-i18n="eggHelpItem1"></li>
-            <li data-i18n="eggHelpItem2"></li>
-            <li data-i18n="eggHelpItem3"></li>
-            <li data-i18n="eggHelpItem4"></li>
+        <details>
+          <summary data-i18n="notesTitle">Note utili</summary>
+          <ul>
+            <li data-i18n-html="note1"></li>
+            <li data-i18n-html="note2"></li>
+            <li data-i18n-html="note3"></li>
+            <li data-i18n-html="note4"></li>
           </ul>
-          <p class="egg-help-linkline">
-            <a href="https://laioxy.github.io/wondermail/anyegg/" target="_blank" rel="noopener" data-i18n="eggHelpLink">Pagina dello scopritore del glitch</a>
-          </p>
-        </div>
-      </section>
-    </form>
-
-    <section class="card memo-visuals hidden" id="memoVisuals">
-      <div class="memo-visuals-header">
-        <div>
-          <p class="eyebrow" data-i18n="memoVisualEyebrow">Memo tesoro</p>
-          <h2 data-i18n="memoVisualTitle">Mappe delle stanze</h2>
-          <p class="lead" id="memoVisualLead"></p>
-        </div>
-        <div class="source-links">
-          <a class="source-link" href="https://wiki.grovyle.net/pokedun3/?%E3%81%8A%E3%81%9F%E3%81%8B%E3%82%89%E3%83%A1%E3%83%A2#content_1_2" target="_blank" rel="noopener" data-i18n="sourceShapes">Wiki JP: forme</a>
-          <a class="source-link" href="https://wiki.grovyle.net/pokedun3/?%E3%81%B5%E3%81%97%E3%81%8E%E3%81%AA%E3%83%A1%E3%83%BC%E3%83%ABS/%E3%81%8A%E3%81%9F%E3%81%8B%E3%82%89%E3%83%A1%E3%83%A2#content_1_1" target="_blank" rel="noopener" data-i18n="sourceCodes">Wiki JP: codici</a>
-        </div>
+        </details>
       </div>
-
-      <article class="memo-spotlight" id="memoSpotlight">
-        <div id="memoSpotlightMap" class="memo-map memo-map-large" data-i18n-title="memoMapLabel"></div>
-        <div class="memo-spotlight-copy">
-          <p class="badge small-badge" id="memoSpotlightBadge"></p>
-          <h3 id="memoSpotlightTitle"></h3>
-          <p id="memoSpotlightDescription"></p>
-          <p class="memo-meta-line" id="memoSpotlightMeta"></p>
-          <p class="memo-warning hidden" id="memoSpotlightWarning"></p>
-          <p class="memo-meta-line" id="memoSpotlightLocation"></p>
-          <pre class="memo-source-code hidden" id="memoSpotlightCode"></pre>
-          <div class="memo-feature-list" id="memoSpotlightFeatures"></div>
-        </div>
-      </article>
-
-      <div class="memo-gallery-grid hidden" id="memoGalleryGrid"></div>
-      <p class="hint" data-i18n="memoHintBottom"></p>
     </section>
-
-    <section class="card result-card">
-      <div class="field import-code-field">
-        <label for="importCode" data-i18n="importCodeLabel">Leggi una password</label>
-        <textarea id="importCode" rows="3" placeholder="Incolla qui una password..." data-i18n-placeholder="importCodePlaceholder"></textarea>
-        <div class="result-actions import-actions">
-          <button type="button" id="importCodeBtn" data-i18n="importCodeButton">Leggi</button>
-        </div>
-      </div>
-      <div class="result-header">
-        <h2 data-i18n="resultTitle">Password generata</h2>
-        <div class="result-actions">
-          <button type="button" id="generateBtn" class="primary" data-i18n="generate">Genera</button>
-          <button type="button" id="copyPrettyBtn" data-i18n="copy">Copia</button>
-          <button type="button" id="copyCompactBtn" data-i18n="copyCompact">Copia senza spazi</button>
-        </div>
-      </div>
-      <textarea id="outputbox" rows="3" readonly placeholder="Qui comparirà la password..." data-i18n-placeholder="outputPlaceholder"></textarea>
-      <div class="field compact-output">
-        <label for="compactOutput" data-i18n="compactLabel">Versione compatta</label>
-        <input id="compactOutput" type="text" readonly>
-      </div>
-      <p id="statusLine" class="hint" role="status"></p>
-    </section>
-
-    <section class="card project-warning">
-      <p class="eyebrow" data-i18n="warningEyebrow">Da sapere</p>
-      <h2 data-i18n="warningTitle">Prima di usare le password</h2>
-      <p class="lead" data-i18n="warningLead"></p>
-      <p class="hint" data-i18n="warningHint"></p>
-    </section>
-
-    <section class="card notes">
-      <h2 data-i18n="notesTitle">Note utili</h2>
-      <ul>
-        <li data-i18n-html="note1"></li>
-        <li data-i18n-html="note2"></li>
-        <li data-i18n-html="note3"></li>
-        <li data-i18n-html="note4"></li>
-      </ul>
-    </section>
-
-    <details class="card sources-panel">
-      <summary data-i18n="sourcesSummary">Crediti e fonti</summary>
-      <div class="sources-panel-content">
-        <section class="sources-block">
-          <h3 data-i18n="creditsTitle">Crediti</h3>
-          <p data-i18n-html="creditsBody1"></p>
-          <p data-i18n-html="creditsBody2"></p>
-          <p data-i18n-html="creditsBody3"></p>
-        </section>
-
-        <section class="sources-block">
-          <h3 data-i18n="officialDataTitle">Testi e dati ufficiali</h3>
-          <ul class="source-list">
-            <li><a href="https://github.com/pret/pmd-sky" target="_blank" rel="noopener" data-i18n="sourcePmdSky">pret/pmd-sky</a></li>
-            <li><a href="https://github.com/SkyTemple/skytemple-files" target="_blank" rel="noopener" data-i18n="sourceSkyTemple">SkyTemple</a></li>
-            <li><a href="https://github.com/UsernameFodder/pmdsky-debug" target="_blank" rel="noopener" data-i18n="sourcePmdskyDebug">pmdsky-debug</a></li>
-            <li><a href="https://wiki.pokemoncentral.it/Elenco_delle_forme_alternative_in_altre_lingue" target="_blank" rel="noopener" data-i18n="sourcePokemonCentral">Pokémon Central Wiki</a></li>
-          </ul>
-        </section>
-
-        <section class="sources-block">
-          <h3 data-i18n="generatorBaseTitle">Base del generatore</h3>
-          <ul class="source-list">
-            <li><a href="https://github.com/RedCoal27/wondermail_pdm" target="_blank" rel="noopener" data-i18n="sourceRedCoal">RedCoal27/wondermail_pdm</a></li>
-            <li><a href="https://github.com/SombrAbsol/SombrAbsol.github.io" target="_blank" rel="noopener" data-i18n="sourceSombrAbsol">SombrAbsol.github.io</a></li>
-            <li><a href="https://laioxy.github.io/wondermail/" target="_blank" rel="noopener" data-i18n="sourceLaioxy">Lai-brary</a></li>
-          </ul>
-        </section>
-
-        <section class="sources-block">
-          <h3 data-i18n="wonderMailDocsTitle">Documentazione</h3>
-          <ul class="source-list">
-            <li><a href="https://bulbapedia.bulbagarden.net/wiki/Wonder_Mail" target="_blank" rel="noopener">Bulbapedia: Wonder Mail</a></li>
-            <li><a href="https://bulbapedia.bulbagarden.net/wiki/Job_%28Mystery_Dungeon%29" target="_blank" rel="noopener">Bulbapedia: Job (Mystery Dungeon)</a></li>
-            <li><a href="https://the-warp-point.blogspot.com/2009/12/pokemon-mystery-dungeon-explorers-of.html" target="_blank" rel="noopener">The Warp Point</a></li>
-          </ul>
-        </section>
-
-        <section class="sources-block">
-          <h3 data-i18n="memoSourcesTitle">Memo tesoro</h3>
-          <ul class="source-list">
-            <li><a href="https://wiki.grovyle.net/pokedun3/?%E3%81%8A%E3%81%9F%E3%81%8B%E3%82%89%E3%83%A1%E3%83%A2#content_1_2" target="_blank" rel="noopener">Wiki Grovyle (JP)</a></li>
-            <li><a href="https://baumifstory.blog.fc2.com/blog-entry-453.html" target="_blank" rel="noopener">Baumifstory</a></li>
-          </ul>
-        </section>
-
-        <section class="sources-block">
-          <h3 data-i18n="auxDataTitle">Immagini</h3>
-          <ul class="source-list">
-            <li><a href="https://wiki.pmdo.pmdcollab.org/wiki/Category:Item_sprites" target="_blank" rel="noopener">PMDO Wiki: sprite degli strumenti</a></li>
-            <li><a href="https://github.com/PokeAPI/sprites" target="_blank" rel="noopener">PokeAPI sprites</a></li>
-          </ul>
-        </section>
-      </div>
-    </details>
 
     <footer class="footer">
-      <p data-i18n="footerText"></p>
+      <details class="credits">
+        <summary data-i18n="sourcesSummary">Crediti e fonti</summary>
+        <div class="credits-grid">
+          <section>
+            <h3 data-i18n="officialDataTitle">Testi e dati ufficiali</h3>
+            <ul>
+              <li><a href="https://github.com/pret/pmd-sky" target="_blank" rel="noopener" data-i18n="sourcePmdSky">pret/pmd-sky</a></li>
+              <li><a href="https://github.com/SkyTemple/skytemple-files" target="_blank" rel="noopener" data-i18n="sourceSkyTemple">SkyTemple</a></li>
+              <li><a href="https://github.com/UsernameFodder/pmdsky-debug" target="_blank" rel="noopener" data-i18n="sourcePmdskyDebug">pmdsky-debug</a></li>
+              <li><a href="https://wiki.pokemoncentral.it/Elenco_delle_forme_alternative_in_altre_lingue" target="_blank" rel="noopener" data-i18n="sourcePokemonCentral">Pokémon Central Wiki</a></li>
+            </ul>
+          </section>
+          <section>
+            <h3 data-i18n="imagesTitle">Immagini</h3>
+            <ul>
+              <li><a href="https://sprites.pmdcollab.org/" target="_blank" rel="noopener" data-i18n="sourcePortraits">PMDCollab SpriteCollab</a></li>
+              <li><a href="https://wiki.pmdo.pmdcollab.org/wiki/Category:Item_sprites" target="_blank" rel="noopener" data-i18n="sourceItemIcons">PMDO Wiki</a></li>
+              <li><a href="https://github.com/eifetx/Pixelify-Sans" target="_blank" rel="noopener" data-i18n="sourceFont">Pixelify Sans</a></li>
+            </ul>
+          </section>
+          <section>
+            <h3 data-i18n="communityTitle">Ricerche della community</h3>
+            <ul>
+              <li><a href="https://laioxy.github.io/wondermail/" target="_blank" rel="noopener" data-i18n="sourceLaioxy">Lai-brary</a></li>
+              <li><a href="https://wiki.grovyle.net/pokedun3/?%E3%81%B5%E3%81%97%E3%81%8E%E3%81%AA%E3%83%A1%E3%83%BC%E3%83%ABS/%E3%81%8A%E3%81%9F%E3%81%8B%E3%82%89%E3%83%A1%E3%83%A2" target="_blank" rel="noopener" data-i18n="sourceGrovyle">Wiki Grovyle</a></li>
+              <li><a href="https://github.com/SombrAbsol/SombrAbsol.github.io" target="_blank" rel="noopener" data-i18n="sourceSombrAbsol">SombrAbsol</a></li>
+              <li><a href="https://bulbapedia.bulbagarden.net/wiki/Wonder_Mail" target="_blank" rel="noopener">Bulbapedia: Wonder Mail</a></li>
+            </ul>
+          </section>
+        </div>
+        <p class="legal" data-i18n="legalText"></p>
+      </details>
+      <p class="origin" data-i18n-html="originText"></p>
     </footer>
   </main>
 </body>
