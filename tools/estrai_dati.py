@@ -44,6 +44,13 @@ SOURCES = {
     # Elenchi delle stanze scelte dal gioco per covi, Lettere di sfida e Memo tesoro.
     "roomIds1": ("asm/main_rodata_020A18BC.s", "d5a7484b5a17aeec212c78e70c29d6540263f691"),
     "roomIds2": ("asm/main_rodata_020A190C.s", "843e52aeaa00c242a6cb05d71a4d31e332435225"),
+    # Contenuto dei Tecalusso delle stanze: tabella dungeon -> elenco (overlay 29) ed elenchi (overlay 10).
+    "boxTable": ("asm/overlay_29_rodata_02352A6C.s", "7948735707040fccc65902b4d36891701e8618ef"),
+    "boxLists1": ("asm/overlay_10_rodata_022C464C.s", "7e0e63b832dba93e321a0220a1527380508c0e20"),
+    "boxLists2": ("asm/overlay_10_rodata_022C48E4.s", "48845e7cfcc43b4d0ba76111d2a3ae86f15c5cfc"),
+    "boxLists3": ("asm/overlay_10_rodata_022C490C.s", "9f4128a23347f2f15c92c89793d20150b62389ce"),
+    # Dati degli strumenti (categoria di ogni strumento), versione europea.
+    "itemP": ("files/language-specific/EU/BALANCE/item_p.bin", "22e33f76a2c9e443c67d6d0434161c1265110ce7"),
 }
 LANGUAGES = ("it", "en")
 
@@ -225,6 +232,23 @@ def read_genders(monster_md: bytes) -> list[int]:
     return [monster_md[8 + i * 68 + 0x12] for i in range(count)]
 
 
+def read_item_categories(item_p: bytes) -> list[int]:
+    """BALANCE/item_p.bin (contenitore SIR0): una voce da 16 byte per strumento; il byte 4 è la
+    categoria (enum item_category di pmdsky-debug: 0-1 da lanciare, 2 bacche e semi, 3 cibo,
+    4 da tenere, 5 MT, 6 Poké, 8 altro, 9 sfere, 10 Combinatore, 11 MT usata, 12-14 forzieri,
+    15 strumenti esclusivi)."""
+    if item_p[:4] != b"SIR0":
+        raise ValueError("item_p.bin non riconosciuto")
+    start, end = struct.unpack_from("<II", item_p, 4)
+    categories = []
+    for offset in range(start, end - 15, 16):
+        item_id = struct.unpack_from("<H", item_p, offset + 6)[0]
+        if item_id != len(categories):
+            raise ValueError("item_p.bin: strumenti fuori ordine")
+        categories.append(item_p[offset + 4])
+    return categories
+
+
 def build_shared(en_strings: list[str], genders: list[int]) -> dict:
     items_start, count = BLOCKS["items"]
     long_start, _ = BLOCKS["itemLong"]
@@ -265,13 +289,26 @@ NUMBER = re.compile(r"^(0x[0-9a-fA-F]+|\d+)$")
 
 def assemble(source: str, defines: frozenset = frozenset({"EUROPE"})) -> tuple[bytes, dict]:
     """Assemblatore minimo per i file di dati di pret/pmd-sky: restituisce i byte e la posizione di ogni
-    etichetta. Gestisce #ifdef/#else/#endif (versione europea), #define, .byte, .hword, .word e .space.
+    etichetta. Gestisce il preprocessore (#ifdef, #if defined(...), #elif, #else, #endif, #define) per la
+    versione europea e le direttive .byte, .hword, .word e .space.
     I .word che puntano a un'etichetta dello stesso file diventano la posizione di quell'etichetta."""
     data = bytearray()
     labels: dict[str, int] = {}
     values: dict[str, int] = {}
     relocations: list[tuple[int, str]] = []
-    active = [True]
+    # Pila dei blocchi condizionali: [attivo il blocco esterno, un ramo già preso, attivo questo ramo]
+    stack: list[list[bool]] = []
+
+    def active() -> bool:
+        return stack[-1][2] if stack else True
+
+    def condition(expr: str) -> bool:
+        expr = re.sub(r"defined\s*\(\s*(\w+)\s*\)|defined\s+(\w+)",
+                      lambda m: str((m.group(1) or m.group(2)) in defines), expr)
+        expr = expr.replace("&&", " and ").replace("||", " or ").replace("!", " not ")
+        if not re.fullmatch(r"[\sA-Za-z()]+", expr) or re.search(r"[A-Za-z]+", expr.replace("True", "").replace("False", "").replace("and", "").replace("or", "").replace("not", "")):
+            raise ValueError(f"condizione non gestita: {expr}")
+        return bool(eval(expr, {"__builtins__": {}}))  # solo True/False e operatori logici, controllato sopra
 
     def evaluate(expr: str) -> int:
         expr = expr.strip()
@@ -287,20 +324,31 @@ def assemble(source: str, defines: frozenset = frozenset({"EUROPE"})) -> tuple[b
         if not line:
             continue
         if line.startswith("#"):
-            parts = line.split()
-            if parts[0] == "#ifdef":
-                active.append(active[-1] and parts[1] in defines)
-            elif parts[0] == "#ifndef":
-                active.append(active[-1] and parts[1] not in defines)
-            elif parts[0] == "#else":
-                parent = active[-2]
-                active[-1] = parent and not active[-1]
-            elif parts[0] == "#endif":
-                active.pop()
-            elif parts[0] == "#define" and active[-1]:
-                values[parts[1]] = evaluate(" ".join(parts[2:])) if len(parts) > 2 else 1
+            directive, _, rest = line.partition(" ")
+            rest = rest.strip()
+            if directive in ("#ifdef", "#ifndef", "#if"):
+                if directive == "#if":
+                    cond = condition(rest)
+                else:
+                    cond = (rest in defines) == (directive == "#ifdef")
+                outer = active()
+                stack.append([outer, cond, outer and cond])
+            elif directive == "#elif":
+                top = stack[-1]
+                cond = not top[1] and condition(rest)
+                top[2] = top[0] and cond
+                top[1] = top[1] or cond
+            elif directive == "#else":
+                top = stack[-1]
+                top[2] = top[0] and not top[1]
+                top[1] = True
+            elif directive == "#endif":
+                stack.pop()
+            elif directive == "#define" and active():
+                name, _, value = rest.partition(" ")
+                values[name] = evaluate(value) if value.strip() else 1
             continue
-        if not active[-1]:
+        if not active():
             continue
         label = re.match(r"^([A-Za-z_]\w*):", line)
         if label:
@@ -498,21 +546,72 @@ UNUSED_TREASURE_MEMO = 114
 SEALED_CHAMBER = 165
 # Finché la storia non è abbastanza avanti il gioco genera solo le prime 15 stanze dei Memo tesoro.
 TREASURE_MEMO_EARLY_COUNT = 15
+# Ultimi piani dei dungeon che si sbloccano dopo la storia, con i loro premi (enum fixed_room_id di
+# pmdsky-debug). Usati come stanza di un Memo tesoro non hanno il tesoro della missione: la missione non
+# si completa e si può ripetere. Il nome inglese serve a trovare l'ID del dungeon nei testi del gioco.
+DUNGEON_END_ROOMS = {
+    81: "Zero Isle North", 82: "Zero Isle East", 83: "Zero Isle West", 84: "Zero Isle South",
+    85: "Oran Forest", 86: "Marine Resort", 87: "Serenity River", 88: "Landslide Cave",
+    89: "Lush Prairie", 90: "Tiny Meadow", 91: "Surrounded Sea", 92: "Concealed Ruins",
+    93: "Lake Afar", 94: "Happy Outlook", 95: "Mt. Mistral", 96: "Shimmer Hill",
+    97: "Lost Wilderness", 98: "Midnight Forest", 99: "Zero Isle Center", 100: "Oblivion Forest",
+    101: "Treacherous Waters", 102: "Southeastern Islands", 103: "Inferno Cave", 104: "Midnight Forest",
+}
+# Il contenuto dei Tecalusso dipende dal dungeon della missione (tabella ov29_02353050 letta da
+# PlaceFixedRoomTile); fuori dalla tabella il gioco ci mette un Revitalseme.
+BOX_TABLE_LABEL = "ov29_02353050"
+BOX_FALLBACK_ITEM = 73
+GOLDEN_CHAMBER_BOX_LABEL = "ov10_022C4B34"   # premi della Sala d'Oro (solo con la missione della Sala d'Oro)
+# Negli elenchi, 0x579-0x57B indicano uno strumento esclusivo per un membro della squadra.
+EXCLUSIVE_ITEM_CODES = range(0x579, 0x57D)
 
 
-def crop(rows: list[str]) -> list[str]:
-    """Taglia i muri esterni lasciando un bordo di una casella."""
+def crop(rows: list[str]) -> tuple[list[str], int, int]:
+    """Taglia i muri esterni lasciando un bordo di una casella. Restituisce anche lo spostamento."""
     cells = [(x, y) for y, row in enumerate(rows) for x, char in enumerate(row) if char != "#"]
     if not cells:
-        return rows
+        return rows, 0, 0
     x0 = max(min(x for x, _ in cells) - 1, 0)
     x1 = min(max(x for x, _ in cells) + 1, len(rows[0]) - 1)
     y0 = max(min(y for _, y in cells) - 1, 0)
     y1 = min(max(y for _, y in cells) + 1, len(rows) - 1)
-    return [row[x0:x1 + 1] for row in rows[y0:y1 + 1]]
+    return [row[x0:x1 + 1] for row in rows[y0:y1 + 1]], x0, y0
 
 
-def build_rooms(fixed: bytes, entities_src: bytes, properties_src: bytes, ids1: bytes, ids2: bytes) -> dict:
+def read_item_list(data: bytes, offset: int) -> list[int]:
+    """Elenco di ID di strumenti a 16 bit terminato da zero."""
+    items = []
+    while offset + 2 <= len(data):
+        value = struct.unpack_from("<h", data, offset)[0]
+        if value == 0:
+            break
+        items.append(value)
+        offset += 2
+    return items
+
+
+def read_box_lists(table_src: bytes, *list_srcs: bytes) -> tuple[dict, list[int]]:
+    """Contenuto possibile dei Tecalusso per dungeon ({ID dungeon: [strumenti]}) e premi della Sala d'Oro."""
+    source = table_src.decode("utf-8")
+    table = source[source.index(f"{BOX_TABLE_LABEL}:"):]
+    pairs = re.findall(r"\.byte (0x[0-9A-Fa-f]+), 0x00, 0x00, 0x00\s*\n\s*\.word (\w+)", table)
+    assembled = [assemble(src.decode("utf-8")) for src in list_srcs]
+
+    def lookup(label: str) -> list[int]:
+        for data, labels in assembled:
+            if label in labels:
+                return read_item_list(data, labels[label])
+        raise ValueError(f"elenco {label} non trovato")
+
+    lists = {}
+    for dungeon, label in pairs:
+        lists[str(int(dungeon, 16))] = lookup(label)
+    return lists, lookup(GOLDEN_CHAMBER_BOX_LABEL)
+
+
+def build_rooms(fixed: bytes, entities_src: bytes, properties_src: bytes, ids1: bytes, ids2: bytes,
+                box_table: bytes, box_lists1: bytes, box_lists2: bytes, box_lists3: bytes,
+                en_strings: list[str]) -> dict:
     rooms = read_fixed_bin(fixed)
     entities = read_entity_table(entities_src)
     properties = read_room_properties(properties_src)
@@ -530,18 +629,32 @@ def build_rooms(fixed: bytes, entities_src: bytes, properties_src: bytes, ids1: 
     for key in ("treasureMemo", "challenge", "legendaryChallenge", "outlawHideout"):
         for room_id in mission_rooms[key]:
             kinds[room_id] = key
+    # Dungeon a cui appartiene l'ultimo piano (ID dai nomi inglesi del gioco).
+    dungeon_start, dungeon_count = BLOCKS["dungeons"]
+    dungeon_names = [clean_name(text) for text in en_strings[dungeon_start:dungeon_start + dungeon_count]]
+    room_dungeons = {}
+    for room_id, name in DUNGEON_END_ROOMS.items():
+        kinds[room_id] = "dungeonEnd"
+        room_dungeons[room_id] = dungeon_names.index(name)
+    # Stanze senza il tesoro della missione ma con dei premi: in un Memo tesoro la missione non finisce mai.
+    mission_rooms["withoutTreasure"] = sorted(list(DUNGEON_END_ROOMS) + [GOLDEN_CHAMBER, SECRET_ROOM, UNUSED_TREASURE_MEMO])
+    box_lists, golden_items = read_box_lists(box_table, box_lists1, box_lists2, box_lists3)
 
     output = {}
     for room_id in sorted(kinds):
         room = rooms[room_id]
         rows = []
+        placed = []
         for y in range(room["h"]):
             row = ""
-            for action in room["actions"][y * room["w"]:(y + 1) * room["w"]]:
+            for x, action in enumerate(room["actions"][y * room["w"]:(y + 1) * room["w"]]):
                 if action in BASE_ACTIONS:
                     row += BASE_ACTIONS[action]
                 elif 0x10 <= action < 0x10 + len(entities):
-                    row += entity_char(entities[action - 0x10])
+                    char = entity_char(entities[action - 0x10])
+                    if char in "ic":
+                        placed.append((x, y, entities[action - 0x10]["item"]))
+                    row += char
                 else:
                     raise ValueError(f"stanza {room_id}: azione sconosciuta {action:#x}")
             rows.append(row)
@@ -549,8 +662,16 @@ def build_rooms(fixed: bytes, entities_src: bytes, properties_src: bytes, ids1: 
         if room_id >= SEALED_CHAMBER:
             # Per le stanze inserite in un piano normale il gioco ignora questi divieti.
             props = {**props, "orbs": 1, "warps": 1, "trawl": 1}
-        output[str(room_id)] = {"kind": kinds[room_id], "map": crop(rows), "props": props}
-    return {"missionRooms": mission_rooms, "legend": LEGEND, "rooms": output}
+        cropped, x0, y0 = crop(rows)
+        entry = {"kind": kinds[room_id], "props": props, "map": cropped}
+        if room_id in room_dungeons:
+            entry["dungeon"] = room_dungeons[room_id]
+        if placed:
+            entry["items"] = [[x - x0, y - y0, item] for x, y, item in placed]
+        output[str(room_id)] = entry
+    boxes = {"fallback": BOX_FALLBACK_ITEM, "byDungeon": box_lists, "goldenChamber": golden_items,
+             "exclusiveCodes": list(EXCLUSIVE_ITEM_CODES)}
+    return {"missionRooms": mission_rooms, "legend": LEGEND, "boxes": boxes, "rooms": output}
 
 
 # ---------------------------------------------------------------------------
@@ -564,12 +685,13 @@ def compact(value) -> str:
 def format_rooms(payload: dict) -> str:
     """Una riga per ogni riga della mappa, così le differenze tra versioni restano leggibili."""
     lines = ["{"]
-    for key in ("source", "missionRooms", "legend"):
+    for key in ("source", "missionRooms", "legend", "boxes"):
         lines.append(f" {compact(key)}: {compact(payload[key])},")
     lines.append(' "rooms": {')
     room_items = list(payload["rooms"].items())
     for index, (room_id, room) in enumerate(room_items):
-        lines.append(f"  {compact(room_id)}: {{\"kind\": {compact(room['kind'])}, \"props\": {compact(room['props'])}, \"map\": [")
+        head = {key: value for key, value in room.items() if key != "map"}
+        lines.append(f"  {compact(room_id)}: {compact(head)[:-1]}, \"map\": [")
         lines += [f"   {compact(row)}," for row in room["map"][:-1]] + [f"   {compact(room['map'][-1])}"]
         lines.append("  ]}" + ("," if index < len(room_items) - 1 else ""))
     lines += [" }", "}"]
@@ -616,12 +738,14 @@ def main() -> int:
         )
 
     shared = build_shared(texts["en"], genders)
+    shared["itemCategory"] = read_item_categories(load_source("itemP", args.pmd_sky))
     shared["source"] = source
     write_js(args.out / "dati_gioco.js", "window.WMSkyGameData", shared,
              "Dati di PMD: Esploratori del Cielo che non dipendono dalla lingua.")
 
     rooms = build_rooms(*(load_source(key, args.pmd_sky) for key in
-                          ("fixed", "fixedEntities", "fixedProperties", "roomIds1", "roomIds2")))
+                          ("fixed", "fixedEntities", "fixedProperties", "roomIds1", "roomIds2",
+                           "boxTable", "boxLists1", "boxLists2", "boxLists3")), texts["en"])
     rooms["source"] = f"{source} {SOURCES['fixed'][0]}"
     write_js(args.out / "stanze_fisse.js", "window.WMSkyFixedRooms", rooms,
              "Stanze speciali di PMD: Esploratori del Cielo (forme e contenuto dai dati del gioco).",

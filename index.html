@@ -293,6 +293,14 @@
             <input id="compactOutput" type="text" readonly>
           </div>
           <p id="statusLine" class="status" role="status"></p>
+          <div class="similar">
+            <p class="field-label" data-i18n="similarTitle">Missione simile</p>
+            <div class="similar-actions">
+              <button type="button" id="similarNextFloor" data-i18n="similarNextFloor">Piano successivo</button>
+              <button type="button" id="similarNewSeed" data-i18n="similarNewSeed">Nuovo seme</button>
+            </div>
+            <p class="hint" data-i18n="similarHint"></p>
+          </div>
         </section>
 
         <section class="window room-card hidden" id="roomCard" aria-labelledby="roomTitle">
@@ -307,6 +315,11 @@
           <ul class="room-legend" id="roomLegend"></ul>
           <p class="room-warning" id="roomWarning" hidden></p>
           <ul class="room-facts" id="roomFacts"></ul>
+          <details class="room-boxes" id="roomBoxes" hidden>
+            <summary data-i18n="roomBoxesTitle">Cosa c'è nei Tecalusso in ogni dungeon</summary>
+            <p class="hint" data-i18n="roomBoxesHint"></p>
+            <ul class="room-boxes-list" id="roomBoxesList"></ul>
+          </details>
           <div class="room-example" id="roomExample" hidden>
             <p id="roomExampleText"></p>
             <div class="room-example-row">

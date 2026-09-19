@@ -413,6 +413,7 @@ input[type="checkbox"] { accent-color: var(--gold); width: 18px; height: 18px; }
   background: transparent;
   box-shadow: none;
   font-weight: 400;
+  scroll-margin-top: 34px;
 }
 .search-suggestion:active { transform: none; }
 .search-suggestion:hover, .search-suggestion.active { background: rgba(255, 255, 255, .08); border-color: rgba(255, 255, 255, .12); }
@@ -437,6 +438,22 @@ input[type="checkbox"] { accent-color: var(--gold); width: 18px; height: 18px; }
   overflow: hidden;
 }
 .search-suggestion-empty { color: var(--muted); }
+/* Titoli dei gruppi di strumenti (bacche, sfere, MT...), fissi in alto mentre si scorre */
+.search-group {
+  position: sticky;
+  top: -6px;
+  z-index: 1;
+  margin: 2px -6px 0;
+  padding: 7px 14px 5px;
+  border-bottom: 1px solid var(--line-strong);
+  background: #0f1d48;
+  font-family: var(--font-pixel);
+  font-size: .8rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+.search-group:first-child { margin-top: -6px; }
 
 /* Anteprime di Pokémon e strumenti nel modulo */
 .entity-preview {
@@ -643,6 +660,15 @@ textarea.password {
 .compact-output { margin-bottom: 8px; }
 .compact-output label { font-size: .85rem; color: var(--muted); font-weight: 600; }
 .compact-output input { font-family: var(--font-code); letter-spacing: .06em; font-size: .92rem; }
+.similar {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 2px dashed var(--line);
+}
+.similar .field-label, .similar .hint { margin: 0; }
+.similar-actions { display: flex; flex-wrap: wrap; gap: 10px; }
 
 /* ------------------------------------------------------------------------
    Stanze speciali: scelta e mappa
@@ -700,6 +726,24 @@ textarea.password {
   box-shadow: 0 0 6px var(--teal);
 }
 
+/* Stanze fuori elenco (senza tesoro della missione), in un gruppo a parte */
+.room-extra {
+  grid-column: 1 / -1;
+  margin-top: 4px;
+  padding: 10px 12px;
+  border: 1px dashed var(--line-strong);
+  border-radius: 10px;
+  background: rgba(5, 12, 36, .35);
+}
+.room-extra summary { color: var(--gold); }
+.room-extra[open] summary { margin-bottom: 6px; }
+.room-extra .hint { margin: 0 0 10px; }
+.room-extra-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(62px, 1fr));
+  gap: 8px;
+}
+
 .room-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 14px; }
 .room-head > div { display: grid; gap: 4px; }
 .badge {
@@ -710,6 +754,7 @@ textarea.password {
   color: var(--muted);
   white-space: nowrap;
 }
+.room-farm .badge { border-color: var(--green); background: rgba(127, 227, 154, .12); color: var(--green); }
 .room-map {
   --cols: 12;
   --rows: 12;
@@ -865,6 +910,40 @@ textarea.password {
   color: #ffd3da;
   font-size: .92rem;
 }
+/* Contenuto dei Tecalusso per dungeon (stanze senza tesoro) */
+.room-boxes {
+  margin-top: 14px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(5, 12, 36, .45);
+}
+.room-boxes summary { color: var(--gold); }
+.room-boxes[open] summary { margin-bottom: 8px; }
+.room-boxes .hint { margin: 0 0 10px; }
+.room-boxes-list { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.room-boxes-row {
+  display: grid;
+  gap: 6px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.room-boxes-row.current { border-color: rgba(127, 227, 154, .7); background: rgba(127, 227, 154, .08); }
+.room-boxes-dungeons { display: flex; flex-wrap: wrap; gap: 6px; }
+.room-boxes-items { margin: 0; color: var(--muted); font-size: .88rem; }
+.room-boxes-other { font-weight: 700; font-size: .88rem; }
+.chip {
+  padding: 3px 10px;
+  border-radius: 999px;
+  border-width: 1px;
+  font-size: .84rem;
+  font-weight: 600;
+  box-shadow: none;
+}
+.chip.active { border-color: var(--green); color: var(--green); }
+.chip:disabled { opacity: .45; cursor: not-allowed; }
+
 .room-example {
   margin-top: 14px;
   padding: 12px;

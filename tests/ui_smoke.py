@@ -19,6 +19,9 @@ from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).resolve().parent.parent
 JP_CODES = json.loads((ROOT / "tests" / "fixtures" / "codici_memo_giapponesi.json").read_text(encoding="utf-8"))
+# Memo tesoro al piano 1 della Grotta Marina con la stanza 81 (fondo di Isola Zero Nord): la stanza non ha
+# il tesoro della missione, quindi la missione non si completa e si può rifare per raccogliere i premi.
+FARM_CODE = "=27YY RQ+4%WP CCCTTPTP21 P#%33FM =+66N"
 
 failures: list[str] = []
 
@@ -34,9 +37,18 @@ class QuietHandler(http.server.SimpleHTTPRequestHandler):
         pass
 
 
+class QuietServer(socketserver.ThreadingTCPServer):
+    daemon_threads = True
+
+    def handle_error(self, request, client_address):
+        # Il browser chiude le connessioni a metà quando termina: non è un errore della pagina.
+        if not isinstance(sys.exc_info()[1], (BrokenPipeError, ConnectionResetError)):
+            super().handle_error(request, client_address)
+
+
 def serve() -> tuple[socketserver.TCPServer, str]:
     handler = functools.partial(QuietHandler, directory=str(ROOT))
-    server = socketserver.TCPServer(("127.0.0.1", 0), handler)
+    server = QuietServer(("127.0.0.1", 0), handler)
     threading.Thread(target=server.serve_forever, daemon=True).start()
     return server, f"http://127.0.0.1:{server.server_address[1]}/index.html"
 
@@ -219,7 +231,8 @@ def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
         set_select(page, "regionBox", "eu")
         page.click('.preset-btn[data-preset="memo"]')
         page.wait_for_timeout(150)
-        check(page.locator("#roomPicker .room-option").count() == 31, "scelta tra «A caso» e 30 stanze dei Memo tesoro")
+        check(page.locator("#roomPicker > .room-option").count() == 31, "scelta tra «A caso» e 30 stanze dei Memo tesoro")
+        check(page.locator("#roomPicker .room-extra .room-option").count() == 27, "27 stanze senza tesoro in un gruppo a parte")
         page.evaluate("pickRoom('115')")
         page.wait_for_timeout(150)
         struct = decode_output(page, "eu")["struct"]
@@ -236,6 +249,63 @@ def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
         if screenshot_dir:
             page.evaluate("document.getElementById('roomCard').scrollIntoView()")
             page.screenshot(path=str(screenshot_dir / f"memo_it{'_offline' if offline else ''}.png"), full_page=False)
+
+        # Codice "da farm" (stanza 81, senza tesoro) e missioni simili
+        page.fill("#importCode", FARM_CODE)
+        page.click("#importCodeBtn")
+        page.wait_for_timeout(150)
+        check("Europa" in page.text_content("#importStatus"), "codice da farm letto (EU)")
+        title = page.text_content("#roomTitle")
+        check(title == "Stanza 81 · fondo di Isola Zero Nord", f"stanza 81 riconosciuta: {title!r}")
+        check(page.text_content("#roomBadge") == "Si può ripetere", "stanza senza tesoro segnalata come ripetibile")
+        legend = page.text_content("#roomLegend")
+        check("Mascheradoro" in legend and "Gommaincanto × 2" in legend, f"premi della stanza 81 in legenda: {legend!r}")
+        check(page.locator("#roomPicker .room-extra[open] .room-option.active").count() == 1,
+              "stanza 81 evidenziata tra le stanze senza tesoro")
+        check("non c'è in questa stanza" in page.text_content("#jobFields"), "l'anteprima avvisa che il tesoro non c'è")
+        check(page.is_hidden("#roomBoxes"), "stanza 81 senza Tecalusso: niente tabella dei dungeon")
+
+        # Stanza 92 (6 Tecalusso): il contenuto dipende dal dungeon, che si sceglie dalla tabella
+        seed = decode_output(page, "eu")["struct"]["flavorText"]
+        page.evaluate("pickRoom('92')")
+        page.wait_for_timeout(150)
+        check(page.is_visible("#roomBoxes"), "stanza 92: tabella del contenuto dei Tecalusso per dungeon")
+        page.click("#roomBoxes summary")
+        page.click('#roomBoxes .chip[data-dungeon="72"]')
+        page.wait_for_timeout(150)
+        struct = decode_output(page, "eu")["struct"]
+        check((struct["dungeon"], struct["specialFloor"], struct["flavorText"]) == (72, 92, seed),
+              f"dungeon scelto dalla tabella, stessa stanza e stesso seme: {(struct['dungeon'], struct['specialFloor'])}")
+        facts = page.text_content("#roomFacts")
+        check("Riserva Marina contengono uno a caso tra Gommabianca" in facts, f"contenuto dei Tecalusso in Riserva Marina: {facts[:90]!r}")
+        page.evaluate("pickRoom('81')")
+        page.wait_for_timeout(150)
+        before = decode_output(page, "eu")["struct"]
+        page.click("#similarNextFloor")
+        page.wait_for_timeout(150)
+        after = decode_output(page, "eu")["struct"]
+        changed = sorted(key for key in before if key != "checksum" and before[key] != after[key])
+        check(changed == ["floor"] and after["floor"] == 2, f"«Piano successivo» cambia solo il piano: {changed}, piano {after['floor']}")
+        page.click("#similarNewSeed")
+        page.wait_for_timeout(150)
+        seeded = decode_output(page, "eu")["struct"]
+        changed = sorted(key for key in after if key != "checksum" and after[key] != seeded[key])
+        check(changed == ["flavorText"], f"«Nuovo seme» cambia solo il seme: {changed}")
+        last = page.evaluate("getDungeonFloorLimit(document.getElementById('dungeonBox').value)")
+        set_input(page, "floor", last)
+        page.evaluate("generateCode()")
+        page.click("#similarNextFloor")
+        page.wait_for_timeout(100)
+        check(decode_output(page, "eu")["struct"]["floor"] == last and "piano successivo" in page.text_content("#statusLine"),
+              f"all'ultimo piano ({last}) non si va oltre: {page.text_content('#statusLine')!r}")
+
+        # Strumenti divisi per categoria
+        page.click("#rewardItemSearch")
+        page.wait_for_timeout(100)
+        headers = page.eval_on_selector_all("#rewardItemField .search-group", "els => els.map(e => e.textContent)")
+        first = page.evaluate("document.querySelector('#rewardItemField .search-suggestions').firstElementChild.textContent")
+        check("Sfere" in headers and "MT (mosse)" in headers and "Nessuno" in first, f"strumenti divisi per categoria: {headers}")
+        page.keyboard.press("Escape")
 
         # Ricerca con il nome inglese
         results = page.evaluate("getSearchSuggestions(document.getElementById('rewardItemBox'), 'oran').map(s => s.text)")

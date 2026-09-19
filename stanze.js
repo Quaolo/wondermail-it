@@ -38,7 +38,7 @@
 
   // ID ufficiali usati per i nomi nella legenda.
   const TRAP_IDS = { gust: 7, warp: 6, chestnut: 16 };
-  const ITEM_IDS = { poke: 183, box: 385, treasure: 385, door: 182, trawlOrb: 322, reviverSeed: 73 };
+  const ITEM_IDS = { poke: 183, box: 385, treasure: 385, door: 182, trawlOrb: 322, reviverSeed: 73, oranBerry: 70 };
 
   // Colori delle miniature (un pixel per casella).
   const THUMB_COLORS = {
@@ -58,7 +58,9 @@
     const numeric = parseInt(id, 10);
     if (!data || !Number.isFinite(numeric)) return null;
     const room = data.rooms[String(numeric)];
-    return room ? { id: numeric, kind: room.kind, map: room.map, props: room.props } : null;
+    return room
+      ? { id: numeric, kind: room.kind, map: room.map, props: room.props, items: room.items || [], dungeon: room.dungeon }
+      : null;
   }
 
   function hasRoom(id) {
@@ -76,7 +78,9 @@
     const lists = data.missionRooms;
     const main = parseInt(typeData.mainType, 10);
     const sub = parseInt(typeData.specialType, 10) || 0;
-    if (main === 12) return { kind: 'treasureMemo', rooms: lists.treasureMemo, early: lists.treasureMemoEarly };
+    if (main === 12) {
+      return { kind: 'treasureMemo', rooms: lists.treasureMemo, early: lists.treasureMemoEarly, extra: lists.withoutTreasure };
+    }
     if (main === 11 && sub === 0) return { kind: 'challenge', rooms: lists.challenge };
     if (main === 11 && lists.legendaryChallenge[sub - 1]) {
       return { kind: 'legendaryChallenge', fixed: lists.legendaryChallenge[sub - 1] };
@@ -96,7 +100,8 @@
       outlawHideout: t('roomKindHideout'),
       sealedChamber: t('roomKindSealed'),
       goldenChamber: t('roomKindGolden'),
-      secretRoom: t('roomKindSecret')
+      secretRoom: t('roomKindSecret'),
+      dungeonEnd: t('roomKindDungeonEnd')
     };
     return labels[kind] || t('roomKindOther');
   }
@@ -130,6 +135,64 @@
   function extraText(key) {
     const text = getGameText();
     return (text && text.extra && text.extra[key]) || key;
+  }
+
+  // Strumento posato su una casella (stanze con premi fissi).
+  function itemAt(room, x, y) {
+    const entry = (room.items || []).find(([ix, iy]) => ix === x && iy === y);
+    return entry ? entry[2] : null;
+  }
+
+  function isWithoutTreasure(room) {
+    const data = getData();
+    return !!(data && room && data.missionRooms.withoutTreasure.includes(room.id));
+  }
+
+  // Cosa può contenere un Tecalusso: dipende dal dungeon della missione.
+  function describeBoxContents(dungeonId) {
+    const data = getData();
+    const boxes = data && data.boxes;
+    if (!boxes) return '';
+    const list = boxes.byDungeon[String(dungeonId)];
+    if (!list) return getItemName(boxes.fallback);
+    // Il gioco sceglie una voce dell'elenco a caso (ov29_023442B8): le voci ripetute sono più probabili.
+    const counts = new Map();
+    list.forEach((item) => {
+      const name = boxes.exclusiveCodes.includes(item) ? t('exclusiveForTeam') : getItemName(item);
+      counts.set(name, (counts.get(name) || 0) + 1);
+    });
+    const entries = Array.from(counts);
+    if (entries.length === 1) return entries[0][0];
+    if (entries.every(([, count]) => count === entries[0][1])) {
+      return t('boxAnyOf', { items: entries.map(([name]) => name).join(', ') });
+    }
+    return entries.map(([name, count]) => `${name} ${Math.round((count / list.length) * 100)}%`).join(', ');
+  }
+
+  /**
+   * Contenuto dei Tecalusso per ogni dungeon (tabella ov29_02353050 letta da PlaceFixedRoomTile).
+   * I dungeon con lo stesso elenco stanno nella stessa riga; i dungeon che non sono in tabella danno
+   * sempre il ripiego (Revitalseme) e non compaiono.
+   */
+  function getBoxTable() {
+    const data = getData();
+    const boxes = data && data.boxes;
+    if (!boxes) return { rows: [], fallback: '' };
+    const rows = new Map();
+    Object.keys(boxes.byDungeon).forEach((key) => {
+      const list = boxes.byDungeon[key];
+      const signature = list.join(',');
+      if (signature === String(boxes.fallback)) return;
+      if (!rows.has(signature)) rows.set(signature, { dungeons: [], contents: describeBoxContents(key) });
+      rows.get(signature).dungeons.push(parseInt(key, 10));
+    });
+    return { rows: Array.from(rows.values()), fallback: getItemName(boxes.fallback) };
+  }
+
+  // Tecalusso che il gioco riempie con la tabella dei dungeon (non il tesoro della missione né la stanza segreta).
+  function hasDungeonBoxes(room) {
+    return !!room && room.kind !== 'secretRoom' && Array.isArray(room.items)
+      && room.items.some(([, , item]) => item === ITEM_IDS.box);
   }
 
   function getCellLabel(type, context) {
@@ -224,12 +287,16 @@
     container.setAttribute('aria-label', t('roomMapLabel', { room: room.id, width, height }));
 
     const fragment = document.createDocumentFragment();
-    room.map.forEach((row) => {
-      for (const char of row) {
+    room.map.forEach((row, y) => {
+      [...row].forEach((char, x) => {
         const type = CELL_TYPES[char] || 'floor';
         const cell = document.createElement('span');
         cell.className = `cell cell-${baseClass(type)} mark-${type}`;
-        if (type !== baseClass(type)) {
+        const placedItem = (type === 'item' || type === 'box') ? itemAt(room, x, y) : null;
+        if (placedItem !== null && context.itemImage) {
+          cell.title = getItemName(placedItem);
+          cell.appendChild(createImage(context.itemImage(placedItem), 'cell-icon'));
+        } else if (type !== baseClass(type)) {
           cell.title = getCellLabel(type, context);
           const portrait = portraitFor(type, context);
           const icon = iconFor(type, context);
@@ -242,7 +309,7 @@
           cell.title = getCellLabel(type, context);
         }
         fragment.appendChild(cell);
-      }
+      });
     });
     container.appendChild(fragment);
   }
@@ -268,8 +335,27 @@
     list.innerHTML = '';
     if (!room) return;
     const counts = countCells(room);
+    // Strumenti posati: una voce per strumento, con la sua icona.
+    const placed = new Map();
+    (room.items || []).forEach(([, , item]) => placed.set(item, (placed.get(item) || 0) + 1));
     LEGEND_ORDER.forEach((type) => {
       if (!counts[type]) return;
+      if ((type === 'item' || type === 'box') && placed.size && context.itemImage) {
+        placed.forEach((count, item) => {
+          const inGroup = type === 'box' ? countCellsOfItem(room, 'c', item) : countCellsOfItem(room, 'i', item);
+          if (!inGroup) return;
+          const entry = document.createElement('li');
+          entry.className = 'legend-item';
+          const swatch = document.createElement('span');
+          swatch.className = 'cell cell-floor legend-swatch';
+          swatch.appendChild(createImage(context.itemImage(item), 'cell-icon'));
+          const label = document.createElement('span');
+          label.textContent = inGroup > 1 ? `${getItemName(item)} × ${inGroup}` : getItemName(item);
+          entry.append(swatch, label);
+          list.appendChild(entry);
+        });
+        return;
+      }
       const item = document.createElement('li');
       item.className = 'legend-item';
       const swatch = document.createElement('span');
@@ -287,6 +373,10 @@
     });
   }
 
+  function countCellsOfItem(room, char, item) {
+    return (room.items || []).filter(([x, y, id]) => id === item && room.map[y][x] === char).length;
+  }
+
   /**
    * Cose da sapere su una stanza: regole del gioco (sfere, mosse...) e avvisi.
    * Restituisce { facts: [testo], warning: testo o '' }.
@@ -299,6 +389,27 @@
     const props = room.props || {};
     const item = context.targetItem && context.targetItem.name;
 
+    const farm = plan && plan.kind === 'treasureMemo' && isWithoutTreasure(room);
+    if (farm) {
+      const fixedItems = (room.items || []).filter(([x, y]) => room.map[y][x] === 'i').map(([, , id]) => id);
+      if (fixedItems.length) {
+        const names = new Map();
+        fixedItems.forEach((id) => names.set(getItemName(id), (names.get(getItemName(id)) || 0) + 1));
+        facts.push(t('roomFactFixedLoot', { items: Array.from(names, ([name, count]) => (count > 1 ? `${name} × ${count}` : name)).join(', ') }));
+      }
+      if (counts.box) {
+        const boxes = {
+          count: counts.box,
+          box: getItemName(ITEM_IDS.box),
+          dungeon: context.dungeonName || '',
+          contents: describeBoxContents(context.dungeon),
+          // GetRandomSecretRoomItem: elenco "stanza segreta" del piano, Baccarancia se è vuoto.
+          fallback: getItemName(ITEM_IDS.oranBerry)
+        };
+        if (room.kind === 'secretRoom') facts.push(t('roomFactSecretBoxes', boxes));
+        else facts.push(counts.box === 1 ? t('roomFactBox', boxes) : t('roomFactBoxes', boxes));
+      }
+    }
     if (room.kind === 'treasureMemo') {
       facts.push(item
         ? t('roomFactTreasureWith', { box: getItemName(ITEM_IDS.treasure), item })
@@ -313,7 +424,7 @@
     if (room.kind === 'legendaryChallenge') facts.push(t('roomFactLegendary'));
     if (room.kind === 'outlawHideout') facts.push(t('roomFactHideout', { count: (counts.minion1 || 0) + (counts.minion2 || 0) }));
     if (room.kind === 'sealedChamber') facts.push(item ? t('roomFactSealedWith', { item }) : t('roomFactSealed'));
-    if (room.kind === 'goldenChamber') facts.push(t('roomFactGolden', { count: counts.box || 0, box: getItemName(ITEM_IDS.box) }));
+    if (room.kind === 'goldenChamber' && !farm) facts.push(t('roomFactGolden', { count: counts.box || 0, box: getItemName(ITEM_IDS.box) }));
     if (counts.door) facts.push(t('roomFactKeyDoor', { key: getItemName(ITEM_IDS.door) }));
     if (counts.crack) facts.push(t('roomFactCrack', { skill: extraText('absoluteMover') }));
     if (counts.water) facts.push(t('roomFactWater'));
@@ -326,7 +437,9 @@
     }
 
     if (plan && plan.forced) facts.push(t('roomFactForced'));
-    if (room.kind === 'unusedTreasureMemo') {
+    if (farm) {
+      warning = room.id === 81 ? t('roomWarningFarmKnown') : t('roomWarningFarm');
+    } else if (room.kind === 'unusedTreasureMemo') {
       facts.push(t('roomFactUnusedMemoLoot', { count: counts.box || 0, box: getItemName(ITEM_IDS.box), seed: getItemName(ITEM_IDS.reviverSeed) }));
       warning = t('roomWarningUnusedMemo');
     } else if (room.kind === 'secretRoom') {
@@ -389,6 +502,30 @@
       const room = getRoom(id);
       if (room) container.appendChild(makeButton(String(id), String(id), room));
     });
+
+    // Stanze che il gioco non usa per questa missione ma che una password può indicare.
+    if (Array.isArray(plan.extra) && plan.extra.length) {
+      const group = document.createElement('details');
+      group.className = 'room-extra';
+      group.open = plan.extra.map(String).includes(selectedValue);
+      const summary = document.createElement('summary');
+      summary.textContent = t('roomExtraTitle', { count: plan.extra.length });
+      const note = document.createElement('p');
+      note.className = 'hint';
+      note.textContent = t('roomExtraHint');
+      const grid = document.createElement('div');
+      grid.className = 'room-extra-grid';
+      plan.extra.forEach((id) => {
+        const room = getRoom(id);
+        if (!room) return;
+        const button = makeButton(String(id), String(id), room);
+        const dungeon = room.dungeon !== undefined ? getDungeonName(room.dungeon) : getKindLabel(room.kind);
+        button.title = `${t('roomNumber', { room: id })} · ${dungeon}`;
+        grid.appendChild(button);
+      });
+      group.append(summary, note, grid);
+      container.appendChild(group);
+    }
   }
 
   root.WMSkyRooms = {
@@ -402,6 +539,10 @@
     renderLegend,
     renderPicker,
     describeRoom,
+    describeBoxContents,
+    getBoxTable,
+    hasDungeonBoxes,
+    isWithoutTreasure,
     getMemoExample
   };
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -8,8 +8,10 @@ const require = createRequire(import.meta.url);
 globalThis.window = globalThis.window || {};
 require('../data/stanze_fisse.js');
 require('../data/esempi_memo.js');
+require('../data/dati_gioco.js');
 require('../lm.js');
-const { rooms, missionRooms, legend } = window.WMSkyFixedRooms;
+const { rooms, missionRooms, legend, boxes } = window.WMSkyFixedRooms;
+const { itemCategory } = window.WMSkyGameData;
 
 const source = readFileSync(new URL('../lmgenerate.js', import.meta.url), 'utf8');
 const context = {};
@@ -68,6 +70,30 @@ test('Lettere di sfida, covi e Sala Proibita hanno gli avversari e gli oggetti a
   assert.equal(count(rooms[missionRooms.sealedChamber], 't'), 1);
   assert.equal(count(rooms[missionRooms.sealedChamber], 'E'), 1);
   assert.equal(count(rooms[missionRooms.goldenChamber], 'c'), 2);
+});
+
+test('stanze senza tesoro: premi fissi e nessun tesoro della missione', () => {
+  assert.deepEqual(missionRooms.withoutTreasure, [...Array.from({ length: 24 }, (_, i) => 81 + i), 111, 113, 114]);
+  for (const id of missionRooms.withoutTreasure) {
+    const room = rooms[id];
+    assert.ok(room, `manca la stanza ${id}`);
+    assert.equal(count(room, 'T'), 0, `stanza ${id}: non deve avere il tesoro della missione`);
+    assert.ok(room.items && room.items.length > 0, `stanza ${id}: nessun premio`);
+    for (const [x, y] of room.items) assert.ok(room.map[y] && room.map[y][x] !== '#', `stanza ${id}: premio in un muro`);
+  }
+  // Il codice da farm segnalato dai giocatori usa la 81: 2 Gommaincanto, Mascheradoro, Fantascrigno.
+  assert.deepEqual(rooms[81].items.map(([, , item]) => item).sort((a, b) => a - b), [57, 67, 136, 136]);
+  assert.equal(rooms[81].kind, 'dungeonEnd');
+  assert.equal(rooms[113].items.length, 5);
+  // Tecalusso: contenuto scelto in base al dungeon della missione, Revitalseme se il dungeon non è in tabella.
+  assert.equal(boxes.fallback, 73);
+  assert.equal(boxes.byDungeon[72].length, 17);
+});
+
+test('categorie degli strumenti dal gioco', () => {
+  assert.equal(itemCategory.length, 1400);
+  // Baccacedro, Gommaincanto, Mascheradoro, Tecalusso, Setabianca (esclusivo).
+  assert.deepEqual([71, 136, 57, 385, 506].map((id) => itemCategory[id]), [2, 3, 4, 12, 15]);
 });
 
 test('la stanza 115 coincide con la mappa della wiki giapponese', () => {

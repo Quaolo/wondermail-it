@@ -235,16 +235,60 @@ function syncSearchBoxSelection(controller) {
 function getSearchSuggestions(select, query) {
   const normalized = String(query || '').trim().toLowerCase();
   if (!select) return [];
+  const grouped = isItemSelect(select.id);
 
-  return Array.from(select.options)
+  const suggestions = Array.from(select.options)
     .map((option, index) => ({
       index,
       value: option.value,
       text: option.text,
       description: getSearchSuggestionDescription(select.id, option.value),
-      searchText: normalizeSearchText(option.dataset.search || option.text || '')
+      searchText: normalizeSearchText(option.dataset.search || option.text || ''),
+      group: grouped ? getItemGroupIndex(option.value) : undefined
     }))
     .filter((entry) => !normalized || entry.searchText.includes(normalizeSearchText(normalized)));
+  // Strumenti divisi per categoria (bacche, sfere, MT...), nell'ordine del gioco dentro ogni gruppo.
+  if (grouped) suggestions.sort((a, b) => a.group - b.group || a.index - b.index);
+  return suggestions;
+}
+
+// Gruppi degli strumenti, dalle categorie del gioco (BALANCE/item_p.bin, enum item_category).
+const ITEM_GROUPS = [
+  { key: 'berries', categories: [2] },
+  { key: 'food', categories: [3] },
+  { key: 'orbs', categories: [9] },
+  { key: 'tms', categories: [5, 11] },
+  { key: 'held', categories: [4] },
+  { key: 'boxes', categories: [12, 13, 14] },
+  { key: 'exclusive', categories: [15] },
+  { key: 'thrown', categories: [0, 1] },
+  { key: 'other', categories: [6, 7, 8, 10] }
+];
+
+// "Nessuno" (strumento 0) resta in cima, fuori dai gruppi.
+function getItemGroupIndex(itemId) {
+  const id = parseInt(itemId, 10);
+  if (!(id > 0)) return -1;
+  const categories = window.WMSkyGameData && window.WMSkyGameData.itemCategory;
+  const category = categories ? categories[id] : undefined;
+  const index = ITEM_GROUPS.findIndex((group) => group.categories.includes(category));
+  return index >= 0 ? index : ITEM_GROUPS.length - 1;
+}
+
+function getItemGroupLabel(index) {
+  const labels = {
+    berries: t('itemGroupBerries'),
+    food: t('itemGroupFood'),
+    orbs: t('itemGroupOrbs'),
+    tms: t('itemGroupTms'),
+    held: t('itemGroupHeld'),
+    boxes: t('itemGroupBoxes'),
+    exclusive: t('itemGroupExclusive'),
+    thrown: t('itemGroupThrown'),
+    other: t('itemGroupOther')
+  };
+  const group = ITEM_GROUPS[index] || ITEM_GROUPS[ITEM_GROUPS.length - 1];
+  return labels[group.key];
 }
 
 function closeSearchSuggestions(controller) {
@@ -276,7 +320,16 @@ function renderSearchSuggestions(controller, suggestions) {
     return;
   }
 
+  let lastGroup;
   suggestions.forEach((suggestion, index) => {
+    if (suggestion.group !== undefined && suggestion.group >= 0 && suggestion.group !== lastGroup) {
+      const header = document.createElement('div');
+      header.className = 'search-group';
+      header.setAttribute('role', 'presentation');
+      header.textContent = getItemGroupLabel(suggestion.group);
+      controller.suggestions.appendChild(header);
+      lastGroup = suggestion.group;
+    }
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'search-suggestion';
@@ -313,6 +366,12 @@ function renderSearchSuggestions(controller, suggestions) {
   });
 
   controller.suggestions.classList.remove('hidden');
+  // Con le frecce la voce attiva resta visibile anche nelle liste lunghe.
+  if (controller.scrollToActive) {
+    controller.scrollToActive = false;
+    const active = controller.suggestions.querySelector('.search-suggestion.active');
+    if (active && typeof active.scrollIntoView === 'function') active.scrollIntoView({ block: 'nearest' });
+  }
 }
 
 function updateSearchSuggestions(controller) {
@@ -395,6 +454,7 @@ function registerSearchBox(input) {
     if (event.key === 'ArrowDown') {
       event.preventDefault();
       controller.activeIndex = (controller.activeIndex + 1) % controller.currentSuggestions.length;
+      controller.scrollToActive = true;
       renderSearchSuggestions(controller, controller.currentSuggestions);
       return;
     }
@@ -403,6 +463,7 @@ function registerSearchBox(input) {
       controller.activeIndex = controller.activeIndex <= 0
         ? controller.currentSuggestions.length - 1
         : controller.activeIndex - 1;
+      controller.scrollToActive = true;
       renderSearchSuggestions(controller, controller.currentSuggestions);
       return;
     }
@@ -980,7 +1041,15 @@ function relabelItemSelect(selectId) {
     if (!Number.isFinite(numeric)) return;
 
     option.text = getItemDisplayName(numeric);
-    option.dataset.search = `${option.text} ${getOtherLanguageText('items', numeric)}`;
+    // Si trova anche con il nome nell'altra lingua, con il nome della categoria e, per gli strumenti
+    // esclusivi, con il nome del Pokémon a cui sono dedicati.
+    const owner = getItemOwnerPokemonId(numeric);
+    option.dataset.search = [
+      option.text,
+      getOtherLanguageText('items', numeric),
+      getItemGroupLabel(getItemGroupIndex(numeric)),
+      Number.isFinite(owner) ? getMonName(owner) : ''
+    ].join(' ');
     const chestVariant = getTreasureBoxVariantLabel(numeric);
     option.title = chestVariant ? t('chestVariantTitle', { variant: chestVariant }) : '';
   });
@@ -2004,8 +2073,19 @@ function renderJobCard() {
   if (struct.missionType === 10 && struct.target2 > 0) {
     addJobRow(fields, t('jobAccomplice'), makePersonValue(struct.target2));
   }
+  const farm = struct.missionType === 12 && window.WMSkyRooms && WMSkyRooms.isWithoutTreasure(WMSkyRooms.getRoom(struct.specialFloor));
   if (struct.missionType === 12 || (struct.missionType === 3 && struct.missionSpecial === 1)) {
-    addJobRow(fields, struct.missionType === 12 ? t('jobTreasure') : t('jobChamberItem'), makeItemValue(struct.targetItem));
+    let value = makeItemValue(struct.targetItem);
+    if (farm) {
+      // Nelle stanze senza tesoro lo strumento obiettivo non compare da nessuna parte.
+      const wrap = document.createElement('span');
+      const missing = document.createElement('span');
+      missing.className = 'job-note';
+      missing.textContent = t('jobTreasureMissing');
+      wrap.append(value, missing);
+      value = wrap;
+    }
+    addJobRow(fields, struct.missionType === 12 ? t('jobTreasure') : t('jobChamberItem'), value);
   } else if ([4, 6, 7, 9].includes(struct.missionType) && !egg) {
     addJobRow(fields, t('jobItem'), makeItemValue(struct.targetItem));
   }
@@ -2023,9 +2103,12 @@ function renderJobCard() {
   addJobRow(fields, jobText('reward'), getRewardValue(struct));
   addJobRow(fields, jobText('restrictions'), struct.restriction || struct.restrictionType ? t('jobRestrictionSet') : jobText('none'));
 
-  note.textContent = egg
-    ? t('jobNoteEgg')
-    : t('jobNote', { seed: struct.flavorText, region: getRegionName(result.region) });
+  if (egg) {
+    note.textContent = t('jobNoteEgg');
+  } else {
+    note.textContent = t('jobNote', { seed: struct.flavorText, region: getRegionName(result.region) })
+      + (farm ? ` ${t('jobNoteFarm')}` : '');
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -2111,6 +2194,10 @@ function getRoomContext(struct, kind) {
     const name = getItemDisplayName(struct.targetItem);
     context.targetItem = { name, image: getItemImage(struct.targetItem, name, false) };
   }
+  // Per le stanze con premi fissi: icone vere e contenuto dei Tecalusso nel dungeon della missione.
+  context.dungeon = struct.dungeon;
+  context.dungeonName = getDungeonName(struct.dungeon);
+  context.itemImage = (itemId) => getItemImage(itemId, getItemName(itemId), false);
   return context;
 }
 
@@ -2140,14 +2227,26 @@ function renderRoomCard() {
 
   kind.textContent = WMSkyRooms.getKindLabel(plan.kind);
   const ordinal = room && plan.rooms && room.kind === plan.kind ? WMSkyRooms.getRoomOrdinal(room) : null;
-  title.textContent = ordinal
-    ? t('roomTitleOrdinal', { room: roomId, ordinal, total: plan.rooms ? plan.rooms.length : 1 })
-    : t('roomNumber', { room: roomId });
+  if (ordinal) {
+    title.textContent = t('roomTitleOrdinal', { room: roomId, ordinal, total: plan.rooms ? plan.rooms.length : 1 });
+  } else if (room && room.dungeon !== undefined) {
+    title.textContent = t('roomTitleDungeon', { room: roomId, dungeon: getDungeonName(room.dungeon) });
+  } else if (room && room.kind !== plan.kind) {
+    title.textContent = t('roomTitleKind', { room: roomId, kind: WMSkyRooms.getKindLabel(room.kind) });
+  } else {
+    title.textContent = t('roomNumber', { room: roomId });
+  }
 
   const typed = String(document.getElementById('specialFloor')?.value || '').trim() !== '';
-  badge.textContent = plan.forced || !plan.rooms
-    ? t('roomBadgeFixed')
-    : (typed ? t('roomBadgeChosen') : t('roomBadgeRandom'));
+  const farm = plan.kind === 'treasureMemo' && WMSkyRooms.isWithoutTreasure(room);
+  card.classList.toggle('room-farm', farm);
+  if (farm) {
+    badge.textContent = t('roomBadgeFarm');
+  } else {
+    badge.textContent = plan.forced || !plan.rooms
+      ? t('roomBadgeFixed')
+      : (typed ? t('roomBadgeChosen') : t('roomBadgeRandom'));
+  }
 
   const context = struct ? getRoomContext(struct, plan.kind) : {};
   WMSkyRooms.renderMap(map, room, context);
@@ -2165,6 +2264,7 @@ function renderRoomCard() {
   });
   warning.textContent = description.warning;
   warning.hidden = !description.warning;
+  renderRoomBoxes(farm && WMSkyRooms.hasDungeonBoxes(room) ? struct : null);
 
   const sample = room && plan.kind === 'treasureMemo' ? WMSkyRooms.getMemoExample(room.id) : null;
   example.hidden = !sample;
@@ -2176,6 +2276,111 @@ function renderRoomCard() {
       region: getRegionName(region)
     });
     exampleCode.textContent = prettyMailString(WMSParser.convertRegion(sample.code, sample.region, region), 2, 7);
+  }
+}
+
+// Stanze senza tesoro: i Tecalusso si riempiono in base al dungeon della missione. La tabella del gioco
+// mostra cosa si trova in ogni dungeon; toccando un dungeon lo si usa nella missione (stessa stanza e seme).
+function renderRoomBoxes(struct) {
+  const panel = document.getElementById('roomBoxes');
+  const list = document.getElementById('roomBoxesList');
+  if (!panel || !list) return;
+  panel.hidden = !struct;
+  list.innerHTML = '';
+  if (!struct) return;
+
+  const select = document.getElementById('dungeonBox');
+  const available = new Set(select ? Array.from(select.options, (option) => option.value) : []);
+  const table = WMSkyRooms.getBoxTable();
+  const addRow = (dungeons, contents, current) => {
+    const row = document.createElement('li');
+    row.className = 'room-boxes-row';
+    row.classList.toggle('current', current);
+    const names = document.createElement('div');
+    names.className = 'room-boxes-dungeons';
+    dungeons.forEach((id) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'chip';
+      button.dataset.dungeon = String(id);
+      button.textContent = getDungeonName(id);
+      button.classList.toggle('active', id === struct.dungeon);
+      button.disabled = !available.has(String(id));
+      button.title = t('roomBoxesUse', { dungeon: getDungeonName(id) });
+      button.addEventListener('click', () => useBoxDungeon(id));
+      names.appendChild(button);
+    });
+    if (!dungeons.length) {
+      const other = document.createElement('span');
+      other.className = 'room-boxes-other';
+      other.textContent = t('roomBoxesOther');
+      names.appendChild(other);
+    }
+    const items = document.createElement('p');
+    items.className = 'room-boxes-items';
+    items.textContent = contents;
+    row.append(names, items);
+    list.appendChild(row);
+  };
+  table.rows.forEach((row) => addRow(row.dungeons, row.contents, row.dungeons.includes(struct.dungeon)));
+  const listed = table.rows.some((row) => row.dungeons.includes(struct.dungeon));
+  addRow([], table.fallback, !listed);
+}
+
+function useBoxDungeon(dungeonId) {
+  const select = document.getElementById('dungeonBox');
+  if (!select) return;
+  freezeOutputMission();
+  setSelectByValue(select, dungeonId);
+  select.dispatchEvent(new Event('change', { bubbles: true }));
+  generateCode();
+}
+
+// ---------------------------------------------------------------------------
+// Missione simile
+// ---------------------------------------------------------------------------
+
+// Per il gioco due missioni sono la stessa se coincidono tipo, sottotipo, dungeon, piano, seme del
+// testo, Pokémon, strumenti, ricompensa e restrizioni (AreMissionsEquivalent): la stanza speciale non
+// conta. Cambiando solo il piano o il seme si ottiene una missione nuova, identica per il resto.
+function freezeOutputMission() {
+  const result = getOutputMission();
+  if (!result) return null;
+  const { struct } = result;
+  const flavor = document.getElementById('flavorText');
+  const special = document.getElementById('specialFloor');
+  if (flavor) flavor.value = String(struct.flavorText);
+  if (special && struct.specialFloor > 0 && !isEggGlitchStruct(struct)) special.value = String(struct.specialFloor);
+  return struct;
+}
+
+function makeSimilarMission(kind) {
+  const nextFloor = kind === 'nextFloor';
+  const struct = freezeOutputMission();
+  if (!struct) {
+    setStatus('statusLine', 'similarUnavailable', null, 'error');
+    return;
+  }
+  if (nextFloor) {
+    const limit = getDungeonFloorLimit(struct.dungeon);
+    if (isEggGlitchStruct(struct) || struct.floor >= limit) {
+      setStatus('statusLine', 'similarLastFloor', null, 'warning');
+      return;
+    }
+    document.getElementById('floor').value = String(struct.floor + 1);
+  } else {
+    let seed;
+    do {
+      seed = Math.floor(Math.random() * 0x1000000);
+    } while (seed === struct.flavorText);
+    document.getElementById('flavorText').value = String(seed);
+  }
+  refreshMissionUi();
+  generateCode();
+  const created = getOutputMission();
+  if (created) {
+    const values = { floor: created.struct.floor, seed: created.struct.flavorText };
+    setStatus('statusLine', nextFloor ? 'similarDoneFloor' : 'similarDoneSeed', values, 'ok');
   }
 }
 
@@ -2202,6 +2407,8 @@ let roomResizeTimer = null;
 onReady(() => {
   renderHeroTeam();
   applyRepoLink();
+  document.getElementById('similarNextFloor')?.addEventListener('click', () => makeSimilarMission('nextFloor'));
+  document.getElementById('similarNewSeed')?.addEventListener('click', () => makeSimilarMission('newSeed'));
   // La mappa si adatta alla larghezza disponibile.
   window.addEventListener('resize', () => {
     window.clearTimeout(roomResizeTimer);

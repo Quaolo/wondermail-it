@@ -29,6 +29,11 @@ valgono anche per il gioco in italiano, ed è il gioco a mostrare i testi della 
   corrisponde sempre a quello che arriverà nel gioco.
 - Nomi e descrizioni ufficiali di strumenti, dungeon, Pokémon e trappole (versione europea, italiano e inglese).
   La ricerca trova anche il nome nell'altra lingua (scrivi "Oran" e trovi Baccarancia).
+- Strumenti **divisi per categoria** (bacche e semi, cibo e gomme, sfere, MT, strumenti da tenere, forzieri,
+  strumenti esclusivi, da lanciare, altro), con le categorie del gioco (`BALANCE/item_p.bin`).
+- **Missione simile**: dalla password mostrata, *Piano successivo* e *Nuovo seme* creano la stessa missione con un
+  solo cambiamento. Per il gioco è una missione diversa (`AreMissionsEquivalent` confronta tipo, luogo, piano,
+  seme, Pokémon, strumenti e ricompensa, non la stanza), quindi si possono tenere entrambe nell'elenco.
 
 **Stanze speciali dai dati del gioco**
 - Mappe di tutte le stanze che una password può indicare, disegnate da `BALANCE/fixed.bin` e dalle tabelle del
@@ -39,6 +44,18 @@ valgono anche per il gioco in italiano, ed è il gioco a mostrare i testi della 
   funzionano, nei Memo tesoro l'Arraffasfera non funziona).
 - Per i Memo tesoro, dove esiste, una missione reale con la stessa stanza (dalla wiki giapponese Grovyle),
   convertita nella regione scelta.
+
+**Stanze senza tesoro (missioni da "farm")**
+- Il gioco non controlla il numero della stanza di un Memo tesoro. Con una stanza che non contiene il tesoro della
+  missione, la missione non si completa mai, resta nell'elenco e si può rifare: a ogni visita la stanza ha di nuovo
+  i suoi premi. È il trucco del codice `=27YY RQ+4%WP CCCTTPTP21 P#%33FM =+66N` (piano 1 della Grotta Marina,
+  stanza 81: 2 Gommaincanto, Mascheradoro e Fantascrigno a ogni visita).
+- Nel generatore le 27 stanze di questo tipo sono in un gruppo a parte (*Stanze senza tesoro, per esperti*):
+  i fondi dei dungeon bonus (81-104), la Sala d'Oro (111), la stanza segreta (113) e il Memo tesoro mai usato (114).
+- Il contenuto dei Tecalusso di queste stanze dipende dal dungeon della missione (tabella del gioco): per esempio
+  in Riserva Marina una Gomma a caso, in Grotta Infuocata un Turbo QI, nelle Isole Zero Est, Ovest e Sud Semevita
+  o Gaudioseme. La scheda della stanza mostra la tabella e permette di cambiare dungeon con un tocco.
+- Provato dai giocatori con la stanza 81; per le altre il comportamento è dedotto dal codice del gioco.
 
 **Correzioni rispetto al generatore originale**
 - **Stanze delle Lettere di sfida e dei covi**: il generatore storico le sceglieva tra 145-160 e 161-165,
@@ -78,8 +95,8 @@ e avvisa se la fonte è cambiata. Estrae:
 | File generato | Contenuto | Fonte in pret/pmd-sky |
 |---|---|---|
 | `data/testi_gioco_it.js`, `data/testi_gioco_en.js` | nomi, descrizioni, trappole, frasi di "Info missione" | `MESSAGE/text_*.str` |
-| `data/dati_gioco.js` | strumenti validi, strumenti esclusivi, forme femminili | `BALANCE/monster.md`, testi |
-| `data/stanze_fisse.js` | mappe, contenuto e regole delle stanze speciali, elenchi delle stanze | `BALANCE/fixed.bin`, tabelle in `asm/` |
+| `data/dati_gioco.js` | strumenti validi, strumenti esclusivi, categorie degli strumenti, forme femminili | `BALANCE/monster.md`, `BALANCE/item_p.bin`, testi |
+| `data/stanze_fisse.js` | mappe, contenuto e regole delle stanze speciali, elenchi delle stanze, contenuto dei Tecalusso | `BALANCE/fixed.bin`, tabelle in `asm/` (overlay 29 e 10) |
 
 ## Test
 
@@ -115,8 +132,8 @@ le tabelle del gioco e che la stanza 115 coincida con la mappa della wiki giappo
 - Il significato dei tipi di ricompensa 4-6 non coincide del tutto con la documentazione del gioco
   ([pmdsky-debug](https://github.com/UsernameFodder/pmdsky-debug): 4 = strumento esclusivo, 5 = denaro nascosto,
   6 = uovo o nuovo membro). Le etichette sono quelle del generatore originale.
-- Le regole delle stanze vengono dal codice del gioco; il comportamento delle stanze fuori elenco (per esempio la
-  114, mai usata dal gioco) è dedotto dal codice e da segnalazioni di giocatori, non provato.
+- Le regole delle stanze vengono dal codice del gioco. Le stanze senza tesoro sono provate dai giocatori solo con
+  la 81; per le altre (per esempio la 114, mai usata dal gioco) il comportamento è dedotto dal codice.
 - Le password sono controllate matematicamente, non in gioco: una password valida può comunque essere
   rifiutata se il dungeon non è sbloccato o se la combinazione non è ammessa.
 
@@ -149,5 +166,7 @@ English, using the official in-game names, job summary sentences and room maps e
 It started from [RedCoal27/wondermail_pdm](https://github.com/RedCoal27/wondermail_pdm) and adds CRC-verified
 decoding, Japanese region support, maps of every special room (Treasure Memos, Challenge Letters, outlaw
 hideouts, Sealed and Golden Chambers) and several fixes, including the room lists used by Challenge Letters
-(150-154) and outlaw hideouts (160-164). Open `index.html` or run `python -m http.server`;
+(150-154) and outlaw hideouts (160-164). It also documents the "farm" trick (a Treasure Memo pointing to a room
+without the mission treasure never ends and can be repeated), with the Deluxe Box contents per dungeon taken
+from the game code, items grouped by in-game category and "similar mission" buttons (next floor, new seed). Open `index.html` or run `python -m http.server`;
 run the tests with `node --test`.
