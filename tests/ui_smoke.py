@@ -117,7 +117,8 @@ def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
         # Avvio in italiano, con la nuova disposizione
         check(page.evaluate("document.documentElement.lang") == "it", f"lingua predefinita italiana{label}")
         check("Missioni Speciali C" in page.title(), f"titolo italiano: {page.title()}")
-        check(page.is_hidden("#repoLink"), "pulsante del repository nascosto finché config.js non ha un indirizzo")
+        check(page.is_visible("#repoLink") and "Quaolo/wondermail-it" in (page.get_attribute("#repoLink", "href") or ""),
+              "pulsante del repository verso Quaolo/wondermail-it")
         check("wondermail_pdm" in page.inner_html(".origin"), "riferimento al progetto originale in fondo alla pagina")
         check(page.evaluate("!!(document.getElementById('readerCard').compareDocumentPosition(document.getElementById('genForm')) & Node.DOCUMENT_POSITION_FOLLOWING)"),
               "«Leggi una password» viene prima del generatore")
