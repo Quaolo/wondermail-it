@@ -14,6 +14,6 @@ window.WMSkyRegisterLocale('es', {
 ```
 
 Le chiavi mancanti vengono prese dall'inglese. I nomi di strumenti, dungeon e Pokémon non vanno tradotti a mano:
-arrivano dai testi ufficiali del gioco (`data/testi_gioco_<lingua>.js`, generati da `tools/estrai_testi.py`).
+arrivano dai testi ufficiali del gioco (`data/testi_gioco_<lingua>.js`, generati da `tools/estrai_dati.py`).
 Per aggiungere una lingua europea basta aggiungere il suo file di testo (`text_f.str`, `text_g.str`, `text_s.str`)
 a `SOURCES` e `LANGUAGES` nello script.

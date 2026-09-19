@@ -16,7 +16,8 @@
 //   useTargetItem: usa lo strumento obiettivo
 //   useTarget2: usa il secondo bersaglio
 //   forceClient / forceTarget: Pokémon imposto dalla missione
-//   specialFloor: stanza speciale fissa
+//   specialFloor: stanza speciale fissa (per Sala Proibita e Sala d'Oro il gioco usa comunque
+//                 la sua stanza, qualunque numero contenga la password)
 //   specialFloorFromList: stanza speciale scelta a caso da staticLists
 //   noReward: nessuna scelta della ricompensa
 // Ogni tipo può avere "subTypes", che sovrascrivono i valori del tipo principale.
@@ -26,9 +27,10 @@ var WMSGenData = {
     { name: 'rescueTarget', mainType: 1, specialType: 0 },
     { name: 'escortToTarget', mainType: 2, specialType: 0 },
 
+    // Nella Sala Proibita lo strumento obiettivo è quello che si trova nella stanza.
     { name: 'exploreWithClient', mainType: 3, clientIsTarget: true, subTypes: [
       { name: 'Normal', specialType: 0 },
-      { name: 'Sealed Chamber', specialType: 1, specialFloor: 165 },
+      { name: 'Sealed Chamber', specialType: 1, specialFloor: 165, useTargetItem: true },
       { name: 'Golden Chamber', specialType: 2, specialFloor: 111 },
       { name: 'New Dungeon', specialType: 3, advancedOnly: true }
     ] },
@@ -69,8 +71,10 @@ var WMSGenData = {
       { name: 'Jirachi', specialType: 5, forceClient: 417, forceTarget: 417, specialFloor: 149 }
     ] },
 
-    // Committente e bersaglio possono essere qualsiasi Pokémon, ma il gioco preferisce che coincidano.
-    { name: 'treasureMemo', mainType: 12, specialType: 0, forceClient: 422, forceTarget: 422, specialFloorFromList: 'treasurehunt', noReward: true }
+    // Memo tesoro: come nelle missioni vere, committente e bersaglio coincidono e lo strumento
+    // obiettivo è il tesoro chiuso nel Tecalusso della stanza (PlaceFixedRoomTile, GetSpecialTargetItem).
+    // Il generatore storico imponeva Turtwig, nessuna ricompensa e una Mela come tesoro.
+    { name: 'treasureMemo', mainType: 12, specialType: 0, clientIsTarget: true, useTargetItem: true, specialFloorFromList: 'treasurehunt' }
   ],
 
   validDungeons: [
@@ -115,20 +119,16 @@ var WMSGenData = {
   // Strumenti non ammessi come strumento obiettivo (strumenti da lancio).
   badTargetItems: [0, 1, 2, 3, 4, 9],
 
+  // Stanze tra cui il gioco sceglie a caso (tabelle TREASURE_MEMO_FIXED_ROOM_IDS,
+  // CHALLENGE_NORMAL_FIXED_ROOM_IDS e OUTLAW_HIDEOUT_FIXED_ROOM_IDS del codice del gioco,
+  // le stesse di data/stanze_fisse.js: un test controlla che coincidano).
   staticLists: {
-    // Stanze valide per i Memo tesoro.
     treasurehunt: [
       115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129,
       130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144
     ],
-    // Stanze per le Lettere di sfida (dal generatore originale, "a memoria": da verificare).
-    challengerequest: [
-      145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160
-    ],
-    // Stanze per i covi dei ricercati (dal generatore originale, "a memoria": da verificare).
-    thievesden: [
-      161, 162, 163, 164, 165
-    ]
+    challengerequest: [150, 151, 152, 153, 154],
+    thievesden: [160, 161, 162, 163, 164]
   }
 };
 
