@@ -40,6 +40,10 @@ d'Oro) mostrano anche la mappa della stanza, con quello che c'è dentro e le reg
 
 I quattro Pokémon in alto sono solo decorativi: se ci clicchi sopra cambia la squadra.
 
+Qualche animazione accompagna il lavoro: la password si scrive da sola, le finestre entrano con calma e i
+valori di "Info missione" si accendono quando cambiano. Se hai chiesto al sistema di ridurre le animazioni,
+il sito le toglie.
+
 Altre cose comode: gli strumenti sono divisi per categoria (bacche, gomme, sfere, MT e così via) e si trovano
 anche cercando il nome inglese. Da una password puoi poi ricavare una missione gemella, al piano successivo o
 con un seme diverso. Per il gioco è una missione diversa, quindi puoi tenerle tutte e due nell'elenco.
@@ -55,7 +59,7 @@ la stanza 81 (due Gommaincanto, una Mascheradoro e un Fantascrigno a ogni visita
 =27YY RQ+4%WP CCCTTPTP21 P#%33FM =+66N
 ```
 
-Nella scheda "Premi da ripetere", di fianco al modulo, scegli il premio che ti interessa e il sito ti dice
+Nella scheda "Cerca un premio", di fianco al modulo, scegli il premio che ti interessa e il sito ti dice
 in quale stanza e in quale dungeon si trova, con la probabilità per ogni Tecalusso; un clic prepara la
 missione. Nel generatore queste stanze sono raccolte a parte, sotto "Stanze senza tesoro". Alcune contengono dei
 Tecalusso e quello che c'è dentro dipende dal dungeon della missione: in Riserva Marina, per esempio, ci sono

@@ -403,6 +403,12 @@ def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
         open_tool_card(page, "presetsCard")
         page.click('.preset-btn[data-preset="memo"]')
         page.wait_for_timeout(200)
+        # Su telefono sopra la missione resta solo «Accesso rapido»
+        tops = page.evaluate("""Object.fromEntries(['presetsCard', 'genForm', 'readerCard', 'farmCard']
+            .map((id) => [id, Math.round(document.getElementById(id).getBoundingClientRect().top + window.scrollY)]))""")
+        check(tops["presetsCard"] < tops["genForm"] < tops["readerCard"] and tops["genForm"] < tops["farmCard"],
+              f"su telefono il modulo sta subito sotto «Accesso rapido»: {tops}")
+
         overflow = page.evaluate("document.documentElement.scrollWidth - document.documentElement.clientWidth")
         check(overflow <= 0, f"nessuno scorrimento orizzontale su telefono ({overflow}px)")
         page.set_viewport_size({"width": 1280, "height": 900})

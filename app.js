@@ -1599,10 +1599,16 @@ onReady(() => {
   initializeSearchBoxes();
 
   document.querySelectorAll('.preset-btn').forEach((btn) => {
-    btn.addEventListener('click', () => applyPreset(btn.dataset.preset));
+    btn.addEventListener('click', () => {
+      requestPasswordAnimation();
+      applyPreset(btn.dataset.preset);
+    });
   });
 
-  document.getElementById('generateBtn').addEventListener('click', generateCode);
+  document.getElementById('generateBtn').addEventListener('click', () => {
+    requestPasswordAnimation();
+    generateCode();
+  });
   document.getElementById('importCodeBtn')?.addEventListener('click', importCode);
   document.getElementById('importCode')?.addEventListener('keydown', (event) => {
     if (event.key === 'Enter' && !event.shiftKey) {
@@ -1655,11 +1661,70 @@ function updateEntityPreviews() {
   );
 }
 
+// ---------------------------------------------------------------------------
+// Animazioni
+// ---------------------------------------------------------------------------
+
+function wantsLessMotion() {
+  return typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+// La password compare carattere per carattere, come i testi del gioco.
+let typeTimer = null;
+
+// Ferma la scrittura in corso: se arriva un errore non deve continuare a comparire la password vecchia.
+function stopTyping() {
+  if (typeTimer) {
+    window.clearInterval(typeTimer);
+    typeTimer = null;
+  }
+}
+
+function showPassword(output, text, animate) {
+  stopTyping();
+  if (!animate || wantsLessMotion() || document.activeElement === output) {
+    output.value = text;
+    return;
+  }
+  const letters = Array.from(text);
+  let shown = 0;
+  output.value = '';
+  typeTimer = window.setInterval(() => {
+    shown += 2;
+    output.value = letters.slice(0, shown).join('');
+    if (shown >= letters.length) {
+      window.clearInterval(typeTimer);
+      typeTimer = null;
+      output.value = text;
+    }
+  }, 18);
+}
+
+// Un lampo dorato sulla finestra quando la password è pronta.
+function flashElement(node, className) {
+  if (!node || wantsLessMotion()) return;
+  node.classList.remove(className);
+  // Riavvia l'animazione anche se era già in corso.
+  void node.offsetWidth;
+  node.classList.add(className);
+  window.setTimeout(() => node.classList.remove(className), 700);
+}
+
+// La password si scrive da sola solo dopo un pulsante, non mentre si compila il modulo a mano.
+let animateNextPassword = false;
+
+function requestPasswordAnimation() {
+  animateNextPassword = true;
+}
+
 function generateCode() {
   const output = document.getElementById('outputbox');
   const compact = document.getElementById('compactOutput');
   const card = document.getElementById('resultCard');
 
+  const animate = animateNextPassword;
+  animateNextPassword = false;
+  stopTyping();
   const showErrors = (errors) => {
     output.value = errors.map((error) => `• ${error}`).join('\n');
     compact.value = '';
@@ -1686,11 +1751,14 @@ function generateCode() {
     return;
   }
 
-  output.value = pretty;
+  showPassword(output, pretty, animate);
   compact.value = compactCode(pretty);
   const region = getSelectedRegion();
   setStatus('statusLine', 'generatedFor', () => ({ region: getRegionName(region) }));
-  if (card) card.classList.remove('has-errors');
+  if (card) {
+    card.classList.remove('has-errors');
+    flashElement(card, 'card-flash');
+  }
   updateOutputCards();
 }
 
@@ -1727,6 +1795,7 @@ function setStatus(id, key, values, state) {
 function importCode() {
   const input = document.getElementById('importCode');
   if (!input) return;
+  requestPasswordAnimation();
 
   const raw = input.value.trim();
   if (!raw) {
@@ -2058,6 +2127,32 @@ function addJobRow(list, label, value) {
   list.appendChild(row);
 }
 
+// Legge le righe di «Info missione» come coppie etichetta/valore, per capire cosa è cambiato.
+function readJobRows(list) {
+  const rows = {};
+  list.querySelectorAll('.job-row').forEach((row) => {
+    const label = row.querySelector('dt');
+    const value = row.querySelector('dd');
+    if (label && value) rows[label.textContent] = value.textContent;
+  });
+  return rows;
+}
+
+// Cambio di missione: la scheda fa un breve cambio pagina e i valori nuovi si accendono un istante.
+function animateJobChanges(card, fields, before, previousObjective) {
+  if (wantsLessMotion()) return;
+  const after = readJobRows(fields);
+  const changed = Object.keys(after).filter((label) => before[label] !== undefined && before[label] !== after[label]);
+  const objectiveChanged = previousObjective !== document.getElementById('jobObjective').textContent;
+  if (!changed.length && !objectiveChanged) return;
+  if (objectiveChanged) flashElement(card, 'job-turn');
+  fields.querySelectorAll('.job-row').forEach((row) => {
+    const label = row.querySelector('dt');
+    if (!label || changed.indexOf(label.textContent) === -1) return;
+    flashElement(row.querySelector('dd'), 'value-flash');
+  });
+}
+
 function renderJobCard() {
   const card = document.getElementById('jobCard');
   const title = document.getElementById('jobTitle');
@@ -2069,6 +2164,8 @@ function renderJobCard() {
   if (!card || !title || !objective || !portrait || !rank || !fields || !note) return;
 
   title.textContent = jobText('title');
+  const previousRows = readJobRows(fields);
+  const previousObjective = objective.textContent;
   fields.innerHTML = '';
   const result = getOutputMission();
   card.classList.toggle('job-card-invalid', !result);
@@ -2149,6 +2246,8 @@ function renderJobCard() {
     note.textContent = t('jobNote', { seed: struct.flavorText, region: getRegionName(result.region) })
       + (farm ? ` ${t('jobNoteFarm')}` : '');
   }
+
+  animateJobChanges(card, fields, previousRows, previousObjective);
 }
 
 // ---------------------------------------------------------------------------
@@ -2370,6 +2469,7 @@ function renderRoomBoxes(struct) {
 function useBoxDungeon(dungeonId) {
   const select = document.getElementById('dungeonBox');
   if (!select) return;
+  requestPasswordAnimation();
   freezeOutputMission();
   setSelectByValue(select, dungeonId);
   select.dispatchEvent(new Event('change', { bubbles: true }));
@@ -2377,7 +2477,7 @@ function useBoxDungeon(dungeonId) {
 }
 
 // ---------------------------------------------------------------------------
-// Premi da ripetere (ricerca inversa)
+// Cerca un premio (ricerca inversa per le missioni da ripetere)
 // ---------------------------------------------------------------------------
 
 // Quante stanze mostrare: le altre danno gli stessi premi, ma con meno Tecalusso.
@@ -2493,6 +2593,7 @@ function renderFarmResults() {
 
 // Prepara la missione: Memo tesoro nella stanza scelta, con il dungeon che contiene il premio.
 function useFarmCombo(roomId, dungeonId) {
+  requestPasswordAnimation();
   withToolCardsOpen(() => {
     applyPresetNow('memo');
     const dungeonSelect = document.getElementById('dungeonBox');
@@ -2586,8 +2687,14 @@ onReady(() => {
   renderHeroTeam();
   document.getElementById('heroTeam')?.addEventListener('click', renderHeroTeam);
   applyRepoLink();
-  document.getElementById('similarNextFloor')?.addEventListener('click', () => makeSimilarMission('nextFloor'));
-  document.getElementById('similarNewSeed')?.addEventListener('click', () => makeSimilarMission('newSeed'));
+  document.getElementById('similarNextFloor')?.addEventListener('click', () => {
+    requestPasswordAnimation();
+    makeSimilarMission('nextFloor');
+  });
+  document.getElementById('similarNewSeed')?.addEventListener('click', () => {
+    requestPasswordAnimation();
+    makeSimilarMission('newSeed');
+  });
   // La mappa si adatta alla larghezza disponibile.
   window.addEventListener('resize', () => {
     window.clearTimeout(roomResizeTimer);

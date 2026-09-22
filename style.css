@@ -1047,14 +1047,59 @@ textarea.password {
 .origin { font-size: .86rem; }
 
 /* ------------------------------------------------------------------------
+   Animazioni
+   ------------------------------------------------------------------------ */
+@keyframes windowIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes cardFlash {
+  0% { box-shadow: var(--window-shadow, 0 12px 32px rgba(0, 0, 0, .38)); }
+  30% { box-shadow: 0 0 0 2px var(--gold), 0 0 26px rgba(255, 212, 92, .5); }
+  100% { box-shadow: var(--window-shadow, 0 12px 32px rgba(0, 0, 0, .38)); }
+}
+@keyframes valueFlash {
+  0% { background: rgba(255, 212, 92, .35); }
+  100% { background: transparent; }
+}
+@keyframes jobTurn {
+  0% { opacity: 1; transform: perspective(700px) rotateY(0); }
+  45% { opacity: .5; transform: perspective(700px) rotateY(-6deg); }
+  100% { opacity: 1; transform: perspective(700px) rotateY(0); }
+}
+@keyframes toolOpen {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: none; }
+}
+
+.window { animation: windowIn .35s ease both; }
+.card-flash { animation: cardFlash .7s ease; }
+.value-flash { animation: valueFlash .7s ease; border-radius: 6px; }
+.job-turn { animation: jobTurn .45s ease; }
+.tool-card[open] .tool-body { animation: toolOpen .2s ease both; }
+button:active, .chip:active, .preset-btn:active { transform: translateY(1px) scale(.98); }
+button, .chip, .preset-btn { transition: transform .08s ease; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+  }
+  .hero-portrait { animation: none; }
+}
+
+/* ------------------------------------------------------------------------
    Schermi piccoli
    ------------------------------------------------------------------------ */
 @media (max-width: 980px) {
   .workbench { grid-template-columns: minmax(0, 1fr); }
   .credits-grid { grid-template-columns: minmax(0, 1fr); }
-  /* In colonna unica il pannello laterale si scioglie e le due schede tornano sopra al modulo. */
+  /* In colonna unica il pannello laterale si scioglie: sopra al modulo resta solo «Accesso rapido»,
+     le altre due schede scendono sotto, prima della guida. */
   .side-panel { display: contents; }
-  .tool-card { order: -1; }
+  #presetsCard { order: -1; }
+  #readerCard, #farmCard { order: 1; }
 }
 @media (max-width: 720px) {
   .page { padding: 14px 12px 28px; gap: 14px; }
