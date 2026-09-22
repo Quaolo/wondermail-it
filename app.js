@@ -1494,6 +1494,31 @@ function resolveInitialLanguage() {
   return getDefaultLanguage();
 }
 
+// Schede a comparsa del pannello laterale: si chiudono da sole quando si compila la missione a mano,
+// così «Info missione» resta in vista. Le aperture fatte dal codice (preset, lettura) non contano.
+const TOOL_CARD_IDS = ['readerCard', 'presetsCard'];
+
+// Diventa vero mentre un preset o la lettura di una password riempiono il modulo da soli.
+let fillingFormFromTool = false;
+
+function withToolCardsOpen(action) {
+  fillingFormFromTool = true;
+  try {
+    return action();
+  } finally {
+    fillingFormFromTool = false;
+  }
+}
+
+function closeToolCards(event) {
+  if (fillingFormFromTool) return;
+  const target = event && event.target;
+  TOOL_CARD_IDS.forEach((id) => {
+    const card = document.getElementById(id);
+    if (card && card.open && !(target && card.contains(target))) card.open = false;
+  });
+}
+
 // Mela: ricompensa predefinita, così la combinazione iniziale è subito valida.
 const DEFAULT_REWARD_ITEM = 109;
 // Gommaincanto: il tesoro più comune nei Memo tesoro reali.
@@ -1524,7 +1549,8 @@ onReady(() => {
   watchedIds.forEach((id) => {
     const node = document.getElementById(id);
     if (!node) return;
-    node.addEventListener('change', () => {
+    node.addEventListener('change', (event) => {
+      closeToolCards(event);
       if (id === 'floor') {
         syncDungeonFloorLimit(true);
       }
@@ -1545,7 +1571,8 @@ onReady(() => {
       refreshMissionUi();
       scheduleLiveGeneration();
     });
-    node.addEventListener('input', () => {
+    node.addEventListener('input', (event) => {
+      closeToolCards(event);
       refreshMissionUi();
       scheduleLiveGeneration(['floor', 'specialFloor', 'flavorText'].includes(id) ? 220 : 120);
     });
@@ -1718,7 +1745,7 @@ function importCode() {
     return;
   }
 
-  const fullyMapped = importDecodedStruct(decoded);
+  const fullyMapped = withToolCardsOpen(() => importDecodedStruct(decoded));
   const values = () => ({ region: getRegionName(decoded.region) });
   setStatus('importStatus', fullyMapped ? 'importCodeOk' : 'importCodePartial', values, fullyMapped ? 'ok' : 'warning');
   setStatus('statusLine', null);
@@ -1748,6 +1775,10 @@ async function copyFrom(id) {
 }
 
 function applyPreset(kind) {
+  return withToolCardsOpen(() => applyPresetNow(kind));
+}
+
+function applyPresetNow(kind) {
   const typeSelect = document.getElementById('missionTypeBox');
   const subSelect = document.getElementById('missionSubTypeBox');
   const eggGlitch = document.getElementById('eggGlitch');

@@ -53,6 +53,13 @@ def serve() -> tuple[socketserver.TCPServer, str]:
     return server, f"http://127.0.0.1:{server.server_address[1]}/index.html"
 
 
+def open_tool_card(page, card_id: str) -> None:
+    """Apre una scheda a comparsa del pannello laterale (Leggi una password, Accesso rapido)."""
+    if not page.evaluate(f"document.getElementById('{card_id}').open"):
+        page.click(f"#{card_id} .tool-summary")
+        page.wait_for_timeout(80)
+
+
 def set_select(page, element_id: str, value) -> None:
     page.evaluate(
         """([id, value]) => {
@@ -120,8 +127,17 @@ def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
         check(page.is_visible("#repoLink") and "Quaolo/wondermail-it" in (page.get_attribute("#repoLink", "href") or ""),
               "pulsante del repository verso Quaolo/wondermail-it")
         check("wondermail_pdm" in page.inner_html(".origin"), "riferimento al progetto originale in fondo alla pagina")
-        check(page.evaluate("!!(document.getElementById('readerCard').compareDocumentPosition(document.getElementById('genForm')) & Node.DOCUMENT_POSITION_FOLLOWING)"),
-              "«Leggi una password» viene prima del generatore")
+        check(not page.evaluate("document.getElementById('readerCard').open || document.getElementById('presetsCard').open"),
+              "«Leggi una password» e «Accesso rapido» partono chiuse")
+        check(page.evaluate("document.querySelector('.form-panel').getBoundingClientRect().top <= document.getElementById('readerCard').getBoundingClientRect().top + 1"),
+              "il modulo della missione parte in cima, non sotto le due schede")
+        open_tool_card(page, "readerCard")
+        check(page.is_visible("#importCode"), "la scheda «Leggi una password» si apre al clic")
+        set_input(page, "floor", 2)
+        page.wait_for_timeout(120)
+        check(not page.evaluate("document.getElementById('readerCard').open"),
+              "compilando la missione a mano la scheda si richiude")
+        set_input(page, "floor", 1)
         code, status = generate(page)
         check(code.count("\n") == 1 and len(code.replace("\n", "").replace(" ", "")) == 34, f"password generata subito: {code!r}")
         check("Europa" in status, f"stato: {status!r}")
@@ -199,6 +215,7 @@ def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
         set_input(page, "floor", 2)
 
         # Preset: glitch dell'uovo (ricetta di Lai-brary)
+        open_tool_card(page, "presetsCard")
         page.click('.preset-btn[data-preset="egg"]')
         set_select(page, "eggPokemonBox", 25)
         generate(page)
@@ -208,6 +225,7 @@ def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
                          "dungeon": 91, "floor": 0, "targetItem": 92, "specialFloor": 0}, f"ricetta dell'uovo di Pikachu: {recipe}")
 
         # Preset di Mewtwo: la password si aggiorna da sola
+        open_tool_card(page, "presetsCard")
         page.click('.preset-btn[data-preset="mewtwo"]')
         page.wait_for_timeout(150)
         struct = decode_output(page, "eu")["struct"]
@@ -220,6 +238,7 @@ def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
         check(cells == expected, f"mappa della stanza 145 disegnata dai dati del gioco ({cells} caselle)")
 
         # Lettura di una password giapponese
+        open_tool_card(page, "readerCard")
         page.fill("#importCode", JP_CODES[0])
         page.click("#importCodeBtn")
         status = page.text_content("#importStatus")
@@ -235,12 +254,14 @@ def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
         }""")
         check(synced, "i campi di ricerca mostrano i valori letti dalla password")
         check("Stanza 115" in page.text_content("#roomTitle"), f"stanza della password letta: {page.text_content('#roomTitle')!r}")
+        open_tool_card(page, "readerCard")
         page.fill("#importCode", "AAAA BBBB CCCC")
         page.click("#importCodeBtn")
         check("non valida" in page.text_content("#importStatus"), "password inventata rifiutata")
 
         # Memo tesoro: committente libero, tesoro scelto, 30 stanze, esempio reale convertito
         set_select(page, "regionBox", "eu")
+        open_tool_card(page, "presetsCard")
         page.click('.preset-btn[data-preset="memo"]')
         page.wait_for_timeout(150)
         check(page.locator("#roomPicker > .room-option").count() == 31, "scelta tra «A caso» e 30 stanze dei Memo tesoro")
@@ -263,6 +284,7 @@ def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
             page.screenshot(path=str(screenshot_dir / f"memo_it{'_offline' if offline else ''}.png"), full_page=False)
 
         # Codice "da farm" (stanza 81, senza tesoro) e missioni simili
+        open_tool_card(page, "readerCard")
         page.fill("#importCode", FARM_CODE)
         page.click("#importCodeBtn")
         page.wait_for_timeout(150)
@@ -323,6 +345,7 @@ def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
         results = page.evaluate("getSearchSuggestions(document.getElementById('rewardItemBox'), 'oran').map(s => s.text)")
         check("Baccarancia" in results, f"cercando 'oran' si trova Baccarancia: {results[:5]}")
 
+        open_tool_card(page, "presetsCard")
         page.click('.preset-btn[data-preset="standard"]')
         check(page.input_value("#specialFloor") == "", "il preset azzera la stanza speciale")
         check(page.is_hidden("#roomCard"), "nessuna stanza per le missioni normali")
@@ -333,6 +356,7 @@ def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
 
         # Schermo di un telefono: niente scorrimento orizzontale
         page.set_viewport_size({"width": 360, "height": 800})
+        open_tool_card(page, "presetsCard")
         page.click('.preset-btn[data-preset="memo"]')
         page.wait_for_timeout(200)
         overflow = page.evaluate("document.documentElement.scrollWidth - document.documentElement.clientWidth")

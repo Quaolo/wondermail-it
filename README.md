@@ -24,8 +24,11 @@ Le password europee vanno bene per tutte le lingue della cartuccia europea, ital
 
 ## Cosa fa
 
-In cima alla pagina puoi incollare una password: il sito capisce di che regione è (Europa, America o
-Giappone), controlla che sia valida e carica la missione nel generatore, pronta da modificare. Di fianco al
+Di fianco al modulo ci sono due schede che si aprono con un clic: "Leggi una password" e "Accesso rapido".
+Nella prima incolli una password e il sito capisce di che regione è (Europa, America o Giappone), controlla
+che sia valida e carica la missione nel generatore, pronta da modificare; nella seconda trovi le scorciatoie
+per le missioni più cercate. Quando cominci a compilare la missione a mano si richiudono da sole, così resta
+spazio all'anteprima. Di fianco al
 modulo c'è l'anteprima della schermata "Info missione" del gioco, con committente, difficoltà e ricompensa.
 L'anteprima è sempre quella della password che stai per copiare.
 
