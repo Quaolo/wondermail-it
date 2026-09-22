@@ -148,7 +148,7 @@ Il test della codifica confronta 60 password con quelle del generatore originale
   per le icone degli strumenti
 - [Pixelify Sans](https://github.com/eifetx/Pixelify-Sans) per il carattere dei titoli (SIL Open Font License)
 
-Ho sviluppato il progetto insieme a Claude, l'assistente di intelligenza artificiale di Anthropic.
+Ho sviluppato il progetto insieme a Claude.
 
 ## Licenza
 
@@ -168,5 +168,5 @@ English. Names, job summary sentences and room maps come straight from the game 
 [wondermail_pdm](https://github.com/RedCoal27/wondermail_pdm) and now has a new interface, Japanese password
 support, CRC checks, maps of every special room and a few fixes. It also covers the "endless" Treasure Memo
 trick: a memo pointing to a room without the mission treasure never ends and can be replayed for the room's
-rewards. Open `index.html` to use it and run `node --test` for the tests. Developed together with Claude
-(Anthropic). The code is MIT licensed; game texts and data belong to their owners.
+rewards. Open `index.html` to use it and run `node --test` for the tests. Developed together with Claude.
+The code is MIT licensed; game texts and data belong to their owners.
