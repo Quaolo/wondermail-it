@@ -345,6 +345,15 @@ def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
         seeded = decode_output(page, "eu")["struct"]
         changed = sorted(key for key in after if key != "checksum" and after[key] != seeded[key])
         check(changed == ["flavorText"], f"«Nuovo seme» cambia solo il seme: {changed}")
+        # Piani che il gioco rifiuta (IsForbiddenFloor): l'ultimo piano della Riserva Marina è uno di questi
+        check(page.evaluate("WMSGen.getForbiddenFloors(72)").__contains__(19), "piano 19 della Riserva Marina vietato")
+        check("piani 19" in page.text_content("#floorLimitHint"), f"avviso sui piani vietati: {page.text_content('#floorLimitHint')!r}")
+        set_input(page, "floor", 19)
+        page.evaluate("generateCode()")
+        page.wait_for_timeout(150)
+        check("non accetta" in page.input_value("#outputbox"), f"piano vietato rifiutato: {page.input_value('#outputbox')!r}")
+
+        set_select(page, "dungeonBox", 1)
         last = page.evaluate("getDungeonFloorLimit(document.getElementById('dungeonBox').value)")
         set_input(page, "floor", last)
         page.evaluate("generateCode()")

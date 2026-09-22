@@ -623,9 +623,13 @@ function syncDungeonFloorLimit(forceClamp = false) {
   }
 
   if (hint) {
-    hint.textContent = limit < 99
-      ? t('floorLimitHint', { count: limit })
-      : t('floorLimitUnknown');
+    const parts = [limit < 99 ? t('floorLimitHint', { count: limit }) : t('floorLimitUnknown')];
+    // Qualche piano (di solito quello del capo) il gioco non lo accetta nelle missioni.
+    const forbidden = WMSGen.getForbiddenFloors(dungeonSelect.value);
+    if (forbidden.length) {
+      parts.push(t('floorForbiddenHint', { floors: forbidden.join(', ') }));
+    }
+    hint.textContent = parts.join(' ');
   }
 }
 
@@ -1551,7 +1555,8 @@ onReady(() => {
         document.getElementById('specialFloor').value = '';
         // Uno strumento da lancio non può essere lo strumento obiettivo: meglio partire da uno valido.
         const targetItem = document.getElementById('targetItemBox');
-        if (targetItem && WMSGenData.badTargetItems.includes(parseInt(targetItem.value, 10))) {
+        const mainType = WMSGen.getTypeData() ? WMSGen.getTypeData().mainType : 0;
+        if (targetItem && WMSGen.getTargetItemError(parseInt(targetItem.value, 10), mainType)) {
           setSelectByValue(targetItem, DEFAULT_TREASURE_ITEM);
         }
       }

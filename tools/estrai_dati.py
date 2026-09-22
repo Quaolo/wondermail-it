@@ -358,6 +358,17 @@ def build_mission_floors(rodata: bytes, points_source: bytes) -> dict:
     # (gli elenchi sono uno dopo l'altro in memoria).
     pointers = read_label_words(data, labels, "MISSION_FLOOR_RANKS_PTRS")
 
+    # Piani che il gioco rifiuta (IsForbiddenFloor: coppie gruppo/piano del gruppo, chiuse da 0x64).
+    forbidden = set()
+    offset = labels["MISSION_FLOORS_FORBIDDEN"]
+    while data[offset] != MISSION_RANK_GROUPS:
+        forbidden.add((data[offset], data[offset + 1]))
+        offset += 2
+
+    # Strumenti che si possono portare nel dungeon (serve alle missioni di consegna).
+    restrictions = labels["DUNGEON_RESTRICTIONS"]
+    max_items = [data[restrictions + 0xC * dungeon + 5] for dungeon in range(FIRST_SPECIAL_DUNGEON)]
+
     # Piano massimo accettato in una missione, per ogni ID di dungeon.
     floors = [floor_count(dungeon) - (1 if dungeon == 0xAE else 0)
               for dungeon in range(LAST_DUNGEON_ID + 1)]
@@ -370,8 +381,16 @@ def build_mission_floors(rodata: bytes, points_source: bytes) -> dict:
         ranks[dungeon] = [data[pointers[group] + group_floor(dungeon, floor)[1]]
                           for floor in range(1, floor_count(dungeon) + 1)]
 
+    forbidden_floors = {}
+    for dungeon in range(FIRST_SPECIAL_DUNGEON):
+        floors_out = [floor for floor in range(1, floors[dungeon] + 1)
+                      if group_floor(dungeon, floor) in forbidden]
+        if floors_out:
+            forbidden_floors[dungeon] = floors_out
+
     points = read_label_words(*assemble_rank_points(points_source), "MISSION_RANK_POINTS")
-    return {"missionFloors": floors, "missionRanks": ranks, "missionRankPoints": points}
+    return {"missionFloors": floors, "missionRanks": ranks, "missionRankPoints": points,
+            "forbiddenFloors": forbidden_floors, "dungeonMaxItems": max_items}
 
 
 def assemble_rank_points(source: bytes) -> tuple[bytes, dict]:

@@ -88,8 +88,6 @@ var WMSGenData = {
   // Ultimo ID dell'elenco completo dei Pokémon ("mostra tutti").
   lastRegularPokemon: 534,
 
-  // Strumenti non ammessi come strumento obiettivo (strumenti da lancio).
-  badTargetItems: [0, 1, 2, 3, 4, 9],
 
   // Stanze tra cui il gioco sceglie a caso (tabelle TREASURE_MEMO_FIXED_ROOM_IDS,
   // CHALLENGE_NORMAL_FIXED_ROOM_IDS e OUTLAW_HIDEOUT_FIXED_ROOM_IDS del codice del gioco,
@@ -267,6 +265,15 @@ var WMSGen = {
     }
   },
 
+  // Controlli del gioco usati anche dall'app.
+  getTargetItemError: function (itemId, mainType) {
+    return getTargetItemError(parseInt(itemId, 10), parseInt(mainType, 10));
+  },
+
+  getForbiddenFloors: function (dungeonId) {
+    return getForbiddenFloors(parseInt(dungeonId, 10));
+  },
+
   getComboBoxValue: function (box) {
     if (typeof box === 'string') {
       box = this.form[box];
@@ -303,10 +310,15 @@ var WMSGen = {
     }
 
     var dungeon = parseInt(this.getComboBoxValue('dungeonBox'), 10);
+    if (!(dungeon >= 0) || dungeon >= FIRST_INVALID_DUNGEON) {
+      errors.push(tr('errorDungeonNotAllowed'));
+    }
     var floorLimit = this.getFloorLimit(dungeon);
     var floor = readInteger(this.form.floor.value);
     if (floor === null || floor < 1 || floor > floorLimit) {
       errors.push(tr('errorFloorRange', { max: floorLimit }));
+    } else if (getForbiddenFloors(dungeon).indexOf(floor) !== -1) {
+      errors.push(tr('errorForbiddenFloor', { floor: floor }));
     }
 
     var specialFloor = String(this.form.specialFloor.value || '').trim();
@@ -330,6 +342,9 @@ var WMSGen = {
       var rewardItem = parseInt(this.getComboBoxValue('rewardItemBox'), 10);
       if (!rewardItem) {
         errors.push(tr('errorRewardItemRequired'));
+      } else if (!isValidGameItem(rewardItem) || !isStorableItem(rewardItem)) {
+        // Il gioco controlla anche la ricompensa (IsItemValid e IsStorableItem).
+        errors.push(tr('errorInvalidRewardItem'));
       }
     }
 
@@ -342,9 +357,17 @@ var WMSGen = {
 
     if (typeData.useTargetItem) {
       var targetItem = parseInt(this.getComboBoxValue('targetItemBox'), 10);
-      if (WMSGenData.badTargetItems.indexOf(targetItem) !== -1) {
+      var itemError = getTargetItemError(targetItem, typeData.mainType);
+      if (itemError === 'thrown') {
+        errors.push(tr('errorThrownTargetItem'));
+      } else if (itemError) {
         errors.push(tr('errorInvalidTargetItem'));
       }
+    }
+
+    // Consegna: in qualche dungeon non si possono portare strumenti, quindi non si consegna niente.
+    if (typeData.mainType === 7 && getDungeonMaxItems(dungeon) === 0) {
+      errors.push(tr('errorNoItemsInDungeon'));
     }
 
     return errors;
@@ -566,6 +589,70 @@ function hasLargeBody(monId) {
     data._largeBodySet = new Set(data.largeBody);
   }
   return data._largeBodySet.has(monId % 600);
+}
+
+// ---------------------------------------------------------------------------
+// Controlli del gioco su dungeon, piani e strumenti (porting di IsMissionValid)
+// ---------------------------------------------------------------------------
+
+// Primo ID di dungeon che il gioco non accetta nelle missioni (IsInvalidForMission).
+var FIRST_INVALID_DUNGEON = 0xB4;
+// Primo forziere: da qui in su niente può essere lo strumento obiettivo (IsValidTargetItem).
+var FIRST_BOX_ITEM = 364;
+// Strumenti che non si possono tenere nel sacco (IsStorableItem): Poké, MT Usata, Uovoincanto.
+var UNSTORABLE_ITEMS = [0, 183, 187, 178];
+// Strumenti da lancio ammessi come obiettivo anche dove gli altri non lo sono: Punta d'Oro, Fossile Raro.
+var THROWN_ITEMS_ALLOWED = [9, 10];
+
+function gameData() {
+  return window.WMSkyGameData || {};
+}
+
+function isValidGameItem(itemId) {
+  var data = gameData();
+  if (!data.validItems) return true;
+  if (!data._validItemSet) {
+    data._validItemSet = new Set(data.validItems);
+  }
+  return itemId > 0 && data._validItemSet.has(itemId);
+}
+
+// Categoria 0 e 1: strumenti da lancio (IsThrownItem).
+function isThrownItem(itemId) {
+  var categories = gameData().itemCategory;
+  return !!categories && categories[itemId] <= 1;
+}
+
+function isStorableItem(itemId) {
+  return UNSTORABLE_ITEMS.indexOf(itemId) === -1;
+}
+
+// Piani che il gioco rifiuta in quel dungeon (IsForbiddenFloor).
+function getForbiddenFloors(dungeonId) {
+  var forbidden = gameData().forbiddenFloors;
+  return (forbidden && forbidden[dungeonId]) || [];
+}
+
+// Strumenti che si possono portare nel dungeon: se sono zero, non si può consegnare niente.
+function getDungeonMaxItems(dungeonId) {
+  var maxItems = gameData().dungeonMaxItems;
+  return maxItems && maxItems[dungeonId] !== undefined ? maxItems[dungeonId] : 99;
+}
+
+/**
+ * Strumento obiettivo: il gioco vuole uno strumento vero, non un forziere e non uno strumento che
+ * non entra nel sacco (CheckItemForMissionType). Nelle missioni "cerca con il committente" (tipo 4)
+ * non sono ammessi gli strumenti da lancio, tranne Punta d'Oro e Fossile Raro.
+ * Restituisce 'invalid', 'thrown' oppure null se lo strumento va bene.
+ */
+function getTargetItemError(itemId, mainType) {
+  if (!itemId || itemId >= FIRST_BOX_ITEM || !isValidGameItem(itemId) || !isStorableItem(itemId)) {
+    return 'invalid';
+  }
+  if (mainType === 4 && isThrownItem(itemId) && THROWN_ITEMS_ALLOWED.indexOf(itemId) === -1) {
+    return 'thrown';
+  }
+  return null;
 }
 
 function getValidItemIds() {

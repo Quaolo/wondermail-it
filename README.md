@@ -10,7 +10,9 @@ dalle wiki e alcuni errori del vecchio generatore sono stati corretti.
 
 ## Come si usa
 
-Non c'è niente da installare, basta aprire `index.html` nel browser. Se preferisci un piccolo server locale:
+Il sito è online qui: <https://quaolo.github.io/wondermail-it/>.
+
+In locale non c'è niente da installare, basta aprire `index.html` nel browser. Se preferisci un piccolo server locale:
 
 ```
 python -m http.server 8000
@@ -72,6 +74,9 @@ con la stanza 81; per le altre l'ho ricavato dal codice del gioco e non l'ho anc
   Pokémon che il gioco accetta, tra cui Nidoqueen, Typhlosion, Treecko, Mudkip e Chimchar. Quelli che il gioco
   rifiuta come committenti, come Grovyle o i leggendari, si possono comunque scegliere come bersaglio. Quando il
   committente si unisce alla squadra, i Pokémon troppo grandi come Onix non compaiono.
+- Prima di dare la password il sito rifà i controlli del gioco (`IsMissionValid`): dungeon, piano (compresi
+  i piani che il gioco non accetta, di solito quello del capo), Pokémon, strumento obiettivo e ricompensa.
+  Così una password rifiutata dal gioco te la segnala subito, con il motivo.
 - Il numero di piani di ogni dungeon e la difficoltà delle missioni vengono dalle tabelle del gioco. Prima
   erano raccolte dalla community e in 17 dungeon su 54 il limite dei piani era sbagliato: per esempio nella
   Giungla del Mistero si fermava al 14 invece che al 29, e nelle Pianure Saetta arrivava al 20 invece che al 10.
@@ -109,8 +114,8 @@ Il test della codifica confronta 60 password con quelle del generatore originale
 
 - I tipi di ricompensa dal 4 al 6 hanno ancora i nomi del generatore originale, che non tornano del tutto con
   quello che si sa del gioco.
-- Una password valida può comunque essere rifiutata dal gioco, per esempio se il dungeon non è ancora
-  sbloccato o se la combinazione non è ammessa.
+- Una password valida può comunque essere rifiutata dal gioco se il dungeon non è ancora sbloccato, se la
+  missione è già nell'elenco o se l'elenco è pieno: quelli dipendono dal salvataggio e il sito non li conosce.
 - Le stanze senza tesoro diverse dalla 81 vanno provate in gioco.
 - Il gioco dice quali strumenti condividono la stessa icona, ma non di che colore sono. Per alcuni i colori
   li ho scelti io e potrebbero non corrispondere.
