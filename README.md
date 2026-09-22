@@ -63,6 +63,12 @@ con la stanza 81; per le altre l'ho ricavato dal codice del gioco e non l'ho anc
 - Il terzo membro delle Lettere di sfida e il complice dei covi finiscono davvero nella password.
 - Arbok maschio non diventa più Nidoran♂, e un valore fuori limite viene segnalato invece di dare una
   password sbagliata.
+- L'elenco dei committenti segue le regole del gioco. Il vecchio generatore lasciava fuori una ventina di
+  Pokémon che il gioco accetta, tra cui Nidoqueen, Typhlosion, Treecko, Mudkip e Chimchar. Quelli che il gioco
+  rifiuta come committenti, come Grovyle o i leggendari, si possono comunque scegliere come bersaglio. Quando il
+  committente si unisce alla squadra, i Pokémon troppo grandi come Onix non compaiono.
+- Le icone degli strumenti seguono i dati del gioco: due strumenti che lì hanno la stessa icona ce l'hanno
+  anche qui, per esempio quasi tutti i semi o i nastri da tenere.
 
 ## Dati del gioco
 
@@ -75,7 +81,8 @@ python tools/estrai_dati.py --pmd-sky ../pmd-sky   # se hai già una copia di pr
 ```
 
 Lo script scarica i file da un commit preciso e controlla che non siano cambiati. Da lì ricava i testi
-(nomi, descrizioni, frasi di "Info missione"), i dati degli strumenti e le stanze speciali.
+(nomi, descrizioni, frasi di "Info missione"), i dati degli strumenti e dei Pokémon (numero del Pokédex per i
+ritratti, chi può fare da committente) e le stanze speciali.
 
 Il resto del codice è JavaScript senza librerie: `lm.js` codifica e decodifica le password,
 `lmgenerate.js` descrive i tipi di missione, `app.js` e `stanze.js` gestiscono la pagina e le mappe.
@@ -84,7 +91,7 @@ In `config.js` si può mettere l'indirizzo del repository per mostrare il pulsan
 ## Test
 
 ```
-node --test                  # codifica, stanze e traduzioni (Node 18 o più recente)
+node --test                  # codifica, stanze, Pokémon, icone e traduzioni (Node 18 o più recente)
 python tests/ui_smoke.py     # prova la pagina in un browser vero, serve Playwright
 ```
 
@@ -97,6 +104,8 @@ Il test della codifica confronta 60 password con quelle del generatore originale
 - Una password valida può comunque essere rifiutata dal gioco, per esempio se il dungeon non è ancora
   sbloccato o se la combinazione non è ammessa.
 - Le stanze senza tesoro diverse dalla 81 vanno provate in gioco.
+- Il gioco dice quali strumenti condividono la stessa icona, ma non di che colore sono. Per alcuni i colori
+  li ho scelti io e potrebbero non corrispondere.
 
 Le idee per le prossime versioni sono in [docs/prossimi-passi.md](docs/prossimi-passi.md).
 
@@ -113,7 +122,8 @@ Le idee per le prossime versioni sono in [docs/prossimi-passi.md](docs/prossimi-
 - [Pokémon Central Wiki](https://wiki.pokemoncentral.it/) per i nomi italiani delle forme alternative
 - [PMDCollab SpriteCollab](https://sprites.pmdcollab.org/) per i ritratti (di Spike Chunsoft e degli artisti
   della community, CC BY-NC 4.0), che vengono caricati da GitHub e non sono inclusi qui
-- la [wiki di PMDO](https://wiki.pmdo.pmdcollab.org/) per le icone degli strumenti
+- la [wiki di PMDO](https://wiki.pmdo.pmdcollab.org/) e i file di [PMDO](https://github.com/audinowho/DumpAsset)
+  per le icone degli strumenti
 - [Pixelify Sans](https://github.com/eifetx/Pixelify-Sans) per il carattere dei titoli (SIL Open Font License)
 
 Ho sviluppato il progetto insieme a Claude, l'assistente di intelligenza artificiale di Anthropic.

@@ -85,34 +85,6 @@ var WMSGenData = {
     0x6D, 0x6E
   ],
 
-  // Pokémon che il gioco usa come committenti (dati estratti dal gioco dal generatore originale).
-  validClients: [
-    1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 18, 19,
-    20, 21, 22, 23, 24, 26, 27, 28, 29, 30, 32, 33, 34, 35, 36, 37,
-    38, 39, 41, 42, 43, 44, 45, 46, 48, 49, 52, 53, 54, 55, 56, 57,
-    58, 59, 60, 61, 62, 64, 65, 66, 68, 69, 70, 72, 73, 74, 75, 76,
-    77, 78, 79, 80, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94,
-    95, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111,
-    112, 114, 115, 116, 117, 118, 119, 120, 121, 123, 124, 125, 126, 127, 128, 129,
-    132, 133, 134, 135, 136, 138, 139, 140, 141, 142, 143, 147, 148, 149, 152, 153,
-    154, 155, 156, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170,
-    171, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182, 184, 185, 186, 187, 188,
-    189, 190, 193, 194, 195, 196, 198, 199, 200, 230, 231, 232, 233, 234, 235, 236,
-    237, 238, 240, 245, 246, 247, 248, 249, 250, 252, 253, 254, 255, 256, 257, 258,
-    259, 261, 262, 263, 265, 266, 267, 268, 269, 273, 274, 275, 283, 284, 287, 288,
-    289, 290, 292, 293, 295, 297, 298, 299, 300, 301, 302, 303, 305, 306, 307, 308,
-    309, 311, 312, 313, 315, 316, 317, 318, 319, 320, 321, 323, 327, 328, 332, 333,
-    334, 335, 337, 338, 339, 340, 341, 342, 343, 344, 345, 346, 347, 348, 350, 351,
-    352, 353, 354, 356, 357, 358, 359, 360, 361, 362, 363, 364, 365, 366, 367, 368,
-    370, 371, 372, 373, 374, 375, 377, 385, 386, 387, 388, 389, 391, 393, 394, 395,
-    396, 397, 398, 399, 400, 401, 402, 403, 404, 405, 406, 407, 408, 422, 423, 424,
-    426, 427, 428, 429, 430, 431, 432, 433, 435, 436, 437, 439, 441, 443, 444, 445,
-    446, 447, 448, 450, 451, 452, 453, 454, 455, 457, 458, 459, 460, 462, 463, 464,
-    465, 466, 467, 468, 469, 471, 472, 473, 474, 475, 476, 477, 478, 479, 480, 481,
-    482, 484, 485, 486, 487, 488, 489, 491, 492, 493, 494, 496, 497, 498, 499, 500,
-    501, 502, 503, 505, 507, 508, 509, 511, 512, 513, 514, 515, 518, 521
-  ],
-
   // Ultimo ID dell'elenco completo dei Pokémon ("mostra tutti").
   lastRegularPokemon: 534,
 
@@ -135,6 +107,9 @@ var WMSGenData = {
 var WMSGen = {
   form: null,
   lastMissionType: 0,
+  monsterListKey: null,
+  // L'app lo imposta per ricostruire gli elenchi dei Pokémon mantenendo le scelte.
+  onMonsterListsChange: null,
   advanced: false,
   showAllPokemon: false,
 
@@ -188,15 +163,65 @@ var WMSGen = {
     });
   },
 
-  fillMonsterLists: function () {
-    var boxes = [this.form.clientBox, this.form.targetBox, this.form.target2Box];
+  /**
+   * Pokémon che il gioco accetta in una Missione Speciale C (porting di CheckMonsterForMissionType,
+   * dati in data/dati_gioco.js): i bersagli devono essere una forma base valida; i committenti non
+   * possono essere in MISSION_BANNED_MONSTERS (tranne negli arresti e nelle Lettere di sfida) e,
+   * quando si uniscono alla squadra (accompagna, esplora, cerca, guida), devono avere taglia 1.
+   */
+  getMonsterIds: function (role, mainType) {
     var ids = [];
     if (this.advanced || this.showAllPokemon) {
       for (var id = 1; id <= WMSGenData.lastRegularPokemon; id++) ids.push(id);
-    } else {
-      ids = WMSGenData.validClients.slice();
+      return ids;
     }
-    boxes.forEach(function (box) {
+    var data = window.WMSkyGameData || {};
+    var bannedAllowed = mainType === 10 || mainType === 11;
+    if (role !== 'client' || bannedAllowed) {
+      return (data.missionTargets || []).slice();
+    }
+    ids = (data.missionClients || []).slice();
+    if (clientJoinsTeam(mainType)) {
+      ids = ids.filter(function (monId) { return !hasLargeBody(monId); });
+    }
+    return ids;
+  },
+
+  // Gruppo di elenchi da mostrare: cambia solo quando cambiano i Pokémon ammessi.
+  getMonsterListKey: function (mainType) {
+    if (this.advanced || this.showAllPokemon) return 'all';
+    if (mainType === 10 || mainType === 11) return 'targets';
+    return clientJoinsTeam(mainType) ? 'smallClients' : 'clients';
+  },
+
+  getSelectedMainType: function () {
+    var typeData = this.form && this.form.missionTypeBox ? this.getTypeData() : null;
+    return typeData ? typeData.mainType : 0;
+  },
+
+  // Aggiorna gli elenchi dei Pokémon se il tipo di missione ne ammette altri.
+  syncMonsterLists: function () {
+    var key = this.getMonsterListKey(this.getSelectedMainType());
+    if (key === this.monsterListKey) return;
+    if (this.monsterListKey !== null && typeof this.onMonsterListsChange === 'function') {
+      this.onMonsterListsChange();
+    } else {
+      this.fillMonsterLists();
+    }
+  },
+
+  fillMonsterLists: function () {
+    var mainType = this.getSelectedMainType();
+    this.monsterListKey = this.getMonsterListKey(mainType);
+    var lists = [
+      [this.form.clientBox, this.getMonsterIds('client', mainType)],
+      [this.form.targetBox, this.getMonsterIds('target', mainType)],
+      [this.form.target2Box, this.getMonsterIds('target', mainType)]
+    ];
+    lists.forEach(function (entry) {
+      var box = entry[0];
+      var ids = entry[1];
+      if (!box) return;
       while (box.options.length) box.remove(0);
       for (var i = 0; i < ids.length; i++) {
         addOptionToSelect(box, ids[i], getMonName(ids[i]));
@@ -308,6 +333,13 @@ var WMSGen = {
       }
     }
 
+    if (clientJoinsTeam(typeData.mainType) && !typeData.forceClient) {
+      var client = parseInt(this.getComboBoxValue('clientBox'), 10);
+      if (hasLargeBody(client)) {
+        errors.push(tr('errorClientTooLarge'));
+      }
+    }
+
     if (typeData.useTargetItem) {
       var targetItem = parseInt(this.getComboBoxValue('targetItemBox'), 10);
       if (WMSGenData.badTargetItems.indexOf(targetItem) !== -1) {
@@ -350,6 +382,7 @@ var WMSGen = {
     if (!typeData) {
       return;
     }
+    this.syncMonsterLists();
     var has = function (key) {
       return Object.prototype.hasOwnProperty.call(typeData, key);
     };
@@ -518,6 +551,21 @@ function hasFemaleForm(baseId) {
     data._femaleFormSet = new Set(data.femaleForm);
   }
   return data._femaleFormSet.has(baseId % 600);
+}
+
+// Tipi di missione in cui il committente si unisce alla squadra: accompagna, esplora, cerca, guida.
+function clientJoinsTeam(mainType) {
+  return mainType >= 2 && mainType <= 5;
+}
+
+// Pokémon che occupano più di un posto nella squadra (taglia diversa da 1 in BALANCE/monster.md).
+function hasLargeBody(monId) {
+  var data = window.WMSkyGameData;
+  if (!data || !data.largeBody) return false;
+  if (!data._largeBodySet) {
+    data._largeBodySet = new Set(data.largeBody);
+  }
+  return data._largeBodySet.has(monId % 600);
 }
 
 function getValidItemIds() {

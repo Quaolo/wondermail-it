@@ -66,7 +66,7 @@ window.WMSkyRegisterLocale('en', {
 
     targetSection: 'Pokémon and item',
     allPokemonFormsLabel: 'Show all Pokémon and forms',
-    allPokemonFormsHint: 'Also includes Pokémon and forms the game never uses as clients. Some combinations may not work.',
+    allPokemonFormsHint: 'Also lists Pokémon and forms the game does not accept in these missions: the password may be rejected.',
     clientLabel: 'Client',
     targetLabel: 'Target Pokémon',
     target2Label: 'Second Pokémon',
@@ -172,6 +172,7 @@ window.WMSkyRegisterLocale('en', {
     errorSpecialFloorRange: 'The special room must be a whole number from 0 to 255.',
     errorFlavorRange: 'The text seed must be a whole number from 0 to 16777215.',
     errorRewardItemRequired: 'Choose a reward item.',
+    errorClientTooLarge: 'This client is too big to join the team: the game would reject the password for this kind of mission.',
     errorInvalidTargetItem: 'This item cannot be the target item (throwing items are not allowed).',
     errorFieldRange: 'The "{field}" field is out of range (maximum {max}).',
     errorSelfCheck: 'The generated password failed the final check: do not use it.',

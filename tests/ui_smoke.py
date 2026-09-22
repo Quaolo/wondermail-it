@@ -147,6 +147,17 @@ def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
         set_select(page, "clientBox", 113)
         check(page.is_disabled("#clientF"), "casella Femmina disattivata per Chansey")
 
+        # Pokémon ammessi come nel gioco (IsMissionValid): Nidoqueen e Treecko sì, Grovyle solo come bersaglio
+        def options(select_id):
+            return page.evaluate(f"[...document.getElementById('{select_id}').options].map(o => +o.value)")
+        clients = options("clientBox")
+        check(31 in clients and 280 in clients and 281 not in clients, "committenti dal gioco: Nidoqueen e Treecko sì, Grovyle no")
+        check(281 in options("targetBox"), "Grovyle può essere il bersaglio")
+        set_select(page, "missionTypeBox", 2)
+        check(95 not in options("clientBox") and 280 in options("clientBox"), "Onix non può unirsi alla squadra (taglia)")
+        set_select(page, "missionTypeBox", 0)
+        check(page.evaluate("[getPortraitPath(29), getPortraitPath(32)]") == ["0029", "0032"], "ritratti di Nidoran♀ e Nidoran♂")
+
         # Lettera di sfida normale: il secondo Pokémon arriva nel codice, la stanza è tra 150 e 154
         set_select(page, "missionTypeBox", 12)
         set_select(page, "missionSubTypeBox", 0)

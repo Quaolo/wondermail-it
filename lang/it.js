@@ -66,7 +66,7 @@ window.WMSkyRegisterLocale('it', {
 
     targetSection: 'Pokémon e strumento',
     allPokemonFormsLabel: 'Mostra tutti i Pokémon e le forme',
-    allPokemonFormsHint: 'Include anche Pokémon e forme che il gioco non usa come committenti. Alcune combinazioni possono non funzionare.',
+    allPokemonFormsHint: 'Include anche i Pokémon e le forme che il gioco non accetta in queste missioni: la password potrebbe essere rifiutata.',
     clientLabel: 'Committente',
     targetLabel: 'Pokémon obiettivo',
     target2Label: 'Secondo Pokémon',
@@ -172,6 +172,7 @@ window.WMSkyRegisterLocale('it', {
     errorSpecialFloorRange: 'La stanza speciale deve essere un numero intero da 0 a 255.',
     errorFlavorRange: 'Il seme del testo deve essere un numero intero da 0 a 16777215.',
     errorRewardItemRequired: 'Scegli uno strumento come ricompensa.',
+    errorClientTooLarge: 'Questo committente è troppo grande per unirsi alla squadra: in questo tipo di missione il gioco rifiuterebbe la password.',
     errorInvalidTargetItem: 'Questo strumento non può essere lo strumento obiettivo (gli strumenti da lancio non sono ammessi).',
     errorFieldRange: 'Il campo "{field}" è fuori dai limiti (massimo {max}).',
     errorSelfCheck: 'La password generata non ha superato la verifica finale: non usarla.',

@@ -1012,6 +1012,9 @@ textarea.password {
   .hero-team { gap: 8px; min-height: 0; }
   .hero-portrait { width: 42px; height: 42px; }
   .lang-picker-trigger { min-width: 0; padding: 7px 12px; }
+  .masthead-tools { gap: 8px; }
+  .repo-link { padding: 7px 10px; }
+  .repo-link span { display: none; }
   .brand-mark { width: 54px; height: 54px; }
   .reader-row { flex-direction: column; }
   .reader-row button { width: 100%; }
@@ -1026,6 +1029,15 @@ textarea.password {
 
 @media (max-width: 420px) {
   .hero-team { gap: 6px; }
+  /* Solo bandiera: il nome della lingua resta per i lettori di schermo. */
+  .lang-picker-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
   .hero-portrait { width: 36px; height: 36px; }
 }
 

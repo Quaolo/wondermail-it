@@ -941,7 +941,14 @@ function rebuildPokemonLists() {
     relabelPokemonSelect(id);
     const select = document.getElementById(id);
     if (!select) return;
-    if (!setSelectByValue(select, previousValues[id])) {
+    const previous = previousValues[id];
+    if (setSelectByValue(select, previous)) return;
+    // Un Pokémon non più in elenco (per esempio letto da una password) resta scelto.
+    const numeric = parseInt(previous, 10);
+    if (Number.isFinite(numeric) && numeric > 0) {
+      ensureSelectOption(select, numeric, getLocalizedPokemonName(numeric));
+      setSelectByValue(select, numeric);
+    } else {
       select.selectedIndex = Math.max(select.selectedIndex, 0);
     }
   });
@@ -1498,6 +1505,7 @@ onReady(() => {
   WMSGen.advanced = false;
   WMSGen.translate = t;
   WMSGen.getFloorLimit = getDungeonFloorLimit;
+  WMSGen.onMonsterListsChange = rebuildPokemonLists;
   WMSGen.setup(document.getElementById('genForm'));
   WMSGen.showAllPokemon = !!document.getElementById('allPokemonForms')?.checked;
   populateEggPokemonList();
@@ -1869,7 +1877,8 @@ function getPortraitPath(monId) {
   if (PORTRAIT_FORMS[baseId]) return PORTRAIT_FORMS[baseId];
   const species = getPortraitSpecies(baseId);
   if (PORTRAIT_FORMS[species]) return PORTRAIT_FORMS[species];
-  const dex = window.WMSkyPokemonSpriteDex && window.WMSkyPokemonSpriteDex[species];
+  const dexList = window.WMSkyGameData && window.WMSkyGameData.nationalDex;
+  const dex = dexList && dexList[species % 600];
   return dex ? String(dex).padStart(4, '0') : null;
 }
 

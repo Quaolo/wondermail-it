@@ -51,6 +51,8 @@ SOURCES = {
     "boxLists3": ("asm/overlay_10_rodata_022C490C.s", "9f4128a23347f2f15c92c89793d20150b62389ce"),
     # Dati degli strumenti (categoria di ogni strumento), versione europea.
     "itemP": ("files/language-specific/EU/BALANCE/item_p.bin", "22e33f76a2c9e443c67d6d0434161c1265110ce7"),
+    # Pokémon che il gioco non accetta come committenti (MISSION_BANNED_MONSTERS, usato da IsMissionValid).
+    "mainRodata": ("asm/main_rodata_020A2808.s", "4e4adb2ac6130def826082136e95e63b0b3ed5f5"),
 }
 LANGUAGES = ("it", "en")
 
@@ -222,14 +224,64 @@ def build_language(strings: list[str]) -> dict:
     }
 
 
-def read_genders(monster_md: bytes) -> list[int]:
-    """BALANCE/monster.md: intestazione di 8 byte ("MD\\0\\0" + numero di voci), poi voci da 68 byte.
-    Il genere è il byte 0x12 (0 = non valido, 1 = maschio, 2 = femmina, 3 = senza genere).
+MONSTER_ENTRY = 68
+
+
+def read_monsters(monster_md: bytes) -> dict:
+    """BALANCE/monster.md: intestazione di 8 byte ("MD\\0\\0" + numero di voci), poi voci da 68 byte
+    (struct monster_data_table_entry di pret/pmd-sky). Servono il numero del Pokédex nazionale (0x04),
+    il genere (0x12: 0 = non valido, 1 = maschio, 2 = femmina, 3 = senza genere) e la taglia (0x13).
     La voce ID + 600 è la seconda forma di genere della specie ID."""
     if monster_md[:4] != b"MD\x00\x00":
         raise ValueError("monster.md non riconosciuto")
     count = struct.unpack_from("<I", monster_md, 4)[0]
-    return [monster_md[8 + i * 68 + 0x12] for i in range(count)]
+    entries = [8 + i * MONSTER_ENTRY for i in range(count)]
+    return {
+        "dex": [struct.unpack_from("<h", monster_md, o + 4)[0] for o in entries],
+        "gender": [monster_md[o + 0x12] for o in entries],
+        "bodySize": [monster_md[o + 0x13] for o in entries],
+    }
+
+
+def read_label_halfwords(source: bytes, label: str) -> list[int]:
+    """Elenco di valori a 16 bit che finisce con 0, scritto come .byte dopo un'etichetta del file .s."""
+    text = source.decode("utf-8")
+    match = re.search(rf"^{label}:\n(.*?)(?=^\s*\.global|\Z)", text, re.M | re.S)
+    if not match:
+        raise ValueError(f"{label} non trovato")
+    data = [int(value, 16) for value in re.findall(r"0x([0-9A-Fa-f]{2})", match.group(1))]
+    values = [data[i] | data[i + 1] << 8 for i in range(0, len(data) - 1, 2)]
+    return values[:values.index(0)]
+
+
+def get_base_form(monster_id: int) -> int:
+    """Porting di GetBaseForm: le forme alternative diventano la forma base (Castform, Unown, Deoxys,
+    Cherrim, Shaymin Forma Cielo, Giratina Forma Originale). Burmy, Wormadam, Shellos e Gastrodon no."""
+    if 202 <= monster_id <= 228:
+        return 201
+    forms = {380: 379, 381: 379, 382: 379, 980: 979, 981: 979, 982: 979,
+             419: 418, 420: 418, 421: 418, 461: 460, 1061: 1060, 535: 534, 536: 529}
+    return forms.get(monster_id, monster_id)
+
+
+def is_monster_illegal_for_missions(monster_id: int, genders: list[int]) -> bool:
+    """Porting di IsMonsterValid e IsMonsterIllegalForMissions: niente ID vuoti, forme della storia
+    (535-552), Kecleon viola (384), Celebi rosa (279) e seconde forme che non sono femmine."""
+    valid = 0 < monster_id < 0x229 or (0x258 <= monster_id < 0x481 and genders[monster_id] == 2)
+    return not valid or 0x217 <= monster_id <= 0x228 or monster_id in (0x180, 0x117)
+
+
+def build_mission_pokemon(monsters: dict, banned: list[int]) -> dict:
+    """Pokémon che IsMissionValid accetta (CheckMonsterForMissionType):
+    - bersagli: forma base, non illegale;
+    - committenti: in più non in MISSION_BANNED_MONSTERS (tranne arresti e Lettere di sfida);
+    - taglia: per accompagna, esplora, cerca con il committente e guida serve taglia 1."""
+    banned_set = set(banned)
+    targets = [pid for pid in range(1, 600)
+               if get_base_form(pid) == pid and not is_monster_illegal_for_missions(pid, monsters["gender"])]
+    clients = [pid for pid in targets if pid not in banned_set]
+    large = [pid for pid in targets if monsters["bodySize"][pid] != 1]
+    return {"missionTargets": targets, "missionClients": clients, "largeBody": large}
 
 
 def read_item_categories(item_p: bytes) -> list[int]:
@@ -247,6 +299,14 @@ def read_item_categories(item_p: bytes) -> list[int]:
             raise ValueError("item_p.bin: strumenti fuori ordine")
         categories.append(item_p[offset + 4])
     return categories
+
+
+def read_item_looks(item_p: bytes) -> list[int]:
+    """Aspetto dell'icona di ogni strumento in BALANCE/item_p.bin: byte 5 = disegno (sprite_id),
+    byte 0xC = tavolozza (palette_id). Restituisce disegno * 16 + tavolozza: due strumenti con lo
+    stesso valore hanno la stessa icona nel gioco."""
+    start, end = struct.unpack_from("<II", item_p, 4)
+    return [item_p[offset + 5] * 16 + item_p[offset + 0xC] for offset in range(start, end - 15, 16)]
 
 
 def build_shared(en_strings: list[str], genders: list[int]) -> dict:
@@ -724,7 +784,8 @@ def main() -> int:
         if len(strings) != TOTAL_STRINGS:
             print(f"Attenzione: {lang} contiene {len(strings)} frasi invece di {TOTAL_STRINGS}.", file=sys.stderr)
         texts[lang] = strings
-    genders = read_genders(load_source("monster", args.pmd_sky))
+    monsters = read_monsters(load_source("monster", args.pmd_sky))
+    genders = monsters["gender"]
 
     source = f"pret/pmd-sky@{PMD_SKY_COMMIT[:12]}"
     for lang, label in (("it", "italiano"), ("en", "inglese (EU)")):
@@ -738,7 +799,13 @@ def main() -> int:
         )
 
     shared = build_shared(texts["en"], genders)
-    shared["itemCategory"] = read_item_categories(load_source("itemP", args.pmd_sky))
+    item_p = load_source("itemP", args.pmd_sky)
+    shared["itemCategory"] = read_item_categories(item_p)
+    shared["itemLook"] = read_item_looks(item_p)
+    banned = read_label_halfwords(load_source("mainRodata", args.pmd_sky), "MISSION_BANNED_MONSTERS")
+    shared.update(build_mission_pokemon(monsters, banned))
+    # Numero del Pokédex nazionale di ogni ID del gioco (per i ritratti di PMDCollab).
+    shared["nationalDex"] = monsters["dex"][:600]
     shared["source"] = source
     write_js(args.out / "dati_gioco.js", "window.WMSkyGameData", shared,
              "Dati di PMD: Esploratori del Cielo che non dipendono dalla lingua.")
