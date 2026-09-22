@@ -131,8 +131,6 @@ Il test della codifica confronta 60 password con quelle del generatore originale
 - Il gioco dice quali strumenti condividono la stessa icona, ma non di che colore sono. Per alcuni i colori
   li ho scelti io e potrebbero non corrispondere.
 
-Le idee per le prossime versioni sono in [docs/prossimi-passi.md](docs/prossimi-passi.md).
-
 ## Crediti
 
 - [wondermail_pdm](https://github.com/RedCoal27/wondermail_pdm) di RedCoal27, il progetto da cui sono partito
