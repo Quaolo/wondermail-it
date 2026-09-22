@@ -389,10 +389,35 @@ def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
         results = page.evaluate("getSearchSuggestions(document.getElementById('rewardItemBox'), 'oran').map(s => s.text)")
         check("Baccarancia" in results, f"cercando 'oran' si trova Baccarancia: {results[:5]}")
 
+        # Accessi rapidi a caso: ogni clic dà una missione nuova e sempre valida
         open_tool_card(page, "presetsCard")
+        codes = set()
+        for _ in range(5):
+            page.click('.preset-btn[data-preset="standard"]')
+            page.wait_for_timeout(120)
+            check(page.evaluate("WMSGen.verify().length") == 0, "missione normale a caso valida")
+            check(page.input_value("#specialFloor") == "", "il preset azzera la stanza speciale")
+            check(page.is_hidden("#roomCard"), "nessuna stanza per le missioni normali")
+            codes.add(page.input_value("#compactOutput"))
+        check(len(codes) >= 4, f"ogni clic dà una missione diversa: {len(codes)} su 5")
+        for _ in range(3):
+            page.click('.preset-btn[data-preset="outlaw"]')
+            page.wait_for_timeout(120)
+            struct = decode_output(page, "eu")["struct"]
+            check(struct["missionType"] == 10 and page.evaluate("WMSGen.verify().length") == 0,
+                  f"ricercato a caso: tipo {struct['missionType']}")
+        for _ in range(3):
+            page.click('.preset-btn[data-preset="surprise"]')
+            page.wait_for_timeout(120)
+            check(page.evaluate("WMSGen.verify().length") == 0, "missione a sorpresa valida")
+        eggs = set()
+        for _ in range(4):
+            page.click('.preset-btn[data-preset="egg"]')
+            page.wait_for_timeout(120)
+            eggs.add(page.evaluate("document.getElementById('eggPokemonBox').value"))
+        check(len(eggs) >= 3, f"l'uovo cambia specie a ogni clic: {len(eggs)} su 4")
         page.click('.preset-btn[data-preset="standard"]')
-        check(page.input_value("#specialFloor") == "", "il preset azzera la stanza speciale")
-        check(page.is_hidden("#roomCard"), "nessuna stanza per le missioni normali")
+        page.wait_for_timeout(120)
 
         if screenshot_dir:
             page.evaluate("window.scrollTo(0, 0)")

@@ -28,11 +28,13 @@ window.WMSkyRegisterLocale('it', {
     importCodePartial: 'Password valida (versione {region}), ma alcuni campi non sono gestiti dal generatore: rigenerandola potrebbe cambiare.',
 
     quickAccess: 'Accesso rapido',
-    presetStandard: 'Missione normale',
+    presetStandard: 'Missione normale a caso',
     presetMemo: 'Memo tesoro',
     presetEgg: 'Missione uovo (glitch)',
     presetChallenge: 'Sfida di {boss}',
-    presetsHint: 'Scorciatoie per le missioni più cercate. Lettere di sfida e Memo tesoro esistono solo in Esploratori del Cielo.',
+    presetOutlaw: 'Ricercato a caso',
+    presetSurprise: 'Missione a sorpresa',
+    presetsHint: 'Scorciatoie per le missioni più cercate. Le tre voci «a caso» riempiono il modulo con una missione nuova a ogni clic. Lettere di sfida e Memo tesoro esistono solo in Esploratori del Cielo.',
 
     missionSection: 'Missione',
     missionTypeLabel: 'Tipo di missione',

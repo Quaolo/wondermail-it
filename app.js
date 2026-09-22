@@ -1619,7 +1619,7 @@ onReady(() => {
   document.getElementById('copyPrettyBtn').addEventListener('click', () => copyFrom('outputbox'));
   document.getElementById('copyCompactBtn').addEventListener('click', () => copyFrom('compactOutput'));
 
-  applyPreset('standard');
+  applyPreset('default');
   WMSGen.update();
   refreshMissionUi();
   generateCode();
@@ -1838,6 +1838,109 @@ async function copyFrom(id) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Missioni a caso (accessi rapidi)
+// ---------------------------------------------------------------------------
+
+// Indici di WMSGenData.missionTypes: 0-9 le missioni normali, 10 e 11 gli arresti, 12 le Lettere di sfida,
+// 13 i Memo tesoro.
+const RANDOM_NORMAL_TYPES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+const RANDOM_OUTLAW_TYPES = [10, 11];
+const RANDOM_ANY_TYPES = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];
+
+function pickRandom(list) {
+  return list[Math.floor(Math.random() * list.length)];
+}
+
+// Un'opzione a caso tra quelle disponibili, saltando le caselle spente.
+function pickRandomOption(selectId, allowed) {
+  const select = document.getElementById(selectId);
+  if (!select || select.disabled || !select.options.length) return null;
+  let values = Array.from(select.options, (option) => option.value).filter((value) => value !== '');
+  if (typeof allowed === 'function') {
+    const usable = values.filter((value) => allowed(parseInt(value, 10)));
+    if (usable.length) values = usable;
+  }
+  if (!values.length) return null;
+  const value = pickRandom(values);
+  setSelectByValue(select, value);
+  return parseInt(value, 10);
+}
+
+function randomCheckbox(id) {
+  const box = document.getElementById(id);
+  if (!box || box.disabled) return;
+  box.checked = Math.random() < 0.5;
+}
+
+// Un piano valido: entro il limite del dungeon e non tra quelli che il gioco rifiuta.
+function pickRandomFloor(dungeonId) {
+  const limit = getDungeonFloorLimit(dungeonId);
+  const forbidden = WMSGen.getForbiddenFloors(dungeonId);
+  const floors = [];
+  for (let floor = 1; floor <= limit; floor += 1) {
+    if (!forbidden.includes(floor)) floors.push(floor);
+  }
+  return floors.length ? pickRandom(floors) : 1;
+}
+
+/**
+ * Riempie il modulo con una missione a caso di uno dei tipi indicati e la genera.
+ * I valori escono dagli elenchi del modulo, che seguono già le regole del gioco; se la combinazione
+ * non va bene (per esempio una consegna in un dungeon senza strumenti) si riprova con altri valori.
+ * Con `plainRooms` restano fuori i sottotipi con una stanza speciale (Sala Proibita e Sala d'Oro).
+ */
+function randomizeMission(typeIndexes, options = {}) {
+  const typeSelect = document.getElementById('missionTypeBox');
+  const subSelect = document.getElementById('missionSubTypeBox');
+  const floorInput = document.getElementById('floor');
+  const eggGlitch = document.getElementById('eggGlitch');
+  if (!typeSelect || !floorInput) return;
+  if (eggGlitch) eggGlitch.checked = false;
+
+  for (let attempt = 0; attempt < 30; attempt += 1) {
+    setSelectByValue(typeSelect, pickRandom(typeIndexes));
+    WMSGen.fillSubTypeList();
+    if (subSelect && subSelect.options.length) {
+      setSelectByValue(subSelect, pickRandom(Array.from(subSelect.options, (option) => option.value)));
+      const chosen = WMSGen.getTypeData();
+      if (options.plainRooms && chosen && (chosen.specialFloor !== undefined || chosen.specialFloorFromList)) {
+        setSelectByValue(subSelect, subSelect.options[0].value);
+      }
+    }
+    document.getElementById('specialFloor').value = '';
+    document.getElementById('flavorText').value = '';
+    WMSGen.update();
+
+    const typeData = WMSGen.getTypeData() || {};
+    ['clientBox', 'targetBox', 'target2Box'].forEach((id) => pickRandomOption(id));
+    ['clientF', 'targetF', 'target2F'].forEach(randomCheckbox);
+    const dungeon = pickRandomOption('dungeonBox');
+    floorInput.value = String(pickRandomFloor(dungeon));
+    pickRandomOption('targetItemBox', (itemId) => !WMSGen.getTargetItemError(itemId, typeData.mainType));
+    const rewardType = document.getElementById('rewardTypeBox');
+    if (rewardType && !rewardType.disabled) {
+      setSelectByValue(rewardType, String(Math.floor(Math.random() * 5)));
+      WMSGen.update();
+    }
+    pickRandomOption('rewardItemBox');
+
+    WMSGen.update();
+    refreshMissionUi();
+    if (!WMSGen.verify().length) return;
+  }
+}
+
+// Missione uovo: la specie che esce dall'uovo cambia a ogni clic.
+function randomizeEggMission() {
+  applyEggGlitchPreset();
+  const species = (window.WMSkyGameData && window.WMSkyGameData.missionTargets) || [];
+  const select = document.getElementById('eggPokemonBox');
+  if (select && species.length) setSelectByValue(select, pickRandom(species));
+  WMSGen.update();
+  refreshMissionUi();
+}
+
 function applyPreset(kind) {
   return withToolCardsOpen(() => applyPresetNow(kind));
 }
@@ -1849,8 +1952,18 @@ function applyPresetNow(kind) {
   if (eggGlitch) eggGlitch.checked = kind === 'egg';
 
   const specialMap = {
-    standard: () => {
+    // All'avvio la pagina parte da una missione semplice, non da una a caso.
+    default: () => {
       setSelectByValue(typeSelect, findMissionTypeIndex(0));
+    },
+    standard: () => {
+      randomizeMission(RANDOM_NORMAL_TYPES, { plainRooms: true });
+    },
+    outlaw: () => {
+      randomizeMission(RANDOM_OUTLAW_TYPES);
+    },
+    surprise: () => {
+      randomizeMission(RANDOM_ANY_TYPES);
     },
     memo: () => {
       setSelectByValue(typeSelect, findMissionTypeIndex(12));
@@ -1858,7 +1971,7 @@ function applyPresetNow(kind) {
       setSelectByValue(document.getElementById('targetItemBox'), DEFAULT_TREASURE_ITEM);
     },
     egg: () => {
-      applyEggGlitchPreset();
+      randomizeEggMission();
     },
     mewtwo: () => {
       setSelectByValue(typeSelect, findMissionTypeIndex(11));
@@ -1880,11 +1993,6 @@ function applyPresetNow(kind) {
       WMSGen.fillSubTypeList();
       setSelectByValue(subSelect, findSubtypeIndex(findMissionTypeIndex(11), 'Suicune'));
     },
-    jirachi: () => {
-      setSelectByValue(typeSelect, findMissionTypeIndex(11));
-      WMSGen.fillSubTypeList();
-      setSelectByValue(subSelect, findSubtypeIndex(findMissionTypeIndex(11), 'Jirachi'));
-    }
   };
 
   if (specialMap[kind]) {

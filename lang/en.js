@@ -28,11 +28,13 @@ window.WMSkyRegisterLocale('en', {
     importCodePartial: 'Valid password ({region} version), but some fields are not handled by the generator: regenerating it may change it.',
 
     quickAccess: 'Quick access',
-    presetStandard: 'Standard mission',
+    presetStandard: 'Random normal mission',
     presetMemo: 'Treasure Memo',
     presetEgg: 'Egg mission (glitch)',
     presetChallenge: '{boss} challenge',
-    presetsHint: 'Shortcuts to the most wanted missions. Challenge Letters and Treasure Memos only exist in Explorers of Sky.',
+    presetOutlaw: 'Random outlaw',
+    presetSurprise: 'Surprise mission',
+    presetsHint: 'Shortcuts for the most wanted missions. The three random ones fill the form with a new mission on every click. Challenge Letters and Treasure Memos only exist in Explorers of Sky.',
 
     missionSection: 'Mission',
     missionTypeLabel: 'Mission type',

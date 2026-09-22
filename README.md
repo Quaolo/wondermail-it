@@ -44,6 +44,11 @@ Qualche animazione accompagna il lavoro: la password si scrive da sola, le fines
 valori di "Info missione" si accendono quando cambiano. Se hai chiesto al sistema di ridurre le animazioni,
 il sito le toglie.
 
+Negli accessi rapidi tre pulsanti tirano fuori una missione diversa a ogni clic: una missione normale, un
+arresto e una a sorpresa (può uscire di tutto, anche una Lettera di sfida o un Memo tesoro). Anche la missione
+uovo cambia specie ogni volta. I valori escono dagli elenchi del modulo, quindi la password è sempre una che
+il gioco accetta.
+
 Altre cose comode: gli strumenti sono divisi per categoria (bacche, gomme, sfere, MT e così via) e si trovano
 anche cercando il nome inglese. Da una password puoi poi ricavare una missione gemella, al piano successivo o
 con un seme diverso. Per il gioco è una missione diversa, quindi puoi tenerle tutte e due nell'elenco.
