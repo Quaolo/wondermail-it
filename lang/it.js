@@ -65,6 +65,7 @@ window.WMSkyRegisterLocale('it', {
     flavorTextHint: 'Numero (0-16777215) da cui il gioco sceglie titolo e descrizione della missione. Leggendo una password viene riportato qui, così rigenerando si ottiene la stessa missione.',
 
     targetSection: 'Pokémon e strumento',
+    heroTeamTitle: 'Cambia la squadra',
     allPokemonFormsLabel: 'Mostra tutti i Pokémon e le forme',
     allPokemonFormsHint: 'Include anche i Pokémon e le forme che il gioco non accetta in queste missioni: la password potrebbe essere rifiutata.',
     clientLabel: 'Committente',

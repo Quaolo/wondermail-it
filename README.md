@@ -36,6 +36,8 @@ Le missioni con una stanza speciale (Memo tesoro, Lettere di sfida, covi dei ric
 d'Oro) mostrano anche la mappa della stanza, con quello che c'è dentro e le regole che valgono lì. Per 12 dei
 30 Memo tesoro c'è anche una missione vera presa dalla wiki giapponese Grovyle, convertita per la tua regione.
 
+I quattro Pokémon in alto sono solo decorativi: se ci clicchi sopra cambia la squadra.
+
 Altre cose comode: gli strumenti sono divisi per categoria (bacche, gomme, sfere, MT e così via) e si trovano
 anche cercando il nome inglese. Da una password puoi poi ricavare una missione gemella, al piano successivo o
 con un seme diverso. Per il gioco è una missione diversa, quindi puoi tenerle tutte e due nell'elenco.

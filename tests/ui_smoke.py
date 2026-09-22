@@ -131,6 +131,15 @@ def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
               "«Leggi una password» e «Accesso rapido» partono chiuse")
         check(page.evaluate("document.querySelector('.form-panel').getBoundingClientRect().top <= document.getElementById('readerCard').getBoundingClientRect().top + 1"),
               "il modulo della missione parte in cima, non sotto le due schede")
+        check(page.evaluate("document.querySelector('.form-panel').getBoundingClientRect().bottom === document.querySelector('.side-panel').getBoundingClientRect().bottom"),
+              "le due colonne finiscono alla stessa altezza")
+        if not offline:
+            before_team = page.evaluate("[...document.querySelectorAll('#heroTeam img')].map(i => i.dataset.monId)")
+            page.click("#heroTeam")
+            page.wait_for_timeout(150)
+            after_team = page.evaluate("[...document.querySelectorAll('#heroTeam img')].map(i => i.dataset.monId)")
+            check(len(before_team) == 4 and before_team != after_team, f"la squadra cambia al clic: {before_team} -> {after_team}")
+
         open_tool_card(page, "readerCard")
         check(page.is_visible("#importCode"), "la scheda «Leggi una password» si apre al clic")
         set_input(page, "floor", 2)

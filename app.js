@@ -1206,7 +1206,7 @@ function renderLanguagePicker() {
 }
 
 // Testi statici della pagina: ogni elemento indica la sua chiave con data-i18n (testo),
-// data-i18n-html (testo con markup), data-i18n-placeholder o data-i18n-title.
+// data-i18n-html (testo con markup), data-i18n-placeholder, data-i18n-title o data-i18n-aria.
 function applyStaticTranslations() {
   document.documentElement.lang = getCurrentLanguage();
   document.title = t('pageTitle');
@@ -1224,6 +1224,9 @@ function applyStaticTranslations() {
   });
   document.querySelectorAll('[data-i18n-title]').forEach((node) => {
     node.title = t(node.dataset.i18nTitle);
+  });
+  document.querySelectorAll('[data-i18n-aria]').forEach((node) => {
+    node.setAttribute('aria-label', t(node.dataset.i18nAria));
   });
 
   // Pulsanti delle Lettere di sfida: il nome del leggendario è quello ufficiale del gioco.
@@ -1935,10 +1938,14 @@ function createFallbackImage(payload, className, alt = '') {
 // Squadra decorativa in alto: Pokémon che si possono scegliere all'inizio del gioco.
 const HERO_TEAM_CHOICES = [1, 4, 7, 25, 37, 52, 54, 66, 104, 133, 152, 155, 158, 258, 280, 283, 286, 328, 422, 425, 428, 438, 488, 489];
 
+// La squadra si può cambiare cliccandoci sopra: ogni volta esce una formazione diversa.
 function renderHeroTeam() {
   const team = document.getElementById('heroTeam');
-  if (!team || team.childElementCount) return;
-  const pool = HERO_TEAM_CHOICES.slice();
+  if (!team) return;
+  const previous = Array.from(team.querySelectorAll('img')).map((image) => Number(image.dataset.monId));
+  team.textContent = '';
+  let pool = HERO_TEAM_CHOICES.filter((monId) => !previous.includes(monId));
+  if (pool.length < 4) pool = HERO_TEAM_CHOICES.slice();
   for (let index = 0; index < 4 && pool.length; index += 1) {
     const [monId] = pool.splice(Math.floor(Math.random() * pool.length), 1);
     const frame = document.createElement('span');
@@ -1946,6 +1953,7 @@ function renderHeroTeam() {
     frame.style.setProperty('--delay', `${index * 0.35}s`);
     const image = document.createElement('img');
     image.alt = '';
+    image.dataset.monId = String(monId);
     image.src = getPokemonImage(monId, '').src;
     // Senza rete la squadra non compare: è solo una decorazione.
     image.addEventListener('error', () => frame.remove());
@@ -2446,6 +2454,7 @@ let roomResizeTimer = null;
 
 onReady(() => {
   renderHeroTeam();
+  document.getElementById('heroTeam')?.addEventListener('click', renderHeroTeam);
   applyRepoLink();
   document.getElementById('similarNextFloor')?.addEventListener('click', () => makeSimilarMission('nextFloor'));
   document.getElementById('similarNewSeed')?.addEventListener('click', () => makeSimilarMission('newSeed'));

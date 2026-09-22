@@ -174,7 +174,17 @@ p { margin: 0; }
 .masthead-side { display: grid; justify-items: end; gap: 14px; }
 .masthead-tools { display: flex; gap: 10px; align-items: center; }
 
-.hero-team { display: flex; gap: 10px; min-height: 60px; }
+.hero-team {
+  display: flex;
+  gap: 10px;
+  min-height: 60px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+.hero-team:hover .hero-portrait { border-color: var(--gold); }
+.hero-team:focus-visible { outline: 2px solid var(--gold); outline-offset: 4px; border-radius: 10px; }
 .portrait-frame {
   display: inline-block;
   flex: 0 0 auto;
@@ -570,7 +580,8 @@ details > summary { cursor: pointer; font-weight: 700; }
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
   gap: 18px;
-  align-items: start;
+  /* Le due colonne finiscono insieme: l'ultima scheda si allunga invece di lasciare un buco. */
+  align-items: stretch;
 }
 .form-panel { padding: 8px 22px; }
 .form-section { padding: 18px 0; }
@@ -588,7 +599,11 @@ details > summary { cursor: pointer; font-weight: 700; }
   font-size: 1rem;
   box-shadow: 0 2px 0 #a3680a;
 }
-.side-panel { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; }
+.side-panel { display: flex; flex-direction: column; gap: 18px; }
+.side-panel > .result-card, .side-panel > .room-card { flex: 1 1 auto; }
+/* Se la scheda si allunga, «Missione simile» scende in fondo invece di lasciare un vuoto. */
+.side-panel > .result-card { display: flex; flex-direction: column; }
+.side-panel > .result-card .similar { margin-top: auto; }
 .workbench > *, .side-panel > *, .page > * { min-width: 0; }
 
 .egg-help ul { margin: 10px 0; padding-left: 20px; color: var(--muted); }

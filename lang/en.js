@@ -65,6 +65,7 @@ window.WMSkyRegisterLocale('en', {
     flavorTextHint: 'Number (0-16777215) the game uses to pick the mission title and description. It is filled in when you read a password, so regenerating gives the same mission.',
 
     targetSection: 'Pokémon and item',
+    heroTeamTitle: 'Shuffle the team',
     allPokemonFormsLabel: 'Show all Pokémon and forms',
     allPokemonFormsHint: 'Also lists Pokémon and forms the game does not accept in these missions: the password may be rejected.',
     clientLabel: 'Client',
