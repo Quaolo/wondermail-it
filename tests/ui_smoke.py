@@ -362,6 +362,21 @@ def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
         check(decode_output(page, "eu")["struct"]["floor"] == last and "piano successivo" in page.text_content("#statusLine"),
               f"all'ultimo piano ({last}) non si va oltre: {page.text_content('#statusLine')!r}")
 
+        # Ricerca inversa dei premi: scelgo la Gommaincanto e uso la combinazione suggerita
+        open_tool_card(page, "farmCard")
+        set_select(page, "farmRewardBox", 136)
+        page.wait_for_timeout(150)
+        rows = page.eval_on_selector_all("#farmResults .farm-row-title", "els => els.map(e => e.textContent)")
+        check(any("81" in row for row in rows) and any("92" in row for row in rows),
+              f"premi della Gommaincanto: stanza 81 sul pavimento e stanza 92 nei Tecalusso: {rows}")
+        page.locator("#farmResults .farm-row").nth(1).locator(".chip").first.click()
+        page.wait_for_timeout(300)
+        check(page.input_value("#specialFloor") == "92" and page.evaluate("document.getElementById('missionTypeBox').value") == "13",
+              f"la combinazione imposta Memo tesoro nella stanza 92: {page.input_value('#specialFloor')}")
+        struct = decode_output(page, "eu")["struct"]
+        check(struct["specialFloor"] == 92 and struct["missionType"] == 12,
+              f"password della missione da ripetere: {struct['specialFloor']}, tipo {struct['missionType']}")
+
         # Strumenti divisi per categoria
         page.click("#rewardItemSearch")
         page.wait_for_timeout(100)

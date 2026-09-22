@@ -169,7 +169,7 @@ function getSearchOptionImage(selectId, value, label) {
   if (selectId === 'rewardItemBox') {
     return getItemImage(Number.isFinite(numeric) ? numeric : value, label, true);
   }
-  if (selectId === 'targetItemBox') {
+  if (selectId === 'targetItemBox' || selectId === 'farmRewardBox') {
     return getItemImage(Number.isFinite(numeric) ? numeric : value, label, false);
   }
   const fallback = buildPreviewBadge(label, selectId === 'dungeonBox' ? 'pokemon' : 'item');
@@ -879,7 +879,7 @@ function getItemDisplayName(itemId) {
 }
 
 function isItemSelect(selectId) {
-  return selectId === 'targetItemBox' || selectId === 'rewardItemBox';
+  return selectId === 'targetItemBox' || selectId === 'rewardItemBox' || selectId === 'farmRewardBox';
 }
 
 // Pokémon a cui è dedicato uno strumento esclusivo (dalla descrizione ufficiale), per l'icona.
@@ -1235,6 +1235,8 @@ function relabelLocalizedControls() {
   ['clientBox', 'targetBox', 'target2Box'].forEach(relabelPokemonSelect);
   relabelEggPokemonSelect();
   ['targetItemBox', 'rewardItemBox'].forEach(relabelItemSelect);
+  populateFarmRewards();
+  renderFarmResults();
   refreshSearchBoxSelections();
 }
 
@@ -2375,6 +2377,141 @@ function useBoxDungeon(dungeonId) {
 }
 
 // ---------------------------------------------------------------------------
+// Premi da ripetere (ricerca inversa)
+// ---------------------------------------------------------------------------
+
+// Quante stanze mostrare: le altre danno gli stessi premi, ma con meno Tecalusso.
+const FARM_ROWS_SHOWN = 5;
+
+// Nome del premio: gli strumenti esclusivi valgono tutti come uno solo.
+function getFarmRewardName(itemId) {
+  return WMSkyRooms.isExclusiveCode(itemId) ? t('exclusiveForTeam') : getItemDisplayName(itemId);
+}
+
+function populateFarmRewards() {
+  const select = document.getElementById('farmRewardBox');
+  if (!select || !window.WMSkyRooms) return;
+  const previous = select.value;
+  const rewards = WMSkyRooms.getFarmRewards()
+    .map((itemId) => ({ itemId, name: getFarmRewardName(itemId) }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+  select.innerHTML = '';
+  rewards.forEach((reward) => {
+    const option = document.createElement('option');
+    option.value = String(reward.itemId);
+    option.text = reward.name;
+    option.dataset.search = `${reward.name} ${getOtherLanguageText('items', reward.itemId) || ''}`;
+    select.add(option);
+  });
+  if (!setSelectByValue(select, previous)) {
+    setSelectByValue(select, DEFAULT_TREASURE_ITEM);
+  }
+}
+
+// Dove si trova il premio scelto: le stanze che ce l'hanno già sul pavimento e, per i Tecalusso,
+// la stanza con più Tecalusso più i dungeon che possono contenerlo.
+function renderFarmResults() {
+  const list = document.getElementById('farmResults');
+  const select = document.getElementById('farmRewardBox');
+  if (!list || !select || !window.WMSkyRooms) return;
+  const itemId = parseInt(select.value, 10);
+  list.innerHTML = '';
+  if (!Number.isFinite(itemId)) return;
+
+  const dungeonSelect = document.getElementById('dungeonBox');
+  const available = new Set(dungeonSelect ? Array.from(dungeonSelect.options, (option) => option.value) : []);
+  const sources = WMSkyRooms.findRewardSources(itemId);
+  const onFloor = sources.filter((source) => source.floorItems);
+  const withBoxes = sources.filter((source) => !source.floorItems
+    && source.dungeons.some((entry) => available.has(String(entry.dungeon))));
+
+  const addRow = (text, chips) => {
+    const row = document.createElement('li');
+    row.className = 'farm-row';
+    const title = document.createElement('p');
+    title.className = 'farm-row-title';
+    title.textContent = text;
+    row.appendChild(title);
+    if (chips) row.appendChild(chips);
+    list.appendChild(row);
+  };
+
+  const chipRow = (buttons) => {
+    const chips = document.createElement('div');
+    chips.className = 'farm-row-chips';
+    buttons.forEach((button) => chips.appendChild(button));
+    return chips;
+  };
+
+  const chip = (label, title, onClick) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'chip';
+    button.textContent = label;
+    if (title) button.title = title;
+    button.addEventListener('click', onClick);
+    return button;
+  };
+
+  if (!onFloor.length && !withBoxes.length) {
+    const empty = document.createElement('li');
+    empty.className = 'hint';
+    empty.textContent = t('farmNoResults');
+    list.appendChild(empty);
+    return;
+  }
+
+  // Strumenti già posati nella stanza: ci sono in qualsiasi dungeon.
+  onFloor.forEach((source) => {
+    addRow(t('farmOnFloor', { room: source.room, count: source.floorItems }),
+      chipRow([chip(t('farmUseRoom'), t('farmUseCombo', { room: source.room }), () => useFarmCombo(source.room, null))]));
+  });
+
+  if (!withBoxes.length) return;
+
+  // Il contenuto dei Tecalusso dipende solo dal dungeon: basta la stanza che ne ha di più.
+  const best = withBoxes[0];
+  const buttons = best.dungeons
+    .filter((entry) => available.has(String(entry.dungeon)))
+    .map((entry) => chip(
+      entry.chance < 1
+        ? t('farmDungeonChance', { dungeon: getDungeonName(entry.dungeon), chance: Math.round(entry.chance * 100) })
+        : getDungeonName(entry.dungeon),
+      t('farmUseCombo', { room: best.room, dungeon: getDungeonName(entry.dungeon) }),
+      () => useFarmCombo(best.room, entry.dungeon)
+    ));
+  addRow(t('farmInBoxes', { room: best.room, boxes: best.boxes }), chipRow(buttons));
+
+  const others = withBoxes.slice(1, 1 + FARM_ROWS_SHOWN).map((source) => source.room);
+  if (others.length) {
+    const more = document.createElement('li');
+    more.className = 'hint';
+    more.textContent = t('farmOtherRooms', { rooms: others.join(', ') });
+    list.appendChild(more);
+  }
+}
+
+// Prepara la missione: Memo tesoro nella stanza scelta, con il dungeon che contiene il premio.
+function useFarmCombo(roomId, dungeonId) {
+  withToolCardsOpen(() => {
+    applyPresetNow('memo');
+    const dungeonSelect = document.getElementById('dungeonBox');
+    if (dungeonId !== null && dungeonSelect) {
+      setSelectByValue(dungeonSelect, dungeonId);
+      dungeonSelect.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    const special = document.getElementById('specialFloor');
+    if (special) special.value = String(roomId);
+    const floor = document.getElementById('floor');
+    if (floor) floor.value = '1';
+    syncDungeonFloorLimit(true);
+    WMSGen.update();
+    refreshMissionUi();
+  });
+  generateCode();
+}
+
+// ---------------------------------------------------------------------------
 // Missione simile
 // ---------------------------------------------------------------------------
 
@@ -2443,6 +2580,9 @@ function updateTargetItemLabel(typeData) {
 let roomResizeTimer = null;
 
 onReady(() => {
+  populateFarmRewards();
+  renderFarmResults();
+  document.getElementById('farmRewardBox')?.addEventListener('change', renderFarmResults);
   renderHeroTeam();
   document.getElementById('heroTeam')?.addEventListener('click', renderHeroTeam);
   applyRepoLink();

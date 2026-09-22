@@ -267,6 +267,24 @@
           </div>
         </details>
 
+        <details class="window tool-card" id="farmCard">
+          <summary class="tool-summary">
+            <span class="tool-title" id="farmTitle" data-i18n="farmTitle">Premi da ripetere</span>
+            <span class="tool-caret" aria-hidden="true"></span>
+          </summary>
+          <div class="tool-body">
+            <p class="hint" data-i18n="farmHint"></p>
+            <div class="field">
+              <label class="sr-only" for="farmRewardSearch" data-i18n="farmRewardLabel">Premio</label>
+              <div class="field-control-group">
+                <input id="farmRewardSearch" type="search" class="searchbox" placeholder="Cerca un premio..." data-i18n-placeholder="farmRewardPlaceholder" data-target="farmRewardBox">
+                <select id="farmRewardBox"></select>
+              </div>
+            </div>
+            <ul class="farm-results" id="farmResults"></ul>
+          </div>
+        </details>
+
         <section class="window job-card" id="jobCard" aria-live="polite">
           <div class="job-head">
             <span class="portrait-frame job-portrait-frame"><img id="jobPortrait" alt=""></span>

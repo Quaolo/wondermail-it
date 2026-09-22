@@ -55,7 +55,9 @@ la stanza 81 (due Gommaincanto, una Mascheradoro e un Fantascrigno a ogni visita
 =27YY RQ+4%WP CCCTTPTP21 P#%33FM =+66N
 ```
 
-Nel generatore queste stanze sono raccolte a parte, sotto "Stanze senza tesoro". Alcune contengono dei
+Nella scheda "Premi da ripetere", di fianco al modulo, scegli il premio che ti interessa e il sito ti dice
+in quale stanza e in quale dungeon si trova, con la probabilità per ogni Tecalusso; un clic prepara la
+missione. Nel generatore queste stanze sono raccolte a parte, sotto "Stanze senza tesoro". Alcune contengono dei
 Tecalusso e quello che c'è dentro dipende dal dungeon della missione: in Riserva Marina, per esempio, ci sono
 Gomme di tutti i tipi. La tabella completa è nella scheda della stanza. Il trucco è stato provato dai giocatori
 con la stanza 81; per le altre l'ho ricavato dal codice del gioco e non l'ho ancora verificato.

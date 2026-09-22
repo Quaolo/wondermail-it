@@ -551,6 +551,10 @@ details > summary { cursor: pointer; font-weight: 700; }
 .tool-card .reader-row { flex-direction: column; }
 .tool-card .reader-row button { width: 100%; }
 .tool-card .status:empty { display: none; }
+.farm-results { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.farm-row { display: grid; gap: 6px; }
+.farm-row-title { margin: 0; font-size: .9rem; color: var(--muted); }
+.farm-row-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 
 .preset-grid { display: flex; flex-wrap: wrap; gap: 10px; }
 .preset-btn {

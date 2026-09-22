@@ -189,6 +189,70 @@
     return { rows: Array.from(rows.values()), fallback: getItemName(boxes.fallback) };
   }
 
+  /**
+   * Ricerca inversa per le missioni da ripetere: quali premi si possono ottenere e dove.
+   * I premi sono gli strumenti posati nelle stanze senza tesoro e il contenuto dei loro Tecalusso
+   * (che dipende dal dungeon della missione). Gli strumenti esclusivi valgono tutti come uno solo.
+   */
+  function isExclusiveCode(item) {
+    const data = getData();
+    return !!data && data.boxes.exclusiveCodes.includes(item);
+  }
+
+  function getFarmRewards() {
+    const data = getData();
+    if (!data) return [];
+    const rewards = new Set();
+    const addBoxItem = (item) => rewards.add(isExclusiveCode(item) ? data.boxes.exclusiveCodes[0] : item);
+    data.missionRooms.withoutTreasure.forEach((id) => {
+      const room = getRoom(id);
+      if (!room) return;
+      (room.items || []).forEach(([, , item]) => {
+        if (item !== ITEM_IDS.box) rewards.add(item);
+      });
+      if (!hasDungeonBoxes(room)) return;
+      rewards.add(data.boxes.fallback);
+      Object.keys(data.boxes.byDungeon).forEach((key) => data.boxes.byDungeon[key].forEach(addBoxItem));
+    });
+    return Array.from(rewards).sort((a, b) => a - b);
+  }
+
+  /**
+   * Dove si ottiene un premio: stanze con lo strumento già sul pavimento (qualsiasi dungeon) e stanze
+   * con Tecalusso, con l'elenco dei dungeon che lo contengono e la probabilità per ogni Tecalusso.
+   */
+  function findRewardSources(itemId) {
+    const data = getData();
+    if (!data) return [];
+    const wantExclusive = isExclusiveCode(itemId);
+    const matches = (item) => (wantExclusive ? isExclusiveCode(item) : item === itemId);
+    const sources = [];
+    data.missionRooms.withoutTreasure.forEach((id) => {
+      const room = getRoom(id);
+      if (!room) return;
+      const onFloor = (room.items || []).filter(([, , item]) => item !== ITEM_IDS.box && matches(item)).length;
+      if (onFloor) sources.push({ room: id, floorItems: onFloor });
+      if (!hasDungeonBoxes(room)) return;
+      const boxes = (room.items || []).filter(([, , item]) => item === ITEM_IDS.box).length;
+      const dungeons = [];
+      Object.keys(data.boxes.byDungeon).forEach((key) => {
+        const list = data.boxes.byDungeon[key];
+        const hits = list.filter(matches).length;
+        if (hits) dungeons.push({ dungeon: parseInt(key, 10), chance: hits / list.length });
+      });
+      // I dungeon che non sono in tabella danno sempre il ripiego (Revitalseme).
+      const fallback = matches(data.boxes.fallback);
+      if (dungeons.length || fallback) {
+        dungeons.sort((a, b) => b.chance - a.chance || a.dungeon - b.dungeon);
+        sources.push({ room: id, boxes: boxes, dungeons: dungeons, fallback: fallback });
+      }
+    });
+    // Prima gli strumenti già sul pavimento (ci sono sempre), poi le stanze con più Tecalusso.
+    sources.sort((a, b) => (b.floorItems || 0) - (a.floorItems || 0)
+      || (b.boxes || 0) - (a.boxes || 0) || a.room - b.room);
+    return sources;
+  }
+
   // Tecalusso che il gioco riempie con la tabella dei dungeon (non il tesoro della missione né la stanza segreta).
   function hasDungeonBoxes(room) {
     return !!room && room.kind !== 'secretRoom' && Array.isArray(room.items)
@@ -541,6 +605,9 @@
     describeRoom,
     describeBoxContents,
     getBoxTable,
+    getFarmRewards,
+    findRewardSources,
+    isExclusiveCode,
     hasDungeonBoxes,
     isWithoutTreasure,
     getMemoExample
