@@ -71,24 +71,8 @@ function getLocaleLabelMap(key, code) {
   return (locale && locale[key]) || (fallback && fallback[key]) || {};
 }
 
-const MISSION_DIFFICULTY_TIERS = {
-  0: { rank: '-', points: 5 },
-  1: { rank: 'E', points: 10 },
-  2: { rank: 'D', points: 15 },
-  3: { rank: 'C', points: 20 },
-  4: { rank: 'B', points: 30 },
-  5: { rank: 'A', points: 60 },
-  6: { rank: 'S', points: 90 },
-  7: { rank: '★1', points: 150 },
-  8: { rank: '★2', points: 250 },
-  9: { rank: '★3', points: 400 },
-  10: { rank: '★4', points: 600 },
-  11: { rank: '★5', points: 800 },
-  12: { rank: '★6', points: 1000 },
-  13: { rank: '★7', points: 1200 },
-  14: { rank: '★8', points: 1400 },
-  15: { rank: '★9', points: 1600 }
-};
+// Lettere delle difficoltà, nell'ordine del gioco; i punti esplorazione sono in data/dati_gioco.js.
+const MISSION_DIFFICULTY_RANKS = ['-', 'E', 'D', 'C', 'B', 'A', 'S', '★1', '★2', '★3', '★4', '★5', '★6', '★7', '★8', '★9'];
 
 const HARDER_MISSION_MAIN_TYPES = new Set([2, 3, 4, 5, 9, 10]);
 
@@ -598,10 +582,12 @@ function relabelDungeonSelect() {
   });
 }
 
+// Piano massimo che il gioco accetta in una missione (sub_02063424 della decompilazione).
 function getDungeonFloorLimit(dungeonId) {
   const numeric = parseInt(dungeonId, 10);
-  if (!Number.isFinite(numeric) || !window.WMSkyDungeonFloorLimits) return 99;
-  const limit = window.WMSkyDungeonFloorLimits[numeric];
+  const floors = window.WMSkyGameData && window.WMSkyGameData.missionFloors;
+  if (!Number.isFinite(numeric) || !floors) return 99;
+  const limit = floors[numeric];
   return Number.isFinite(limit) && limit >= 1 ? limit : 99;
 }
 
@@ -648,24 +634,23 @@ function getMissionDifficultyInfo(typeData = getCurrentTypeData()) {
   const floorValue = parseInt(document.getElementById('floor')?.value || '', 10);
   if (!Number.isFinite(dungeonId) || !Number.isFinite(floorValue)) return null;
 
-  const dungeonRanks = window.WMSkyMissionRankMap && window.WMSkyMissionRankMap[dungeonId];
+  const data = window.WMSkyGameData || {};
+  const dungeonRanks = data.missionRanks && data.missionRanks[dungeonId];
   if (!dungeonRanks) return null;
 
-  let rankId = parseInt(dungeonRanks[floorValue], 10);
+  let rankId = parseInt(dungeonRanks[floorValue - 1], 10);
   if (!Number.isFinite(rankId)) return null;
 
+  // Le missioni più impegnative valgono una difficoltà in più (GetMissionRankWithCapAndModifiers).
   if (typeData && HARDER_MISSION_MAIN_TYPES.has(parseInt(typeData.mainType, 10)) && rankId < 15) {
     rankId += 1;
   }
 
-  const tier = MISSION_DIFFICULTY_TIERS[rankId];
-  if (!tier) return null;
+  const rank = MISSION_DIFFICULTY_RANKS[rankId];
+  const points = (data.missionRankPoints || [])[rankId];
+  if (!rank || !Number.isFinite(points)) return null;
 
-  return {
-    rankId,
-    rank: tier.rank,
-    points: tier.points
-  };
+  return { rankId, rank, points };
 }
 
 function updateMissionDifficultyHint() {

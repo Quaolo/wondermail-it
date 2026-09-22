@@ -168,6 +168,17 @@ def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
         check(decode_output(page, "eu")["struct"]["client"] == 624, "Arbok femmina codificato come 624")
         check(page.text_content("#jobObjective") == "Soccorri Arbok ♀.", f"obiettivo ufficiale: {page.text_content('#jobObjective')!r}")
 
+        # Piani e difficoltà dalle tabelle del gioco: Giungla del Mistero arriva al piano 29 (★7)
+        set_select(page, "dungeonBox", 85)
+        page.wait_for_timeout(120)
+        check("da 1 a 29" in page.text_content("#floorLimitHint"), f"piani della Giungla del Mistero: {page.text_content('#floorLimitHint')!r}")
+        set_input(page, "floor", 29)
+        page.wait_for_timeout(120)
+        difficulty = page.text_content("#missionDifficultyHint")
+        check("★7" in difficulty and "1200" in difficulty, f"difficoltà dell'ultimo piano: {difficulty!r}")
+        set_select(page, "dungeonBox", 1)
+        set_input(page, "floor", 1)
+
         # Chansey non ha forma femminile separata: casella disattivata
         set_select(page, "clientBox", 113)
         check(page.is_disabled("#clientF"), "casella Femmina disattivata per Chansey")

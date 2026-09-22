@@ -51,8 +51,11 @@ SOURCES = {
     "boxLists3": ("asm/overlay_10_rodata_022C490C.s", "9f4128a23347f2f15c92c89793d20150b62389ce"),
     # Dati degli strumenti (categoria di ogni strumento), versione europea.
     "itemP": ("files/language-specific/EU/BALANCE/item_p.bin", "22e33f76a2c9e443c67d6d0434161c1265110ce7"),
-    # Pokémon che il gioco non accetta come committenti (MISSION_BANNED_MONSTERS, usato da IsMissionValid).
+    # Pokémon che il gioco non accetta come committenti (MISSION_BANNED_MONSTERS, usato da IsMissionValid)
+    # e punti esplorazione di ogni difficoltà (MISSION_RANK_POINTS).
     "mainRodata": ("asm/main_rodata_020A2808.s", "4e4adb2ac6130def826082136e95e63b0b3ed5f5"),
+    # Piani di ogni dungeon (DUNGEON_DATA_LIST) e difficoltà per piano (MISSION_FLOOR_RANKS_*).
+    "dungeonRodata": ("asm/main_rodata_0209CECC.s", "6396ccea23e32e04153f6e745fc8cc8588bb64c1"),
 }
 LANGUAGES = ("it", "en")
 
@@ -307,6 +310,73 @@ def read_item_looks(item_p: bytes) -> list[int]:
     stesso valore hanno la stessa icona nel gioco."""
     start, end = struct.unpack_from("<II", item_p, 4)
     return [item_p[offset + 5] * 16 + item_p[offset + 0xC] for offset in range(start, end - 15, 16)]
+
+
+# Il gioco tratta a parte gli ultimi ID dei dungeon: vedi GetNbFloors e DungeonFloorToGroupFloor.
+FIRST_SPECIAL_DUNGEON = 0xB4   # da qui in poi non c'è una voce in DUNGEON_DATA_LIST
+LAST_DUNGEON_ID = 0xFF
+MISSION_RANK_GROUPS = 0x64     # oltre questo gruppo la difficoltà è sempre 1
+
+
+def read_label_words(data: bytes, labels: dict, label: str) -> list[int]:
+    """Tabella di puntatori: legge i .word dall'etichetta fino a quella successiva."""
+    start = labels[label]
+    end = min([offset for offset in sorted(set(labels.values())) if offset > start] + [len(data)])
+    return [struct.unpack_from("<I", data, start + i)[0] for i in range(0, end - start, 4)]
+
+
+def build_mission_floors(rodata: bytes, points_source: bytes) -> dict:
+    """Piani e difficoltà delle missioni, dalle tabelle del gioco.
+
+    `DUNGEON_DATA_LIST` ha una voce di 4 byte per dungeon: numero di piani, gruppo, piani dei dungeon
+    che lo precedono nel gruppo. `sub_02063424` (piano massimo di una missione) restituisce il numero
+    di piani, uno in meno per il dungeon 0xAE. `GetMissionRank` converte dungeon e piano in gruppo e
+    piano del gruppo (`DungeonFloorToGroupFloor`) e legge `MISSION_FLOOR_RANKS_PTRS[gruppo][piano]`."""
+    data, labels = assemble(rodata.decode("utf-8"))
+    base = labels["DUNGEON_DATA_LIST"]
+    entry = lambda dungeon, field: data[base + 4 * dungeon + field]
+
+    def floor_count(dungeon: int) -> int:
+        if dungeon < FIRST_SPECIAL_DUNGEON:
+            return entry(dungeon, 0)
+        if dungeon <= 0xBD:
+            return 5
+        if dungeon == 0xBE:
+            return 1
+        return 0x30
+
+    def group_floor(dungeon: int, floor: int) -> tuple[int, int]:
+        if FIRST_SPECIAL_DUNGEON <= dungeon <= 0xBD:
+            return 0x35, floor + 5 * (dungeon - FIRST_SPECIAL_DUNGEON)
+        if dungeon == 0xBE:
+            return 0x35, floor + 0x32
+        if 0xBF <= dungeon <= 0xD3:
+            return 0x35, floor + 0x33
+        return entry(dungeon, 1), floor + entry(dungeon, 2)
+
+    # Come il gioco: la difficoltà è il byte all'indirizzo del gruppo più il piano del gruppo
+    # (gli elenchi sono uno dopo l'altro in memoria).
+    pointers = read_label_words(data, labels, "MISSION_FLOOR_RANKS_PTRS")
+
+    # Piano massimo accettato in una missione, per ogni ID di dungeon.
+    floors = [floor_count(dungeon) - (1 if dungeon == 0xAE else 0)
+              for dungeon in range(LAST_DUNGEON_ID + 1)]
+    # Difficoltà di ogni piano (solo i dungeon veri: per gli altri il gioco restituisce sempre 1).
+    ranks = {}
+    for dungeon in range(FIRST_SPECIAL_DUNGEON):
+        group, _ = group_floor(dungeon, 1)
+        if group >= MISSION_RANK_GROUPS or not floor_count(dungeon):
+            continue
+        ranks[dungeon] = [data[pointers[group] + group_floor(dungeon, floor)[1]]
+                          for floor in range(1, floor_count(dungeon) + 1)]
+
+    points = read_label_words(*assemble_rank_points(points_source), "MISSION_RANK_POINTS")
+    return {"missionFloors": floors, "missionRanks": ranks, "missionRankPoints": points}
+
+
+def assemble_rank_points(source: bytes) -> tuple[bytes, dict]:
+    data, labels = assemble(source.decode("utf-8"))
+    return data, labels
 
 
 def build_shared(en_strings: list[str], genders: list[int]) -> dict:
@@ -802,7 +872,9 @@ def main() -> int:
     item_p = load_source("itemP", args.pmd_sky)
     shared["itemCategory"] = read_item_categories(item_p)
     shared["itemLook"] = read_item_looks(item_p)
-    banned = read_label_halfwords(load_source("mainRodata", args.pmd_sky), "MISSION_BANNED_MONSTERS")
+    main_rodata = load_source("mainRodata", args.pmd_sky)
+    banned = read_label_halfwords(main_rodata, "MISSION_BANNED_MONSTERS")
+    shared.update(build_mission_floors(load_source("dungeonRodata", args.pmd_sky), main_rodata))
     shared.update(build_mission_pokemon(monsters, banned))
     # Numero del Pokédex nazionale di ogni ID del gioco (per i ritratti di PMDCollab).
     shared["nationalDex"] = monsters["dex"][:600]

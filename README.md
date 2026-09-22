@@ -72,6 +72,9 @@ con la stanza 81; per le altre l'ho ricavato dal codice del gioco e non l'ho anc
   Pokémon che il gioco accetta, tra cui Nidoqueen, Typhlosion, Treecko, Mudkip e Chimchar. Quelli che il gioco
   rifiuta come committenti, come Grovyle o i leggendari, si possono comunque scegliere come bersaglio. Quando il
   committente si unisce alla squadra, i Pokémon troppo grandi come Onix non compaiono.
+- Il numero di piani di ogni dungeon e la difficoltà delle missioni vengono dalle tabelle del gioco. Prima
+  erano raccolte dalla community e in 17 dungeon su 54 il limite dei piani era sbagliato: per esempio nella
+  Giungla del Mistero si fermava al 14 invece che al 29, e nelle Pianure Saetta arrivava al 20 invece che al 10.
 - Le icone degli strumenti seguono i dati del gioco: due strumenti che lì hanno la stessa icona ce l'hanno
   anche qui, per esempio quasi tutti i semi o i nastri da tenere.
 
@@ -87,7 +90,7 @@ python tools/estrai_dati.py --pmd-sky ../pmd-sky   # se hai già una copia di pr
 
 Lo script scarica i file da un commit preciso e controlla che non siano cambiati. Da lì ricava i testi
 (nomi, descrizioni, frasi di "Info missione"), i dati degli strumenti e dei Pokémon (numero del Pokédex per i
-ritratti, chi può fare da committente) e le stanze speciali.
+ritratti, chi può fare da committente), i piani e la difficoltà di ogni dungeon e le stanze speciali.
 
 Il resto del codice è JavaScript senza librerie: `lm.js` codifica e decodifica le password,
 `lmgenerate.js` descrive i tipi di missione, `app.js` e `stanze.js` gestiscono la pagina e le mappe.
