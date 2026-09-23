@@ -1237,6 +1237,7 @@ function relabelLocalizedControls() {
   ['targetItemBox', 'rewardItemBox'].forEach(relabelItemSelect);
   populateFarmRewards();
   renderFarmResults();
+  populateUnlockDungeons();
   refreshSearchBoxSelections();
 }
 
@@ -1806,6 +1807,11 @@ function importCode() {
   const decoded = detectWonderMailCode(raw);
   if (!decoded) {
     setStatus('importStatus', 'importCodeInvalid', null, 'error');
+    return;
+  }
+
+  if (isUnlockGlitchStruct(decoded.struct) && showUnlockFromPassword(decoded)) {
+    setStatus('importStatus', 'importUnlock', () => ({ dungeon: getDungeonName(decoded.struct.dungeon) }), 'ok');
     return;
   }
 
@@ -2721,6 +2727,122 @@ function useFarmCombo(roomId, dungeonId) {
 }
 
 // ---------------------------------------------------------------------------
+// Sblocca un dungeon (glitch della Lettera di sfida di Jirachi, documentato da Lai-brary)
+// ---------------------------------------------------------------------------
+
+// La Lettera di sfida di Jirachi apre la Caverna Stellata quando si avvia la missione, ma il gioco apre in
+// realtà il dungeon scritto nella password. Stessi valori del generatore di Lai-brary: Jirachi come
+// committente, bersaglio e ricompensa (tipo 6), Baccarancia come strumento, piano 0, stanza 149.
+const UNLOCK_GLITCH = {
+  missionType: 11, missionSpecial: 5, client: 417, target: 417, target2: 0,
+  rewardType: 6, reward: 417, targetItem: 70, floor: 0, specialFloor: 149
+};
+// Dungeon della storia e del post-partita (1-122). Restano fuori il dungeon di prova, gli ID senza nome,
+// gli episodi speciali e i dungeon dimostrativi e fittizi (lo 0xAD blocca il gioco su console).
+const UNLOCK_LAST_DUNGEON = 0x7a;
+// Dungeon con un comportamento da sapere, dalla pagina di Lai-brary.
+const UNLOCK_NOTES = { 29: 'sealed', 38: 'noEntry', 41: 'noEntry', 63: 'nightmare', 104: 'noMissions' };
+let unlockSeed = null;
+
+function getUnlockDungeonIds() {
+  const text = getGameText(getCurrentLanguage());
+  const ids = [];
+  for (let id = 1; id <= UNLOCK_LAST_DUNGEON; id += 1) {
+    if (text && text.dungeons && text.dungeons[id]) ids.push(id);
+  }
+  return ids;
+}
+
+function isUnlockGlitchStruct(struct) {
+  return !!struct && ['missionType', 'missionSpecial', 'specialFloor', 'floor']
+    .every((key) => parseInt(struct[key], 10) === UNLOCK_GLITCH[key]);
+}
+
+function buildUnlockStruct(dungeonId, seed) {
+  return Object.assign({ nullBits: 0, mailType: 4, restriction: 0, restrictionType: 0 }, UNLOCK_GLITCH, {
+    dungeon: dungeonId,
+    flavorText: seed
+  });
+}
+
+function populateUnlockDungeons() {
+  const select = document.getElementById('unlockDungeonBox');
+  if (!select) return;
+  const previous = select.value || '1';
+  select.textContent = '';
+  getUnlockDungeonIds().forEach((id) => {
+    const option = document.createElement('option');
+    option.value = String(id);
+    option.textContent = getDungeonName(id);
+    select.appendChild(option);
+  });
+  setSelectByValue(select, previous);
+  renderUnlockNote();
+}
+
+function renderUnlockNote() {
+  const note = document.getElementById('unlockNote');
+  if (!note) return;
+  const kind = UNLOCK_NOTES[parseInt(document.getElementById('unlockDungeonBox')?.value, 10)];
+  note.hidden = !kind;
+  if (kind === 'sealed') note.textContent = t('unlockNoteSealed');
+  else if (kind === 'noEntry') note.textContent = t('unlockNoteNoEntry');
+  else if (kind === 'nightmare') note.textContent = t('unlockNoteNightmare');
+  else if (kind === 'noMissions') note.textContent = t('unlockNoteNoMissions');
+  else note.textContent = '';
+}
+
+// Scrive la password per il dungeon scelto; il seme resta lo stesso finché non si chiede un'altra password.
+function generateUnlockPassword(newSeed) {
+  const select = document.getElementById('unlockDungeonBox');
+  const output = document.getElementById('unlockOutput');
+  if (!select || !output) return;
+  if (newSeed || unlockSeed === null) unlockSeed = Math.floor(Math.random() * 0x1000000);
+  const dungeon = parseInt(select.value, 10) || 1;
+  const region = getSelectedRegion();
+  const struct = buildUnlockStruct(dungeon, unlockSeed);
+  const code = WMSParser.encode(struct, region);
+  const check = WMSParser.decodeWithRegion(code, region);
+  if (!check || !check.crcOk || check.struct.dungeon !== dungeon || !isUnlockGlitchStruct(check.struct)) {
+    output.value = '';
+    setStatus('unlockStatus', 'errorSelfCheck', null, 'error');
+    return;
+  }
+  output.value = prettyMailString(code, 2, 7);
+  setStatus('unlockStatus', 'unlockReady', () => ({
+    dungeon: getDungeonName(dungeon),
+    region: getRegionName(region)
+  }), 'ok');
+  renderUnlockNote();
+}
+
+// Una password del glitch letta in «Leggi una password» va nella sua scheda, non nel modulo.
+function showUnlockFromPassword(decoded) {
+  const card = document.getElementById('unlockCard');
+  const select = document.getElementById('unlockDungeonBox');
+  if (!card || !select) return false;
+  if (!getUnlockDungeonIds().includes(decoded.struct.dungeon)) return false;
+  setSelectedRegion(decoded.region);
+  setSelectByValue(select, decoded.struct.dungeon);
+  unlockSeed = decoded.struct.flavorText;
+  generateUnlockPassword(false);
+  card.open = true;
+  flashElement(card, 'card-flash');
+  return true;
+}
+
+async function copyUnlockPassword() {
+  const text = document.getElementById('unlockOutput')?.value.trim();
+  if (!text) return;
+  try {
+    await navigator.clipboard.writeText(text);
+    setStatus('unlockStatus', 'codeCopied', null, 'ok');
+  } catch (e) {
+    setStatus('unlockStatus', 'copyFailed', null, 'error');
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Missione simile
 // ---------------------------------------------------------------------------
 
@@ -2924,6 +3046,16 @@ onReady(() => {
   document.getElementById('similarNewSeed')?.addEventListener('click', () => {
     requestPasswordAnimation();
     makeSimilarMission('newSeed');
+  });
+  populateUnlockDungeons();
+  document.getElementById('unlockCard')?.addEventListener('toggle', (event) => {
+    if (event.target.open && !document.getElementById('unlockOutput')?.value) generateUnlockPassword(false);
+  });
+  document.getElementById('unlockDungeonBox')?.addEventListener('change', () => generateUnlockPassword(false));
+  document.getElementById('unlockNew')?.addEventListener('click', () => generateUnlockPassword(true));
+  document.getElementById('unlockCopy')?.addEventListener('click', copyUnlockPassword);
+  document.getElementById('regionBox')?.addEventListener('change', () => {
+    if (document.getElementById('unlockOutput')?.value) generateUnlockPassword(false);
   });
   document.getElementById('seriesFloors')?.addEventListener('click', () => makeMissionSeries('floors'));
   document.getElementById('seriesSeeds')?.addEventListener('click', () => makeMissionSeries('seeds'));

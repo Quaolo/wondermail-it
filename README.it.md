@@ -63,6 +63,15 @@ Se ne vuoi di più, "Serie di missioni" te ne prepara fino a otto in un colpo, q
 gioco: su piani di fila (saltando quelli che il gioco rifiuta) o con semi diversi. Si copiano una per una
 oppure tutte insieme.
 
+## Sbloccare un dungeon
+
+La scheda "Sblocca un dungeon" prepara il trucco scoperto da Lai-brary: una Lettera di sfida di Jirachi con un
+altro dungeon scritto dentro. Quando avvii la missione il gioco annuncia che si è aperta la Caverna Stellata,
+ma apre anche il dungeon che hai scelto. Funziona solo in Esploratori del Cielo e serve essere arrivati almeno
+al grado Segreto. Nella scheda ci sono le avvertenze: la più importante è che sbloccare un dungeon della storia
+prima del tempo può rovinare il resto della partita, e dopo aver salvato non si torna indietro. Se incolli una
+di queste password in "Leggi una password", il sito la riconosce e la apre nella sua scheda.
+
 ## Missioni che non finiscono mai
 
 Il gioco non controlla quale stanza è scritta in un Memo tesoro. Se nella stanza non c'è il tesoro della
@@ -149,7 +158,7 @@ Il test della codifica confronta 60 password con quelle del generatore originale
 - [pret/pmd-sky](https://github.com/pret/pmd-sky) per i file e le tabelle del gioco
 - [SkyTemple](https://github.com/SkyTemple/skytemple-files) per il formato dei testi e delle stanze
 - [pmdsky-debug](https://github.com/UsernameFodder/pmdsky-debug) per la documentazione delle funzioni del gioco
-- [Lai-brary](https://laioxy.github.io/wondermail/) per la tabella giapponese e il glitch dell'uovo
+- [Lai-brary](https://laioxy.github.io/wondermail/) per la tabella giapponese, il glitch dell'uovo e quello per sbloccare i dungeon
 - la [wiki Grovyle](https://wiki.grovyle.net/pokedun3/) per i Memo tesoro reali
 - [Pokémon Central Wiki](https://wiki.pokemoncentral.it/) per i nomi italiani delle forme alternative
 - [PMDCollab SpriteCollab](https://sprites.pmdcollab.org/) per i ritratti (di Spike Chunsoft e degli artisti

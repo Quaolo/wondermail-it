@@ -281,6 +281,39 @@ def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
         generate(page)
         check(page.is_hidden("#seriesResult"), "la serie sparisce quando cambia la password")
 
+        # Sblocca un dungeon: ricetta di Lai-brary (Lettera di sfida di Jirachi, piano 0, stanza 149)
+        open_tool_card(page, "unlockCard")
+        set_select(page, "unlockDungeonBox", 67)
+        unlock = page.evaluate("""() => {
+            const r = WMSParser.decodeWithRegion(document.getElementById('unlockOutput').value, 'eu');
+            return r && r.crcOk ? r.struct : null;
+        }""")
+        recipe = unlock and {k: unlock[k] for k in ("missionType", "missionSpecial", "client", "target", "target2", "rewardType",
+                                                   "reward", "targetItem", "dungeon", "floor", "specialFloor", "restriction")}
+        check(recipe == {"missionType": 11, "missionSpecial": 5, "client": 417, "target": 417, "target2": 0, "rewardType": 6,
+                         "reward": 417, "targetItem": 70, "dungeon": 67, "floor": 0, "specialFloor": 149, "restriction": 0},
+              f"password per sbloccare il Cratere Oscuro: {recipe}")
+        check("Cratere Oscuro" in page.text_content("#unlockStatus"), "stato della scheda con il nome del dungeon")
+        ids = page.evaluate("getUnlockDungeonIds()")
+        check(1 in ids and 122 in ids and 0 not in ids and 105 not in ids and max(ids) == 122,
+              f"elenco dei dungeon da sbloccare: {len(ids)} voci, niente dungeon di prova né senza nome")
+        set_select(page, "unlockDungeonBox", 63)
+        check(page.is_visible("#unlockNote"), "avviso per L'Incubo")
+        set_select(page, "unlockDungeonBox", 67)
+        check(page.is_hidden("#unlockNote"), "nessun avviso per il Cratere Oscuro")
+        set_select(page, "regionBox", "na")
+        na_code = page.input_value("#unlockOutput")
+        na = page.evaluate("(c) => { const r = WMSParser.decodeWithRegion(c, 'na'); return r && r.crcOk ? r.struct.dungeon : null; }", na_code)
+        check(na == 67, "cambiando regione la password si rifà per l'America")
+        set_select(page, "regionBox", "eu")
+        eu_code = page.input_value("#unlockOutput")
+        page.evaluate("document.getElementById('unlockCard').open = false")
+        open_tool_card(page, "readerCard")
+        page.fill("#importCode", eu_code)
+        page.click("#importCodeBtn")
+        check("Cratere Oscuro" in page.text_content("#importStatus") and page.evaluate("document.getElementById('unlockCard').open"),
+              "una password di sblocco letta apre la sua scheda")
+
         # Preset di Mewtwo: la password si aggiorna da sola
         open_tool_card(page, "presetsCard")
         page.click('.preset-btn[data-preset="mewtwo"]')

@@ -63,6 +63,15 @@ different seed. For the game it is a different mission, so you can keep both in 
 more, "Mission series" makes up to eight at once, as many as the game's job list holds: on consecutive floors
 (skipping the ones the game refuses) or with different seeds. You can copy them one by one or all together.
 
+## Unlocking a dungeon
+
+The "Unlock a dungeon" card sets up the trick found by Lai-brary: a Jirachi Challenge Letter with another
+dungeon written inside. When you start the mission the game announces that Star Cave has opened, but it also
+opens the dungeon you picked. It only works in Explorers of Sky and you need to have reached at least Secret
+Rank. The warnings are in the card: the most important one is that unlocking a story dungeon too early can
+break the rest of your game, and once you save there is no going back. If you paste one of these passwords in
+"Read a password", the site recognizes it and opens it in its card.
+
 ## Missions that never end
 
 The game does not check which room a Treasure Memo points to. If the mission treasure is not in the room, the
@@ -151,7 +160,7 @@ The encoding test compares 60 passwords with those of the original generator and
 - [pret/pmd-sky](https://github.com/pret/pmd-sky) for the game files and tables
 - [SkyTemple](https://github.com/SkyTemple/skytemple-files) for the text and room formats
 - [pmdsky-debug](https://github.com/UsernameFodder/pmdsky-debug) for the documentation of the game functions
-- [Lai-brary](https://laioxy.github.io/wondermail/) for the Japanese table and the egg glitch
+- [Lai-brary](https://laioxy.github.io/wondermail/) for the Japanese table, the egg glitch and the dungeon unlock glitch
 - the [Grovyle wiki](https://wiki.grovyle.net/pokedun3/) for the real Treasure Memos
 - [Pokémon Central Wiki](https://wiki.pokemoncentral.it/) for the Italian names of alternate forms
 - [PMDCollab SpriteCollab](https://sprites.pmdcollab.org/) for the portraits (by Spike Chunsoft and community

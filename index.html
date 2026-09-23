@@ -286,6 +286,39 @@
           </div>
         </details>
 
+        <details class="window tool-card" id="unlockCard">
+          <summary class="tool-summary">
+            <span class="tool-title" data-i18n="unlockTitle">Sblocca un dungeon</span>
+            <span class="tool-caret" aria-hidden="true"></span>
+          </summary>
+          <div class="tool-body">
+            <p class="hint" data-i18n="unlockHint"></p>
+            <div class="field">
+              <label for="unlockDungeonBox" data-i18n="unlockDungeonLabel">Dungeon da sbloccare</label>
+              <select id="unlockDungeonBox"></select>
+            </div>
+            <p class="hint unlock-note" id="unlockNote" hidden></p>
+            <label class="sr-only" for="unlockOutput" data-i18n="resultTitle">Password</label>
+            <textarea id="unlockOutput" class="password" rows="2" readonly></textarea>
+            <div class="result-actions">
+              <button type="button" id="unlockCopy" class="primary" data-i18n="copy">Copia</button>
+              <button type="button" id="unlockNew" data-i18n="unlockNewPassword">Un'altra password</button>
+            </div>
+            <p id="unlockStatus" class="status" role="status"></p>
+            <div class="unlock-help">
+              <p class="field-label" data-i18n="unlockHelpTitle">Prima di usarla</p>
+              <ul>
+                <li data-i18n="unlockHelp1"></li>
+                <li data-i18n="unlockHelp2"></li>
+                <li data-i18n="unlockHelp3"></li>
+                <li data-i18n="unlockHelp4"></li>
+                <li class="unlock-danger" data-i18n="unlockHelp5"></li>
+              </ul>
+              <p><a href="https://laioxy.github.io/wondermail/anydungeon/" target="_blank" rel="noopener" data-i18n="unlockHelpLink">Pagina dello scopritore del glitch (Lai-brary)</a></p>
+            </div>
+          </div>
+        </details>
+
         <section class="window job-card" id="jobCard" aria-live="polite">
           <div class="job-head">
             <span class="portrait-frame job-portrait-frame"><img id="jobPortrait" alt=""></span>
