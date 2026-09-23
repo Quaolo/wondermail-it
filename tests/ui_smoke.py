@@ -247,6 +247,40 @@ def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
         check(recipe == {"missionType": 6, "rewardType": 5, "reward": 25, "client": 286, "target": 286,
                          "dungeon": 91, "floor": 0, "targetItem": 92, "specialFloor": 0}, f"ricetta dell'uovo di Pikachu: {recipe}")
 
+        # Serie di missioni: con l'uovo no, con un Memo tesoro sì
+        page.click("#seriesSeeds")
+        check("una alla volta" in page.text_content("#seriesStatus") and page.is_hidden("#seriesResult"),
+              "niente serie per la missione uovo")
+        page.evaluate("useFarmCombo(81, 1)")
+        page.wait_for_timeout(100)
+        base = decode_output(page, "eu")["struct"]
+        page.click("#seriesFloors")
+        series = page.evaluate("""() => missionSeries.entries.map((e) => {
+            const r = WMSParser.decodeWithRegion(e.pretty, 'eu');
+            return r && r.crcOk ? r.struct : null;
+        })""")
+        floors = [s and s["floor"] for s in series]
+        check(floors == [1, 2, 3, 4], f"serie di piani in Grotta Marina fino all'ultimo piano: {floors}")
+        check("solo 4 piani" in page.text_content("#seriesStatus"), "avviso quando i piani finiscono prima di 8")
+        same = all(s and all(s[k] == base[k] for k in base if k not in ("floor", "checksum")) for s in series)
+        check(same, "nella serie di piani cambia solo il piano (stanza 81 compresa)")
+        page.click("#seriesSeeds")
+        series = page.evaluate("""() => missionSeries.entries.map((e) => {
+            const r = WMSParser.decodeWithRegion(e.pretty, 'eu');
+            return r && r.crcOk ? r.struct : null;
+        })""")
+        seeds = {s and s["flavorText"] for s in series}
+        check(len(series) == 8 and len(seeds) == 8 and series[0]["flavorText"] == base["flavorText"],
+              f"serie di 8 missioni con semi tutti diversi ({len(seeds)})")
+        check(all(s["floor"] == base["floor"] and s["specialFloor"] == 81 for s in series), "nella serie di semi resta tutto il resto")
+        check(page.locator("#seriesList li").count() == 8, "otto righe nella serie")
+        page.evaluate("applyLanguage('en')")
+        check(page.text_content("#seriesList li .series-tag").startswith("Seed "), "etichette della serie tradotte")
+        page.evaluate("applyLanguage('it')")
+        set_input(page, "floor", 2)
+        generate(page)
+        check(page.is_hidden("#seriesResult"), "la serie sparisce quando cambia la password")
+
         # Preset di Mewtwo: la password si aggiorna da sola
         open_tool_card(page, "presetsCard")
         page.click('.preset-btn[data-preset="mewtwo"]')

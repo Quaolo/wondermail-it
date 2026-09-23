@@ -59,6 +59,9 @@ il gioco accetta.
 Altre cose comode: gli strumenti sono divisi per categoria (bacche, gomme, sfere, MT e così via) e si trovano
 anche cercando il nome inglese. Da una password puoi poi ricavare una missione gemella, al piano successivo o
 con un seme diverso. Per il gioco è una missione diversa, quindi puoi tenerle tutte e due nell'elenco.
+Se ne vuoi di più, "Serie di missioni" te ne prepara fino a otto in un colpo, quante ne tiene l'elenco del
+gioco: su piani di fila (saltando quelli che il gioco rifiuta) o con semi diversi. Si copiano una per una
+oppure tutte insieme.
 
 ## Missioni che non finiscono mai
 

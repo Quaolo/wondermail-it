@@ -322,6 +322,25 @@
               <button type="button" id="similarNewSeed" data-i18n="similarNewSeed">Nuovo seme</button>
             </div>
             <p class="hint" data-i18n="similarHint"></p>
+            <div class="series">
+              <p class="field-label" data-i18n="seriesTitle">Serie di missioni</p>
+              <div class="series-controls">
+                <label class="sr-only" for="seriesCount" data-i18n="seriesCountLabel">Quante missioni</label>
+                <select id="seriesCount">
+                  <option value="2">2</option><option value="3">3</option><option value="4">4</option>
+                  <option value="5">5</option><option value="6">6</option><option value="7">7</option>
+                  <option value="8" selected>8</option>
+                </select>
+                <button type="button" id="seriesFloors" data-i18n="seriesFloors">Piani di fila</button>
+                <button type="button" id="seriesSeeds" data-i18n="seriesSeeds">Semi diversi</button>
+              </div>
+              <p class="hint" data-i18n="seriesHint"></p>
+              <div id="seriesResult" class="series-result" hidden>
+                <ol id="seriesList" class="series-list"></ol>
+                <button type="button" id="seriesCopyAll" class="primary" data-i18n="seriesCopyAll">Copia tutte</button>
+              </div>
+              <p id="seriesStatus" class="status" role="status"></p>
+            </div>
           </div>
         </section>
 

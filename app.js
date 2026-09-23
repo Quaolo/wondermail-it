@@ -2746,12 +2746,12 @@ function makeSimilarMission(kind) {
     return;
   }
   if (nextFloor) {
-    const limit = getDungeonFloorLimit(struct.dungeon);
-    if (isEggGlitchStruct(struct) || struct.floor >= limit) {
+    const next = isEggGlitchStruct(struct) ? null : getNextAllowedFloor(struct.dungeon, struct.floor);
+    if (next === null) {
       setStatus('statusLine', 'similarLastFloor', null, 'warning');
       return;
     }
-    document.getElementById('floor').value = String(struct.floor + 1);
+    document.getElementById('floor').value = String(next);
   } else {
     let seed;
     do {
@@ -2768,10 +2768,132 @@ function makeSimilarMission(kind) {
   }
 }
 
+// Primo piano valido sopra quello indicato: salta i piani che il gioco rifiuta. null se non ce ne sono.
+function getNextAllowedFloor(dungeonId, floor) {
+  const limit = getDungeonFloorLimit(dungeonId);
+  const forbidden = WMSGen.getForbiddenFloors(dungeonId);
+  for (let next = floor + 1; next <= limit; next += 1) {
+    if (!forbidden.includes(next)) return next;
+  }
+  return null;
+}
+
+// ---------------------------------------------------------------------------
+// Serie di missioni gemelle
+// ---------------------------------------------------------------------------
+
+// La missione della password più altre uguali su piani di fila o con semi diversi: per il gioco sono
+// tutte missioni diverse. L'elenco delle missioni del gioco ne tiene al massimo otto.
+const SERIES_MAX = 8;
+let missionSeries = null;
+
+function buildMissionSeries(mode, count) {
+  const result = getOutputMission();
+  if (!result || !result.crcOk) return { error: 'noPassword' };
+  const base = result.struct;
+  if (isEggGlitchStruct(base)) return { error: 'egg' };
+
+  const total = Math.max(2, Math.min(SERIES_MAX, count));
+  const entries = [{ floor: base.floor, seed: base.flavorText }];
+  const seeds = new Set([base.flavorText]);
+  while (entries.length < total) {
+    const last = entries[entries.length - 1];
+    if (mode === 'floors') {
+      const floor = getNextAllowedFloor(base.dungeon, last.floor);
+      if (floor === null) break;
+      entries.push({ floor, seed: base.flavorText });
+    } else {
+      let seed;
+      do {
+        seed = Math.floor(Math.random() * 0x1000000);
+      } while (seeds.has(seed));
+      seeds.add(seed);
+      entries.push({ floor: base.floor, seed });
+    }
+  }
+
+  for (const entry of entries) {
+    const struct = Object.assign({}, base, { floor: entry.floor, flavorText: entry.seed });
+    const code = WMSParser.encode(struct, result.region);
+    const check = WMSParser.decodeWithRegion(code, result.region);
+    if (!check || !check.crcOk || check.struct.floor !== entry.floor || check.struct.flavorText !== entry.seed) {
+      return { error: 'selfCheck' };
+    }
+    entry.pretty = prettyMailString(code, 2, 7);
+  }
+  return { baseCode: result.clean, mode, requested: total, entries };
+}
+
+function makeMissionSeries(mode) {
+  const count = parseInt(document.getElementById('seriesCount')?.value, 10) || SERIES_MAX;
+  const series = buildMissionSeries(mode, count);
+  if (series.error) {
+    missionSeries = null;
+    renderMissionSeries();
+    if (series.error === 'egg') setStatus('seriesStatus', 'seriesEgg', null, 'error');
+    else if (series.error === 'selfCheck') setStatus('seriesStatus', 'errorSelfCheck', null, 'error');
+    else setStatus('seriesStatus', 'similarUnavailable', null, 'error');
+    return;
+  }
+  missionSeries = series;
+  renderMissionSeries();
+  const values = { count: series.entries.length };
+  if (series.entries.length < series.requested) {
+    setStatus('seriesStatus', 'seriesShort', values, 'warning');
+  } else {
+    setStatus('seriesStatus', 'seriesDone', values, 'ok');
+  }
+  flashElement(document.getElementById('seriesResult'), 'card-flash');
+}
+
+// La serie vale finché resta la stessa password: se la password cambia, sparisce.
+function renderMissionSeries() {
+  const box = document.getElementById('seriesResult');
+  const list = document.getElementById('seriesList');
+  if (!box || !list) return;
+  const current = compactCode(document.getElementById('compactOutput')?.value || '');
+  if (missionSeries && missionSeries.baseCode !== current) {
+    missionSeries = null;
+    setStatus('seriesStatus', null);
+  }
+  list.textContent = '';
+  box.hidden = !missionSeries;
+  if (!missionSeries) return;
+  missionSeries.entries.forEach((entry, index) => {
+    const item = document.createElement('li');
+    const tag = document.createElement('span');
+    tag.className = 'series-tag';
+    tag.textContent = missionSeries.mode === 'floors'
+      ? t('seriesFloorTag', { floor: entry.floor })
+      : t('seriesSeedTag', { seed: entry.seed });
+    const code = document.createElement('code');
+    code.className = 'series-code';
+    code.textContent = entry.pretty;
+    const copy = document.createElement('button');
+    copy.type = 'button';
+    copy.className = 'ghost';
+    copy.textContent = t('copy');
+    copy.setAttribute('aria-label', t('seriesCopyOne', { number: index + 1 }));
+    copy.addEventListener('click', () => copySeriesText(compactCode(entry.pretty), false));
+    item.append(tag, code, copy);
+    list.appendChild(item);
+  });
+}
+
+async function copySeriesText(text, all) {
+  try {
+    await navigator.clipboard.writeText(text);
+    setStatus('seriesStatus', all ? 'seriesCopied' : 'codeCopied', null, 'ok');
+  } catch (e) {
+    setStatus('seriesStatus', 'copyFailed', null, 'error');
+  }
+}
+
 // Anteprima e stanza seguono sempre la password mostrata.
 function updateOutputCards() {
   renderJobCard();
   renderRoomCard();
+  renderMissionSeries();
 }
 
 // Etichetta dello strumento obiettivo: nei Memo tesoro è il tesoro, nella Sala Proibita l'oggetto da trovare.
@@ -2802,6 +2924,12 @@ onReady(() => {
   document.getElementById('similarNewSeed')?.addEventListener('click', () => {
     requestPasswordAnimation();
     makeSimilarMission('newSeed');
+  });
+  document.getElementById('seriesFloors')?.addEventListener('click', () => makeMissionSeries('floors'));
+  document.getElementById('seriesSeeds')?.addEventListener('click', () => makeMissionSeries('seeds'));
+  document.getElementById('seriesCopyAll')?.addEventListener('click', () => {
+    if (!missionSeries) return;
+    copySeriesText(missionSeries.entries.map((entry) => entry.pretty).join('\n\n'), true);
   });
   // La mappa si adatta alla larghezza disponibile.
   window.addEventListener('resize', () => {

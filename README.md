@@ -59,7 +59,9 @@ accepts.
 
 Other handy things: items are grouped by category (berries, Gummis, orbs, TMs and so on) and can also be found
 by their Italian name. From a password you can also make a twin mission, on the next floor or with a
-different seed. For the game it is a different mission, so you can keep both in your list.
+different seed. For the game it is a different mission, so you can keep both in your list. If you want
+more, "Mission series" makes up to eight at once, as many as the game's job list holds: on consecutive floors
+(skipping the ones the game refuses) or with different seeds. You can copy them one by one or all together.
 
 ## Missions that never end
 
