@@ -328,6 +328,44 @@ def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
         page.click("#originClose")
         check(page.is_hidden("#originBar"), "la riga dell'origine si può chiudere")
 
+        # Ricompensa con un Pokémon: uovo (5) e Pokémon che si unisce alla squadra (6)
+        set_select(page, "missionTypeBox", 0)
+        set_select(page, "dungeonBox", 1)
+        set_input(page, "floor", 2)
+        set_select(page, "rewardTypeBox", 6)
+        page.wait_for_timeout(100)
+        check(page.is_visible("#rewardPokemonField") and page.is_hidden("#rewardItemField"),
+              "con il tipo 6 si sceglie il Pokémon, non lo strumento")
+        struct = decode_output(page, "eu")["struct"]
+        check(struct["rewardType"] == 6 and struct["reward"] == struct["client"], "senza scelta si unisce il committente")
+        set_select(page, "rewardPokemonBox", 25)
+        page.wait_for_timeout(150)
+        struct = decode_output(page, "eu")["struct"]
+        check(struct["reward"] == 25 and "Pikachu" in page.text_content("#jobFields"),
+              f"si unisce Pikachu, anche nell'anteprima: {struct['reward']}")
+        joined_code = page.input_value("#compactOutput")
+        check(page.evaluate("[...document.getElementById('rewardPokemonBox').options].every(o => o.value !== '150')"),
+              "Mewtwo non è tra i Pokémon che possono unirsi alla squadra")
+        page.evaluate("""() => { const s = document.getElementById('rewardPokemonBox');
+            const o = document.createElement('option'); o.value = '150'; o.text = 'Mewtwo'; s.add(o);
+            s.value = '150'; s.dispatchEvent(new Event('change', { bubbles: true })); }""")
+        code, _ = generate(page)
+        check("committente" in code and page.input_value("#compactOutput") == "", f"Mewtwo come ricompensa viene rifiutato: {code!r}")
+        set_select(page, "rewardTypeBox", 5)
+        page.wait_for_timeout(100)
+        check(page.evaluate("[...document.getElementById('rewardPokemonBox').options].some(o => o.value === '150')"),
+              "per l'uovo si può scegliere anche Mewtwo (il gioco non controlla la specie)")
+        set_select(page, "rewardPokemonBox", 150)
+        page.wait_for_timeout(150)
+        check(decode_output(page, "eu")["struct"]["reward"] == 150, "uovo di Mewtwo nella password")
+        open_tool_card(page, "readerCard")
+        page.fill("#importCode", joined_code)
+        page.click("#importCodeBtn")
+        page.wait_for_timeout(200)
+        check(page.input_value("#rewardTypeBox") == "6" and page.input_value("#rewardPokemonBox") == "25",
+              "leggendo la password torna Pikachu come Pokémon che si unisce")
+        set_select(page, "rewardTypeBox", 3)
+
         # Sblocca un dungeon: ricetta di Lai-brary (Lettera di sfida di Jirachi, piano 0, stanza 149)
         open_tool_card(page, "unlockCard")
         set_select(page, "unlockDungeonBox", 67)

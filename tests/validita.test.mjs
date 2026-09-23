@@ -11,9 +11,9 @@ const { forbiddenFloors, dungeonMaxItems, itemCategory } = window.WMSkyGameData;
 
 const source = readFileSync(new URL('../lmgenerate.js', import.meta.url), 'utf8');
 const context = {};
-new Function('window', 'document', `${source}; this.getTargetItemError = getTargetItemError;`)
+new Function('window', 'document', `${source}; this.getTargetItemError = getTargetItemError; this.getRewardPokemonIds = getRewardPokemonIds;`)
   .call(context, window, {});
-const { getTargetItemError } = context;
+const { getTargetItemError, getRewardPokemonIds } = context;
 
 test('i piani vietati vengono dal gioco', () => {
   // Di solito è il piano del capo: Riserva Marina 19, Grotta Infuocata 30.
@@ -47,4 +47,16 @@ test('lo strumento obiettivo segue le regole di CheckItemForMissionType', () => 
   // Punta d'Oro e Fossile Raro sono ammessi anche lì.
   assert.equal(getTargetItemError(9, 4), null);
   assert.equal(getTargetItemError(10, 4), null);
+});
+
+test('ricompensa con un Pokémon: le specie che IsMissionValid accetta', () => {
+  const MEWTWO = 150;
+  const JIRACHI = 417;
+  const PIKACHU = 25;
+  // Tipo 6 (si unisce alla squadra): niente leggendari e personaggi della storia, tranne nelle Lettere di sfida.
+  assert.ok(getRewardPokemonIds(6, 0).includes(PIKACHU));
+  assert.ok(!getRewardPokemonIds(6, 0).includes(MEWTWO));
+  assert.ok(getRewardPokemonIds(6, 11).includes(JIRACHI), 'la Lettera di sfida di Jirachi lo dà come ricompensa');
+  // Tipo 5 (uovo): il gioco non controlla la specie, l'elenco comprende anche i leggendari.
+  assert.ok(getRewardPokemonIds(5, 0).includes(MEWTWO));
 });

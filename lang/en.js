@@ -229,6 +229,14 @@ window.WMSkyRegisterLocale('en', {
     errorForbiddenFloor: 'The game does not accept missions on floor {floor} of this dungeon.',
     errorNoItemsInDungeon: 'No items can be taken into this dungeon, so nothing can be delivered there.',
     errorThrownTargetItem: 'In this kind of mission the target item cannot be a thrown item.',
+    rewardPokemonLabel: 'Reward Pokémon',
+    rewardPokemonEggLabel: 'Egg species',
+    rewardPokemonJoinLabel: 'Pokémon that joins the team',
+    rewardPokemonPlaceholder: 'Search a Pokémon...',
+    rewardPokemonClient: 'Same as the client',
+    rewardPokemonEggHint: 'The game gives an egg of this species and does not check which one it is. In job board missions it is the client\'s species.',
+    rewardPokemonJoinHint: 'When the mission is done this Pokémon asks to join the team. The game only accepts Pokémon that could be a client (in Challenge Letters the others too).',
+    errorRewardPokemon: 'The game does not accept this Pokémon as a reward: pick one that could be a client.',
     errorInvalidRewardItem: 'This item cannot be a reward.',
     floorForbiddenHint: 'The game does not accept missions on floors {floors}.',
     farmTitle: 'Find a reward',
@@ -405,7 +413,7 @@ window.WMSkyRegisterLocale('en', {
     3: 'Item + ??? (random)',
     4: '??? (chosen item)',
     5: '??? (egg)',
-    6: '??? (the client joins the team)'
+    6: '??? (a Pokémon joins the team)'
   },
 
   // The game does not tell alternate forms apart: these labels are ours.

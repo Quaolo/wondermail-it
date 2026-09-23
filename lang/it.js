@@ -229,6 +229,14 @@ window.WMSkyRegisterLocale('it', {
     errorForbiddenFloor: 'Il gioco non accetta missioni al piano {floor} di questo dungeon.',
     errorNoItemsInDungeon: 'In questo dungeon non si possono portare strumenti, quindi non si può consegnare niente.',
     errorThrownTargetItem: 'In questo tipo di missione lo strumento obiettivo non può essere uno strumento da lancio.',
+    rewardPokemonLabel: 'Pokémon della ricompensa',
+    rewardPokemonEggLabel: 'Specie dell\'uovo',
+    rewardPokemonJoinLabel: 'Pokémon che si unisce alla squadra',
+    rewardPokemonPlaceholder: 'Cerca un Pokémon...',
+    rewardPokemonClient: 'Lo stesso committente',
+    rewardPokemonEggHint: 'Il gioco dà un uovo di questa specie e non controlla quale sia. Nelle missioni della bacheca è la specie del committente.',
+    rewardPokemonJoinHint: 'A missione compiuta questo Pokémon chiede di unirsi alla squadra. Il gioco accetta solo i Pokémon che potrebbero fare da committente (nelle Lettere di sfida anche gli altri).',
+    errorRewardPokemon: 'Il gioco non accetta questo Pokémon come ricompensa: scegline uno che possa fare da committente.',
     errorInvalidRewardItem: 'Questo strumento non può essere una ricompensa.',
     floorForbiddenHint: 'Il gioco non accetta missioni ai piani {floors}.',
     farmTitle: 'Cerca un premio',
@@ -405,7 +413,7 @@ window.WMSkyRegisterLocale('it', {
     3: 'Strumento + ??? (a caso)',
     4: '??? (strumento scelto)',
     5: '??? (uovo)',
-    6: '??? (il committente si unisce alla squadra)'
+    6: '??? (un Pokémon si unisce alla squadra)'
   },
 
   // Il gioco non distingue le forme alternative: queste etichette sono nostre

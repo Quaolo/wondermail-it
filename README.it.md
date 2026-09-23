@@ -117,6 +117,10 @@ con la stanza 81; per le altre l'ho ricavato dal codice del gioco e non l'ho anc
 - Il numero di piani di ogni dungeon e la difficoltà delle missioni vengono dalle tabelle del gioco. Prima
   erano raccolte dalla community e in 17 dungeon su 54 il limite dei piani era sbagliato: per esempio nella
   Giungla del Mistero si fermava al 14 invece che al 29, e nelle Pianure Saetta arrivava al 20 invece che al 10.
+- I tipi di ricompensa seguono il codice del gioco (`InitMissionReward`). Con l'uovo e con il Pokémon che si
+  unisce alla squadra si può scegliere la specie: di base è il committente, come nelle missioni della bacheca.
+  Per l'uovo il gioco accetta qualsiasi specie, mentre chi si unisce alla squadra deve essere un Pokémon che
+  potrebbe fare da committente.
 - Le icone degli strumenti seguono i dati del gioco: due strumenti che lì hanno la stessa icona ce l'hanno
   anche qui, per esempio quasi tutti i semi o i nastri da tenere.
 
@@ -149,8 +153,6 @@ Il test della codifica confronta 60 password con quelle del generatore originale
 
 ## Cose ancora da verificare
 
-- I tipi di ricompensa dal 4 al 6 hanno ancora i nomi del generatore originale, che non tornano del tutto con
-  quello che si sa del gioco.
 - Una password valida può comunque essere rifiutata dal gioco se il dungeon non è ancora sbloccato, se la
   missione è già nell'elenco o se l'elenco è pieno: quelli dipendono dal salvataggio e il sito non li conosce.
 - Le stanze senza tesoro diverse dalla 81 vanno provate in gioco.

@@ -828,6 +828,15 @@ function importDecodedStruct(result) {
   applyPokemonToField('target2Box', 'target2F', struct.target2);
   applyItemToField('targetItemBox', struct.targetItem);
   applyItemToField('rewardItemBox', struct.reward);
+  if (!eggGlitch && (struct.rewardType === 5 || struct.rewardType === 6)) {
+    populateRewardPokemonList(true);
+    const rewardMon = document.getElementById('rewardPokemonBox');
+    if (rewardMon) {
+      const value = struct.reward === struct.client ? 0 : struct.reward;
+      if (value) ensureSelectOption(rewardMon, value, getLocalizedPokemonName(value));
+      setSelectByValue(rewardMon, value);
+    }
+  }
 
   if (rawFlavor) {
     rawFlavor.value = Number.isFinite(struct.flavorText) ? String(struct.flavorText) : '';
@@ -990,6 +999,40 @@ function populateEggPokemonList() {
   }
 
   refreshSearchBoxSelections();
+}
+
+// Pokémon della ricompensa (tipi 5 e 6): l'elenco dipende dal tipo di ricompensa e, per il 6, dalle Lettere
+// di sfida. La prima voce (0) vuol dire "il committente", come nelle missioni della bacheca.
+function populateRewardPokemonList(force) {
+  const select = document.getElementById('rewardPokemonBox');
+  const typeData = getCurrentTypeData();
+  if (!select || !typeData) return;
+  const rewardType = parseInt(document.getElementById('rewardTypeBox')?.value || '0', 10);
+  if (rewardType !== 5 && rewardType !== 6) return;
+  const kind = `${rewardType}:${typeData.mainType === 11 ? 'challenge' : 'other'}`;
+  if (!force && select.dataset.kind === kind) return;
+  const previous = String(select.value || '0');
+  select.dataset.kind = kind;
+  select.innerHTML = '';
+  const same = document.createElement('option');
+  same.value = '0';
+  same.text = t('rewardPokemonClient');
+  select.add(same);
+  WMSGen.getRewardPokemonIds(rewardType, typeData.mainType).forEach((id) => {
+    const option = document.createElement('option');
+    option.value = String(id);
+    option.text = getLocalizedPokemonName(id);
+    select.add(option);
+  });
+  if (!setSelectByValue(select, previous)) setSelectByValue(select, '0');
+  refreshSearchBoxSelections();
+}
+
+function updateRewardPokemonTexts(rewardType) {
+  const label = document.getElementById('rewardPokemonLabel');
+  const hint = document.getElementById('rewardPokemonHint');
+  if (label) label.textContent = rewardType === 5 ? t('rewardPokemonEggLabel') : t('rewardPokemonJoinLabel');
+  if (hint) hint.textContent = rewardType === 5 ? t('rewardPokemonEggHint') : t('rewardPokemonJoinHint');
 }
 
 function isEggGlitchEnabled() {
@@ -1238,6 +1281,7 @@ function relabelLocalizedControls() {
   populateFarmRewards();
   renderFarmResults();
   populateUnlockDungeons();
+  populateRewardPokemonList(true);
   refreshSearchBoxSelections();
 }
 
@@ -1432,6 +1476,12 @@ function updateMissionFieldVisibility() {
   setFieldVisibility('targetItemField', !eggGlitch && !!typeData.useTargetItem);
   setFieldVisibility('rewardTypeField', !eggGlitch && !typeData.noReward);
   setFieldVisibility('rewardItemField', !eggGlitch && !typeData.noReward && rewardType >= 1 && rewardType <= 4);
+  const rewardPokemon = !eggGlitch && !typeData.noReward && (rewardType === 5 || rewardType === 6);
+  setFieldVisibility('rewardPokemonField', rewardPokemon);
+  if (rewardPokemon) {
+    populateRewardPokemonList(false);
+    updateRewardPokemonTexts(rewardType);
+  }
   setFieldVisibility('eggPokemonField', eggGlitch);
   setFieldVisibility('eggHelpCard', eggGlitch);
   updateTargetItemLabel(typeData);
@@ -1708,7 +1758,7 @@ onReady(() => {
   const watchedIds = [
     'missionTypeBox', 'missionSubTypeBox', 'dungeonBox', 'floor', 'clientBox', 'clientF',
     'targetBox', 'targetF', 'target2Box', 'target2F', 'targetItemBox', 'rewardTypeBox',
-    'rewardItemBox', 'regionBox', 'flavorText', 'specialFloor', 'eggPokemonBox'
+    'rewardItemBox', 'regionBox', 'flavorText', 'specialFloor', 'eggPokemonBox', 'rewardPokemonBox'
   ];
 
   watchedIds.forEach((id) => {
@@ -2407,6 +2457,12 @@ function getRewardValue(struct) {
   }
   if (struct.rewardType === 5 && isEggGlitchStruct(struct)) {
     return document.createTextNode(`${label} · ${getEggPokemonDisplayName(struct.reward)}`);
+  }
+  if ((struct.rewardType === 5 || struct.rewardType === 6) && struct.reward > 0) {
+    const wrap = document.createElement('span');
+    wrap.className = 'job-reward';
+    wrap.append(document.createTextNode(`${label} · `), makePersonValue(struct.reward));
+    return wrap;
   }
   return document.createTextNode(label);
 }

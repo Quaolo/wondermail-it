@@ -274,6 +274,10 @@ var WMSGen = {
     return getForbiddenFloors(parseInt(dungeonId, 10));
   },
 
+  getRewardPokemonIds: function (rewardType, mainType) {
+    return getRewardPokemonIds(parseInt(rewardType, 10), parseInt(mainType, 10));
+  },
+
   getComboBoxValue: function (box) {
     if (typeof box === 'string') {
       box = this.form[box];
@@ -345,6 +349,15 @@ var WMSGen = {
       } else if (!isValidGameItem(rewardItem) || !isStorableItem(rewardItem)) {
         // Il gioco controlla anche la ricompensa (IsItemValid e IsStorableItem).
         errors.push(tr('errorInvalidRewardItem'));
+      }
+    }
+
+    // Tipo 6: IsMissionValid vuole una specie ammessa nelle missioni e, tranne nelle Lettere di sfida,
+    // una che possa fare da committente (IsMonsterMissionAllowed). Il tipo 5 (uovo) non viene controllato.
+    if (!typeData.noReward && rewardType === 6) {
+      var joining = parseInt(this.getComboBoxValue('rewardPokemonBox'), 10);
+      if (joining > 0 && getRewardPokemonIds(6, typeData.mainType).indexOf(joining) === -1) {
+        errors.push(tr('errorRewardPokemon'));
       }
     }
 
@@ -490,7 +503,10 @@ var WMSGen = {
     } else if (struct.rewardType >= 1 && struct.rewardType <= 4) {
       struct.reward = parseInt(this.getComboBoxValue('rewardItemBox'), 10);
     } else if (struct.rewardType === 5 || struct.rewardType === 6) {
-      struct.reward = struct.client;
+      // Uovo (5) o Pokémon che si unisce alla squadra (6): il valore è la specie (InitMissionReward).
+      // Senza una scelta vale il committente, come nelle missioni della bacheca.
+      var rewardMon = parseInt(this.getComboBoxValue('rewardPokemonBox'), 10);
+      struct.reward = rewardMon > 0 ? rewardMon : struct.client;
     } else {
       // Il gioco vuole comunque un valore: una Mela.
       struct.reward = 109;
@@ -615,6 +631,17 @@ function isValidGameItem(itemId) {
     data._validItemSet = new Set(data.validItems);
   }
   return itemId > 0 && data._validItemSet.has(itemId);
+}
+
+// Specie che si possono scegliere come ricompensa. Uovo (5): le specie ammesse nelle missioni. Pokémon che si unisce (6): quelle
+// ammesse nelle missioni (IsMonsterIllegalForMissions) e, fuori dalle Lettere di sfida (tipo 11), non
+// escluse dai committenti (IsMonsterMissionAllowed, MISSION_BANNED_MONSTERS).
+function getRewardPokemonIds(rewardType, mainType) {
+  var data = gameData();
+  if (rewardType === 6) {
+    return ((mainType === 11 ? data.missionTargets : data.missionClients) || []).slice();
+  }
+  return (data.missionTargets || []).slice();
 }
 
 // Categoria 0 e 1: strumenti da lancio (IsThrownItem).

@@ -118,6 +118,9 @@ worked it out from the game code and haven't tried it yet.
 - The number of floors of each dungeon and the mission difficulty come from the game's tables. They used to
   be collected by the community, and in 17 dungeons out of 54 the floor limit was wrong: in Mystery Jungle,
   for example, it stopped at 14 instead of 29, and in Amp Plains it went up to 20 instead of 10.
+- Reward types follow the game code (`InitMissionReward`). For the egg and for the Pokémon that joins the
+  team you can pick the species: by default it is the client, as in job board missions. For the egg the game
+  accepts any species, while the one joining the team has to be a Pokémon that could be a client.
 - Item icons follow the game data: two items that share an icon in the game share it here too, for example
   almost all seeds or the held ribbons.
 
@@ -151,8 +154,6 @@ The encoding test compares 60 passwords with those of the original generator and
 
 ## Still to be checked
 
-- Reward types 4 to 6 still have the names from the original generator, which don't fully match what is known
-  about the game.
 - A valid password can still be refused by the game if the dungeon isn't unlocked yet, if the mission is
   already in your list or if the list is full: those depend on your save file and the site can't know them.
 - The rooms without treasure other than 81 still have to be tried in the game.
