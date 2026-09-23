@@ -87,7 +87,9 @@ In the "Find a reward" card, next to the form, pick the reward you want and the 
 and which dungeon it is in, with the odds for every Deluxe Box; one click sets up the mission. In the
 generator these rooms are listed separately, under "Rooms without treasure". Some of them have Deluxe Boxes,
 and what is inside depends on the mission's dungeon: in Marine Resort, for example, you get Gummis of every
-kind. The full table is in the room card. Players have tested the trick with room 81; for the other rooms I
+kind. The full table is in the room card. The secret room (113) is the exception: there the game draws from
+the floor's own list, so the mission floor matters too, and the site shows what comes out on every floor of
+every dungeon. Players have tested the trick with room 81; for the other rooms I
 worked it out from the game code and haven't tried it yet.
 
 ## What changed from the original generator

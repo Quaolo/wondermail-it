@@ -169,6 +169,46 @@
     return entries.map(([name, count]) => `${name} ${Math.round((count / list.length) * 100)}%`).join(', ');
   }
 
+  // Stanza segreta (113): i Tecalusso pescano dall'elenco "stanza segreta" del piano della missione
+  // (GetRandomSecretRoomItem), che dipende da dungeon e piano. Probabilità in % per ogni Tecalusso.
+  function getSecretRoomItems(dungeonId, floor) {
+    const data = getData();
+    const secret = data && data.secretRoom;
+    if (!secret) return null;
+    const row = secret.byDungeon[String(dungeonId)];
+    const index = row ? row[floor - 1] : undefined;
+    if (index === undefined || index < 0) return null;
+    return secret.lists[index] || null;
+  }
+
+  function formatChance(percent) {
+    const digits = percent >= 10 ? 0 : 1;
+    const lang = typeof getCurrentLanguage === 'function' ? getCurrentLanguage() : undefined;
+    const shown = Number(percent).toLocaleString(lang, { maximumFractionDigits: digits });
+    return percent > 0 && Number(percent) < 0.05 ? `<${(0.1).toLocaleString(lang)}` : shown;
+  }
+
+  function describeSecretBoxContents(dungeonId, floor, limit = 6) {
+    const data = getData();
+    const list = getSecretRoomItems(dungeonId, floor);
+    if (!list) return getItemName(data ? data.secretRoom.fallback : ITEM_IDS.oranBerry);
+    const shown = list.slice(0, limit).map(([item, percent]) => `${getItemName(item)} ${formatChance(percent)}%`);
+    if (list.length > limit) shown.push(t('secretMoreItems', { count: list.length - limit }));
+    return shown.join(', ');
+  }
+
+  // Piani in cui si può fare una missione: entro il limite e non tra quelli che il gioco rifiuta.
+  function missionFloors(dungeonId) {
+    const game = window.WMSkyGameData || {};
+    const limit = (game.missionFloors && game.missionFloors[dungeonId]) || 0;
+    const forbidden = (game.forbiddenFloors && game.forbiddenFloors[dungeonId]) || [];
+    const floors = [];
+    for (let floor = 1; floor <= limit; floor += 1) {
+      if (!forbidden.includes(floor)) floors.push(floor);
+    }
+    return floors;
+  }
+
   /**
    * Contenuto dei Tecalusso per ogni dungeon (tabella ov29_02353050 letta da PlaceFixedRoomTile).
    * I dungeon con lo stesso elenco stanno nella stessa riga; i dungeon che non sono in tabella danno
@@ -210,6 +250,10 @@
       (room.items || []).forEach(([, , item]) => {
         if (item !== ITEM_IDS.box) rewards.add(item);
       });
+      if (room.kind === 'secretRoom' && data.secretRoom) {
+        data.secretRoom.lists.forEach((list) => list.forEach(([item]) => rewards.add(item)));
+        return;
+      }
       if (!hasDungeonBoxes(room)) return;
       rewards.add(data.boxes.fallback);
       Object.keys(data.boxes.byDungeon).forEach((key) => data.boxes.byDungeon[key].forEach(addBoxItem));
@@ -232,6 +276,25 @@
       if (!room) return;
       const onFloor = (room.items || []).filter(([, , item]) => item !== ITEM_IDS.box && matches(item)).length;
       if (onFloor) sources.push({ room: id, floorItems: onFloor });
+      if (room.kind === 'secretRoom' && data.secretRoom && !wantExclusive) {
+        // Per ogni dungeon il piano dove il premio esce più spesso.
+        const boxes = (room.items || []).filter(([, , item]) => item === ITEM_IDS.box).length;
+        const dungeons = [];
+        Object.keys(data.secretRoom.byDungeon).forEach((key) => {
+          const dungeon = parseInt(key, 10);
+          let best = null;
+          missionFloors(dungeon).forEach((floor) => {
+            const hit = (getSecretRoomItems(dungeon, floor) || []).find(([item]) => item === itemId);
+            if (hit && (!best || hit[1] > best.percent)) best = { dungeon, floor, percent: hit[1] };
+          });
+          if (best) dungeons.push(best);
+        });
+        if (dungeons.length) {
+          dungeons.sort((a, b) => b.percent - a.percent || a.dungeon - b.dungeon);
+          sources.push({ room: id, boxes, secret: true, dungeons });
+        }
+        return;
+      }
       if (!hasDungeonBoxes(room)) return;
       const boxes = (room.items || []).filter(([, , item]) => item === ITEM_IDS.box).length;
       const dungeons = [];
@@ -470,7 +533,11 @@
           // GetRandomSecretRoomItem: elenco "stanza segreta" del piano, Baccarancia se è vuoto.
           fallback: getItemName(ITEM_IDS.oranBerry)
         };
-        if (room.kind === 'secretRoom') facts.push(t('roomFactSecretBoxes', boxes));
+        if (room.kind === 'secretRoom') {
+          boxes.floor = context.floor || 1;
+          boxes.contents = describeSecretBoxContents(context.dungeon, boxes.floor);
+          facts.push(t('roomFactSecretBoxes', boxes));
+        }
         else facts.push(counts.box === 1 ? t('roomFactBox', boxes) : t('roomFactBoxes', boxes));
       }
     }
@@ -604,6 +671,9 @@
     renderPicker,
     describeRoom,
     describeBoxContents,
+    describeSecretBoxContents,
+    getSecretRoomItems,
+    formatChance,
     getBoxTable,
     getFarmRewards,
     findRewardSources,

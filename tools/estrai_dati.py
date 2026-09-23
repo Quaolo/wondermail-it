@@ -56,6 +56,8 @@ SOURCES = {
     "mainRodata": ("asm/main_rodata_020A2808.s", "4e4adb2ac6130def826082136e95e63b0b3ed5f5"),
     # Piani di ogni dungeon (DUNGEON_DATA_LIST) e difficoltà per piano (MISSION_FLOOR_RANKS_*).
     "dungeonRodata": ("asm/main_rodata_0209CECC.s", "6396ccea23e32e04153f6e745fc8cc8588bb64c1"),
+    # Piani dei dungeon di Esploratori del Cielo: da qui gli strumenti dei Tecalusso della stanza segreta.
+    "mappa": ("files/BALANCE/mappa_s.bin", "a800bd977c9005ef18ec51e31a5e5b56ff4c0691"),
 }
 LANGUAGES = ("it", "en")
 
@@ -391,6 +393,113 @@ def build_mission_floors(rodata: bytes, points_source: bytes) -> dict:
     points = read_label_words(*assemble_rank_points(points_source), "MISSION_RANK_POINTS")
     return {"missionFloors": floors, "missionRanks": ranks, "missionRankPoints": points,
             "forbiddenFloors": forbidden_floors, "dungeonMaxItems": max_items}
+
+
+# ---------------------------------------------------------------------------
+# Stanza segreta (113): strumenti dei Tecalusso, da BALANCE/mappa_s.bin
+# ---------------------------------------------------------------------------
+
+MAPPA_FLOOR_SIZE = 18          # voce di un piano: nove u16 (forma, Pokémon, trappole, sei elenchi di strumenti)
+MAPPA_SECRET_ROOM_LIST = 8     # ultimo elenco del piano: SPAWN_SECRET_ROOM (dopo normali, negozio, casa dei mostri,
+                               # sepolti e bazar)
+MAPPA_SKIP = 0x7530            # nel formato degli elenchi, un valore oltre 30000 salta (valore - 30000) voci
+MAPPA_CATEGORIES = 0x10        # le prime 16 voci sono le categorie, poi vengono gli strumenti
+MAPPA_LAST_ITEM = 363
+SECRET_ROOM_FALLBACK = 70      # Baccarancia: GetRandomSecretRoomItem la dà quando GetItemIdToSpawn trova una Poké
+
+
+def read_mappa_item_list(data: bytes, offset: int) -> tuple[dict, dict]:
+    """Un elenco di strumenti di mappa_s.bin (formato documentato da SkyTemple, MappaItemList): soglie
+    cumulative su 10000, prima per categoria e poi per strumento, con i salti codificati come 30000 + n."""
+    categories, items = {}, {}
+    in_categories, index = True, 0
+    while index <= MAPPA_LAST_ITEM:
+        value = struct.unpack_from("<H", data, offset)[0]
+        offset += 2
+        if MAPPA_SKIP < value < 0xFFFF:
+            index += value - MAPPA_SKIP
+        else:
+            (categories if in_categories else items)[index] = value
+            index += 1
+        if in_categories and index >= MAPPA_CATEGORIES - 1:
+            in_categories, index = False, index - MAPPA_CATEGORIES
+    return categories, items
+
+
+def pick_counts(thresholds: list[tuple[int, int]]) -> dict:
+    """Come GetItemIdToSpawn: estrae 0-9999 e prende la prima voce (in ordine) con soglia >= numero.
+    Restituisce per ogni voce quanti dei 10000 numeri la scelgono. Le soglie 0 si saltano e 0xFFFF,
+    letto come -1, non viene mai scelto."""
+    counts, covered = {}, -1
+    for key, value in thresholds:
+        if value == 0:
+            continue
+        top = min(value if value < 0x8000 else -1, 9999)
+        if top > covered:
+            counts[key] = top - covered
+            covered = top
+    return counts
+
+
+def secret_room_items(categories: dict, items: dict, item_category: list[int]) -> list[list]:
+    """Probabilità (in %) di ogni strumento in un Tecalusso della stanza segreta, per l'elenco dato."""
+    result = {}
+    for category, count in pick_counts(sorted(categories.items())).items():
+        in_category = [(item, value) for item, value in sorted(items.items())
+                       if item < len(item_category) and item_category[item] == category]
+        picked = pick_counts(in_category)
+        for item, item_count in picked.items():
+            result[item] = result.get(item, 0) + count * item_count
+        # Numeri non coperti: il gioco restituisce una Poké, cioè una Baccarancia.
+        result[SECRET_ROOM_FALLBACK] = result.get(SECRET_ROOM_FALLBACK, 0) + count * (10000 - sum(picked.values()))
+    uncovered = 10000 - sum(pick_counts(sorted(categories.items())).values())
+    result[SECRET_ROOM_FALLBACK] = result.get(SECRET_ROOM_FALLBACK, 0) + uncovered * 10000
+    return sorted([[item, round(weight / 1e6, 3)] for item, weight in result.items() if weight],
+                  key=lambda entry: (-entry[1], entry[0]))
+
+
+def build_secret_room(mappa: bytes, rodata: bytes, item_category: list[int]) -> dict:
+    """Contenuto dei Tecalusso della stanza segreta per ogni dungeon e piano delle missioni.
+
+    PlaceFixedRoomTile riempie i Tecalusso della stanza 113 con GetRandomSecretRoomItem, che pesca
+    dall'elenco SPAWN_SECRET_ROOM del piano caricato da LoadMappaFileAttributes: il gruppo e il piano del
+    gruppo vengono da DUNGEON_DATA_LIST (come per la difficoltà delle missioni)."""
+    if mappa[:4] != b"SIR0":
+        raise ValueError("mappa_s.bin non riconosciuto")
+    header = struct.unpack_from("<I", mappa, 4)[0]
+    floor_lists, _, item_lists = struct.unpack_from("<3I", mappa, header)
+    layouts = struct.unpack_from("<I", mappa, header + 4)[0]
+    groups = [struct.unpack_from("<I", mappa, offset)[0] for offset in range(floor_lists, layouts, 4)]
+
+    def group_size(group: int) -> int:
+        """Piani nell'elenco del gruppo: il primo è vuoto, e l'elenco finisce con una voce vuota."""
+        count, offset = 0, groups[group] + MAPPA_FLOOR_SIZE
+        while offset < floor_lists and mappa[offset:offset + MAPPA_FLOOR_SIZE] != bytes(MAPPA_FLOOR_SIZE):
+            count, offset = count + 1, offset + MAPPA_FLOOR_SIZE
+        return count
+
+    data, labels = assemble(rodata.decode("utf-8"))
+    base = labels["DUNGEON_DATA_LIST"]
+    list_ids, by_dungeon = {}, {}
+    for dungeon in range(1, FIRST_SPECIAL_DUNGEON):
+        floors, group, preceding = data[base + 4 * dungeon], data[base + 4 * dungeon + 1], data[base + 4 * dungeon + 2]
+        if not floors or group >= len(groups):
+            continue
+        row = []
+        for floor in range(1, floors + 1):
+            if floor + preceding > group_size(group):
+                row.append(-1)   # piano che il gruppo non ha (Antro Nascosto): nessun dato
+                continue
+            entry = groups[group] + MAPPA_FLOOR_SIZE * (floor + preceding)
+            list_index = struct.unpack_from("<H", mappa, entry + 2 * MAPPA_SECRET_ROOM_LIST)[0]
+            row.append(list_ids.setdefault(list_index, len(list_ids)))
+        by_dungeon[str(dungeon)] = row
+
+    lists = [None] * len(list_ids)
+    for list_index, position in list_ids.items():
+        offset = struct.unpack_from("<I", mappa, item_lists + 4 * list_index)[0]
+        lists[position] = secret_room_items(*read_mappa_item_list(mappa, offset), item_category)
+    return {"fallback": SECRET_ROOM_FALLBACK, "lists": lists, "byDungeon": by_dungeon}
 
 
 def assemble_rank_points(source: bytes) -> tuple[bytes, dict]:
@@ -834,7 +943,7 @@ def compact(value) -> str:
 def format_rooms(payload: dict) -> str:
     """Una riga per ogni riga della mappa, così le differenze tra versioni restano leggibili."""
     lines = ["{"]
-    for key in ("source", "missionRooms", "legend", "boxes"):
+    for key in ("source", "missionRooms", "legend", "boxes", "secretRoom"):
         lines.append(f" {compact(key)}: {compact(payload[key])},")
     lines.append(' "rooms": {')
     room_items = list(payload["rooms"].items())
@@ -904,6 +1013,8 @@ def main() -> int:
     rooms = build_rooms(*(load_source(key, args.pmd_sky) for key in
                           ("fixed", "fixedEntities", "fixedProperties", "roomIds1", "roomIds2",
                            "boxTable", "boxLists1", "boxLists2", "boxLists3")), texts["en"])
+    rooms["secretRoom"] = build_secret_room(load_source("mappa", args.pmd_sky), load_source("dungeonRodata", args.pmd_sky),
+                                            shared["itemCategory"])
     rooms["source"] = f"{source} {SOURCES['fixed'][0]}"
     write_js(args.out / "stanze_fisse.js", "window.WMSkyFixedRooms", rooms,
              "Stanze speciali di PMD: Esploratori del Cielo (forme e contenuto dai dati del gioco).",

@@ -28,7 +28,9 @@ test('i premi da ripetere sono quelli delle stanze senza tesoro', () => {
   const exclusive = rewards.filter(isExclusiveCode);
   assert.equal(exclusive.length, 1);
   // Niente premi inventati: ogni voce viene dalle stanze o dalla tabella dei Tecalusso.
-  const fromBoxes = new Set([boxes.fallback, ...Object.values(boxes.byDungeon).flat()]);
+  const { secretRoom } = window.WMSkyFixedRooms;
+  const fromBoxes = new Set([boxes.fallback, ...Object.values(boxes.byDungeon).flat(),
+    ...secretRoom.lists.flat().map(([item]) => item)]);
   const fromRooms = new Set(missionRooms.withoutTreasure
     .flatMap((id) => (window.WMSkyFixedRooms.rooms[id].items || []).map(([, , item]) => item)));
   assert.ok(rewards.every((item) => fromBoxes.has(item) || fromRooms.has(item)));
@@ -52,4 +54,34 @@ test('per ogni premio si sa stanza e dungeon', () => {
 test('il Revitalseme si trova anche nei dungeon fuori tabella', () => {
   const sources = findRewardSources(REVITALSEME).filter((source) => !source.floorItems);
   assert.ok(sources[0].fallback, 'i dungeon senza elenco danno sempre il Revitalseme');
+});
+
+test('stanza segreta: ogni elenco copre tutte le estrazioni del gioco', () => {
+  const { secretRoom } = window.WMSkyFixedRooms;
+  assert.ok(secretRoom.lists.length > 5);
+  secretRoom.lists.forEach((list, index) => {
+    const total = list.reduce((sum, [, percent]) => sum + percent, 0);
+    assert.ok(Math.abs(total - 100) < 0.1, `elenco ${index}: ${total}%`);
+  });
+  // Grotta Marina: quattro piani, ognuno con il suo elenco.
+  assert.equal(secretRoom.byDungeon['1'].length, 4);
+  assert.ok(window.WMSkyRooms.getSecretRoomItems(1, 1).length > 10);
+  assert.equal(window.WMSkyRooms.getSecretRoomItems(1, 9), null, 'piano che non esiste');
+});
+
+test('stanza segreta: per ogni dungeon il piano migliore, mai un piano vietato', () => {
+  const [first] = window.WMSkyFixedRooms.secretRoom.lists[0];
+  const source = findRewardSources(first[0]).find((entry) => entry.secret);
+  assert.ok(source, 'la stanza 113 compare tra le fonti');
+  assert.equal(source.room, 113);
+  assert.equal(source.boxes, 5);
+  const game = window.WMSkyGameData;
+  for (const entry of source.dungeons) {
+    assert.ok(entry.floor >= 1 && entry.floor <= game.missionFloors[entry.dungeon]);
+    assert.ok(!(game.forbiddenFloors[entry.dungeon] || []).includes(entry.floor));
+    const hit = window.WMSkyRooms.getSecretRoomItems(entry.dungeon, entry.floor).find(([item]) => item === first[0]);
+    assert.equal(hit[1], entry.percent);
+  }
+  // Ordinati dal più probabile.
+  assert.ok(source.dungeons.every((entry, i, all) => i === 0 || all[i - 1].percent >= entry.percent));
 });

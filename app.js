@@ -2449,6 +2449,7 @@ function getRoomContext(struct, kind) {
   }
   // Per le stanze con premi fissi: icone vere e contenuto dei Tecalusso nel dungeon della missione.
   context.dungeon = struct.dungeon;
+  context.floor = struct.floor;
   context.dungeonName = getDungeonName(struct.dungeon);
   context.itemImage = (itemId) => getItemImage(itemId, getItemName(itemId), false);
   return context;
@@ -2624,6 +2625,9 @@ function populateFarmRewards() {
 
 // Dove si trova il premio scelto: le stanze che ce l'hanno già sul pavimento e, per i Tecalusso,
 // la stanza con più Tecalusso più i dungeon che possono contenerlo.
+// Nella stanza segreta si mostrano i dungeon migliori, non tutti.
+const FARM_SECRET_CHIPS = 8;
+
 function renderFarmResults() {
   const list = document.getElementById('farmResults');
   const select = document.getElementById('farmRewardBox');
@@ -2636,7 +2640,9 @@ function renderFarmResults() {
   const available = new Set(dungeonSelect ? Array.from(dungeonSelect.options, (option) => option.value) : []);
   const sources = WMSkyRooms.findRewardSources(itemId);
   const onFloor = sources.filter((source) => source.floorItems);
-  const withBoxes = sources.filter((source) => !source.floorItems
+  const withBoxes = sources.filter((source) => !source.floorItems && !source.secret
+    && source.dungeons.some((entry) => available.has(String(entry.dungeon))));
+  const secret = sources.filter((source) => source.secret
     && source.dungeons.some((entry) => available.has(String(entry.dungeon))));
 
   const addRow = (text, chips) => {
@@ -2667,7 +2673,7 @@ function renderFarmResults() {
     return button;
   };
 
-  if (!onFloor.length && !withBoxes.length) {
+  if (!onFloor.length && !withBoxes.length && !secret.length) {
     const empty = document.createElement('li');
     empty.className = 'hint';
     empty.textContent = t('farmNoResults');
@@ -2681,7 +2687,27 @@ function renderFarmResults() {
       chipRow([chip(t('farmUseRoom'), t('farmUseCombo', { room: source.room }), () => useFarmCombo(source.room, null))]));
   });
 
-  if (!withBoxes.length) return;
+  // Stanza segreta (dopo le altre righe): il contenuto dipende da dungeon e piano, per ogni dungeon il piano migliore.
+  const addSecretRows = () => secret.forEach((source) => {
+    const buttons = source.dungeons
+      .filter((entry) => available.has(String(entry.dungeon)))
+      .slice(0, FARM_SECRET_CHIPS)
+      .map((entry) => chip(
+        t('farmDungeonFloorChance', {
+          dungeon: getDungeonName(entry.dungeon),
+          floor: entry.floor,
+          chance: WMSkyRooms.formatChance(entry.percent)
+        }),
+        t('farmUseComboFloor', { room: source.room, dungeon: getDungeonName(entry.dungeon), floor: entry.floor }),
+        () => useFarmCombo(source.room, entry.dungeon, entry.floor)
+      ));
+    addRow(t('farmInSecretRoom', { room: source.room, boxes: source.boxes }), chipRow(buttons));
+  });
+
+  if (!withBoxes.length) {
+    addSecretRows();
+    return;
+  }
 
   // Il contenuto dei Tecalusso dipende solo dal dungeon: basta la stanza che ne ha di più.
   const best = withBoxes[0];
@@ -2703,10 +2729,11 @@ function renderFarmResults() {
     more.textContent = t('farmOtherRooms', { rooms: others.join(', ') });
     list.appendChild(more);
   }
+  addSecretRows();
 }
 
 // Prepara la missione: Memo tesoro nella stanza scelta, con il dungeon che contiene il premio.
-function useFarmCombo(roomId, dungeonId) {
+function useFarmCombo(roomId, dungeonId, floorNumber = 1) {
   requestPasswordAnimation();
   withToolCardsOpen(() => {
     applyPresetNow('memo');
@@ -2718,7 +2745,7 @@ function useFarmCombo(roomId, dungeonId) {
     const special = document.getElementById('specialFloor');
     if (special) special.value = String(roomId);
     const floor = document.getElementById('floor');
-    if (floor) floor.value = '1';
+    if (floor) floor.value = String(floorNumber);
     syncDungeonFloorLimit(true);
     WMSGen.update();
     refreshMissionUi();

@@ -447,6 +447,24 @@ def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
         check(struct["specialFloor"] == 92 and struct["missionType"] == 12,
               f"password della missione da ripetere: {struct['specialFloor']}, tipo {struct['missionType']}")
 
+        # Stanza segreta (113): contenuto dei Tecalusso per dungeon e piano
+        secret_item = page.evaluate("""() => {
+            const lists = WMSkyFixedRooms.secretRoom.lists;
+            const elsewhere = new Set(Object.values(WMSkyFixedRooms.boxes.byDungeon).flat());
+            const hit = lists.flat().find(([item]) => !elsewhere.has(item) && item !== WMSkyFixedRooms.boxes.fallback);
+            return hit[0];
+        }""")
+        set_select(page, "farmRewardBox", secret_item)
+        page.wait_for_timeout(150)
+        rows = page.eval_on_selector_all("#farmResults .farm-row-title", "els => els.map(e => e.textContent)")
+        check(any("stanza segreta 113" in row for row in rows), f"premio della stanza segreta (strumento {secret_item}): {rows}")
+        page.locator("#farmResults .farm-row").last.locator(".chip").first.click()
+        page.wait_for_timeout(300)
+        struct = decode_output(page, "eu")["struct"]
+        check(struct["specialFloor"] == 113 and struct["floor"] >= 1, f"missione nella stanza 113 al piano suggerito: {struct['floor']}")
+        facts = page.text_content("#roomFacts")
+        check(f"piano {struct['floor']}" in facts and "%" in facts, f"la scheda della stanza 113 dice cosa c'è nei Tecalusso: {facts[:160]!r}")
+
         # Strumenti divisi per categoria
         page.click("#rewardItemSearch")
         page.wait_for_timeout(100)
