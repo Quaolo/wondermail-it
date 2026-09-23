@@ -33,13 +33,18 @@ Le password europee vanno bene per tutte le lingue della cartuccia europea, ital
 
 ## Cosa fa
 
-Di fianco al modulo ci sono due schede che si aprono con un clic: "Leggi una password" e "Accesso rapido".
-Nella prima incolli una password e il sito capisce di che regione è (Europa, America o Giappone), controlla
-che sia valida e carica la missione nel generatore, pronta da modificare; nella seconda trovi le scorciatoie
-per le missioni più cercate. Quando cominci a compilare la missione a mano si richiudono da sole, così resta
-spazio all'anteprima. Di fianco al
-modulo c'è l'anteprima della schermata "Info missione" del gioco, con committente, difficoltà e ricompensa.
-L'anteprima è sempre quella della password che stai per copiare.
+La pagina è divisa in tre parti. In alto c'è "Parti da", con quattro modi di cominciare: "Leggi una
+password", "Accesso rapido", "Cerca un premio" e "Sblocca un dungeon". Se ne apre uno alla volta. In "Leggi
+una password" incolli una password e il sito capisce di che regione è (Europa, America o Giappone), controlla
+che sia valida e carica la missione nel modulo; in "Accesso rapido" trovi le scorciatoie per le missioni più
+cercate.
+
+Sotto, a sinistra, c'è il modulo: qualunque sia il punto di partenza, lo puoi sempre ritoccare a mano. Quando
+un punto di partenza lo compila, i campi cambiati si illuminano e in cima compare da dove viene la missione,
+con "Annulla" per tornare a com'era prima e "Cambia" per riaprire il pannello. A destra resta sempre in vista
+il risultato: l'anteprima della schermata "Info missione" del gioco, con committente, difficoltà e
+ricompensa, la password da copiare e la mappa della stanza. L'anteprima è sempre quella della password che
+stai per copiare. Su telefono la password resta anche in una barra in fondo allo schermo.
 
 Le missioni con una stanza speciale (Memo tesoro, Lettere di sfida, covi dei ricercati, Sala Proibita e Sala
 d'Oro) mostrano anche la mappa della stanza, con quello che c'è dentro e le regole che valgono lì. Per 12 dei
@@ -57,7 +62,7 @@ uovo cambia specie ogni volta. I valori escono dagli elenchi del modulo, quindi 
 il gioco accetta.
 
 Altre cose comode: gli strumenti sono divisi per categoria (bacche, gomme, sfere, MT e così via) e si trovano
-anche cercando il nome inglese. Da una password puoi poi ricavare una missione gemella, al piano successivo o
+anche cercando il nome inglese. In "Varianti", sotto la password, puoi poi ricavare una missione gemella, al piano successivo o
 con un seme diverso. Per il gioco è una missione diversa, quindi puoi tenerle tutte e due nell'elenco.
 Se ne vuoi di più, "Serie di missioni" te ne prepara fino a otto in un colpo, quante ne tiene l'elenco del
 gioco: su piani di fila (saltando quelli che il gioco rifiuta) o con semi diversi. Si copiano una per una
@@ -83,7 +88,7 @@ la stanza 81 (due Gommaincanto, una Mascheradoro e un Fantascrigno a ogni visita
 =27YY RQ+4%WP CCCTTPTP21 P#%33FM =+66N
 ```
 
-Nella scheda "Cerca un premio", di fianco al modulo, scegli il premio che ti interessa e il sito ti dice
+In "Cerca un premio", nella barra in alto, scegli il premio che ti interessa e il sito ti dice
 in quale stanza e in quale dungeon si trova, con la probabilità per ogni Tecalusso; un clic prepara la
 missione. Nel generatore queste stanze sono raccolte a parte, sotto "Stanze senza tesoro". Alcune contengono dei
 Tecalusso e quello che c'è dentro dipende dal dungeon della missione: in Riserva Marina, per esempio, ci sono

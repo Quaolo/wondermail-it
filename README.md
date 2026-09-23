@@ -34,12 +34,17 @@ European passwords work for every language of the European cartridge.
 
 ## What it does
 
-Next to the form there are two cards that open with a click: "Read a password" and "Quick access". In the
-first one you paste a password and the site works out its region (Europe, America or Japan), checks that it
-is valid and loads the mission into the generator, ready to be edited. The second one has shortcuts for the
-most wanted missions. As soon as you start filling in the mission by hand they close by themselves, so the
-preview has room. The preview shows the game's "Job Summary" screen, with client, difficulty and reward, and
-it always matches the password you are about to copy.
+The page has three parts. At the top there is "Start from", with four ways to begin: "Read a password",
+"Quick access", "Find a reward" and "Unlock a dungeon". Only one is open at a time. In "Read a password" you
+paste a password and the site works out its region (Europe, America or Japan), checks that it is valid and
+loads the mission into the form; "Quick access" has shortcuts for the most wanted missions.
+
+Below, on the left, is the form: whatever you started from, you can always tweak it by hand. When a starting
+point fills it in, the fields that changed light up and the top of the form says where the mission comes
+from, with "Undo" to go back to how it was and "Change" to reopen that panel. On the right the result is
+always in view: a preview of the game's "Job Summary" screen, with client, difficulty and reward, the
+password to copy and the room map. The preview always matches the password you are about to copy. On a phone
+the password also stays in a bar at the bottom of the screen.
 
 Missions with a special room (Treasure Memos, Challenge Letters, outlaw hideouts, the Sealed Chamber and the
 Golden Chamber) also show a map of the room, with what is inside and the rules that apply there. For 12 of
@@ -58,7 +63,7 @@ species every time too. The values come from the form's own lists, so the passwo
 accepts.
 
 Other handy things: items are grouped by category (berries, Gummis, orbs, TMs and so on) and can also be found
-by their Italian name. From a password you can also make a twin mission, on the next floor or with a
+by their Italian name. In "Variants", under the password, you can also make a twin mission, on the next floor or with a
 different seed. For the game it is a different mission, so you can keep both in your list. If you want
 more, "Mission series" makes up to eight at once, as many as the game's job list holds: on consecutive floors
 (skipping the ones the game refuses) or with different seeds. You can copy them one by one or all together.
@@ -83,7 +88,7 @@ uses room 81 (two Wonder Gummis, a Golden Mask and a Wonder Chest on every visit
 =27YY RQ+4%WP CCCTTPTP21 P#%33FM =+66N
 ```
 
-In the "Find a reward" card, next to the form, pick the reward you want and the site tells you which room
+In "Find a reward", in the bar at the top, pick the reward you want and the site tells you which room
 and which dungeon it is in, with the odds for every Deluxe Box; one click sets up the mission. In the
 generator these rooms are listed separately, under "Rooms without treasure". Some of them have Deluxe Boxes,
 and what is inside depends on the mission's dungeon: in Marine Resort, for example, you get Gummis of every

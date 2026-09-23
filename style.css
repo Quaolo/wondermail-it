@@ -171,7 +171,7 @@ p { margin: 0; }
   transform: rotate(-6deg);
 }
 .brand-copy { display: grid; gap: 6px; min-width: 0; }
-.masthead-side { display: grid; justify-items: end; gap: 14px; }
+.masthead-side { display: grid; justify-items: end; gap: 14px; flex: 0 0 auto; }
 .masthead-tools { display: flex; gap: 10px; align-items: center; }
 
 .hero-team {
@@ -519,38 +519,72 @@ details > summary { cursor: pointer; font-weight: 700; }
 .reader .status { margin-top: 10px; }
 .reader .status:empty { min-height: 0; margin-top: 0; }
 
-/* Schede a comparsa del pannello laterale: "Leggi una password" e "Accesso rapido" */
-.window.tool-card { padding: 0; }
-.tool-summary {
+/* Barra "Parti da": i modi di cominciare, un pannello alla volta */
+.start-bar { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; padding: 14px 18px; }
+.start-head, .start-tabs { min-width: 0; max-width: 100%; }
+.start-head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+.start-title { font-size: 1.05rem; color: var(--gold); letter-spacing: .03em; margin: 0; }
+.start-tabs { display: flex; flex-wrap: wrap; gap: 8px; }
+.start-tab {
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-weight: 700;
+}
+.start-tab.active {
+  color: #2b1a00;
+  border-color: #fff1bf;
+  background: linear-gradient(180deg, #ffe27f, #f4b53a);
+  box-shadow: 0 3px 0 #a3680a;
+}
+.start-panel {
+  display: grid;
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 2px dashed var(--line);
+}
+.start-panel[hidden] { display: none; }
+.start-panel > .hint { margin: 0; }
+.start-panel .status:empty { display: none; }
+.panel-in { animation: toolOpen .2s ease both; }
+#readerCard .reader-row { max-width: 760px; }
+#farmCard, #unlockCard { max-width: 900px; }
+
+/* Riga dell'origine in cima al modulo: da dove viene il contenuto, con Annulla */
+.origin-bar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 14px 18px;
-  cursor: pointer;
-  list-style: none;
-  font-family: var(--font-pixel);
-  font-size: 1.05rem;
-  color: var(--gold);
-  letter-spacing: .03em;
+  gap: 8px 12px;
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  border: 1px solid var(--line-strong);
+  border-left: 4px solid var(--teal);
+  border-radius: 10px;
+  background: rgba(98, 227, 211, .08);
 }
-.tool-summary::-webkit-details-marker { display: none; }
-.tool-summary:hover, .tool-summary:focus-visible { color: #ffe9a8; }
-.tool-caret {
-  width: 0;
-  height: 0;
-  flex: 0 0 auto;
-  border-left: 7px solid currentColor;
-  border-top: 5px solid transparent;
-  border-bottom: 5px solid transparent;
-  transition: transform .15s ease;
+.origin-bar[hidden] { display: none; }
+.origin-text { margin: 0; font-size: .92rem; }
+.origin-actions { display: flex; gap: 6px; }
+.origin-actions button[hidden] { display: none; }
+.origin-close { padding: 6px 10px; line-height: 1; }
+.field-changed {
+  animation: fieldChanged 1.6s ease;
+  border-radius: 10px;
 }
-.tool-card[open] .tool-caret { transform: rotate(90deg); }
-.tool-body { padding: 0 18px 16px; display: grid; gap: 10px; }
-.tool-body .hint { margin: 0; }
-.tool-card .reader-row { flex-direction: column; }
-.tool-card .reader-row button { width: 100%; }
-.tool-card .status:empty { display: none; }
+@keyframes fieldChanged {
+  0%, 35% { box-shadow: 0 0 0 3px rgba(98, 227, 211, .75); background: rgba(98, 227, 211, .10); }
+  100% { box-shadow: 0 0 0 3px rgba(98, 227, 211, 0); background: transparent; }
+}
+
+/* Versione del gioco, accanto alla lingua: vale per tutto il sito */
+.region-picker { display: inline-flex; align-items: center; gap: 8px; margin: 0; font-weight: 600; }
+.region-label { font-size: .85rem; color: var(--muted); white-space: nowrap; }
+.region-picker select { width: auto; min-height: 40px; padding-top: 6px; padding-bottom: 6px; }
+
+/* Barra della password su telefono */
+.mobile-pass { display: none; }
+
 .farm-results { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
 .farm-row { display: grid; gap: 6px; }
 .farm-row-title { margin: 0; font-size: .9rem; color: var(--muted); }
@@ -584,8 +618,7 @@ details > summary { cursor: pointer; font-weight: 700; }
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
   gap: 18px;
-  /* Le due colonne finiscono insieme: l'ultima scheda si allunga invece di lasciare un buco. */
-  align-items: stretch;
+  align-items: start;
 }
 .form-panel { padding: 8px 22px; }
 .form-section { padding: 18px 0; }
@@ -603,11 +636,25 @@ details > summary { cursor: pointer; font-weight: 700; }
   font-size: 1rem;
   box-shadow: 0 2px 0 #a3680a;
 }
-.side-panel { display: flex; flex-direction: column; gap: 18px; }
-.side-panel > .result-card, .side-panel > .room-card { flex: 1 1 auto; }
-/* Se la scheda si allunga, «Missione simile» scende in fondo invece di lasciare un vuoto. */
-.side-panel > .result-card { display: flex; flex-direction: column; }
-.side-panel > .result-card .similar { margin-top: auto; }
+/* Colonna del risultato: resta sullo schermo mentre si scorre il modulo. */
+.side-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  position: sticky;
+  top: 12px;
+  max-height: calc(100vh - 24px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-strong) transparent;
+  padding-right: 2px;
+}
+.variants { margin-top: 12px; padding-top: 12px; border-top: 2px dashed var(--line); }
+.variants > summary { cursor: pointer; font-weight: 700; color: var(--muted); }
+.variants > summary:hover { color: var(--text); }
+.variants[open] > summary { margin-bottom: 4px; }
+.variants .similar { margin-top: 8px; padding-top: 0; border-top: 0; }
 .workbench > *, .side-panel > *, .page > * { min-width: 0; }
 
 .egg-help ul { margin: 10px 0; padding-left: 20px; color: var(--muted); }
@@ -1111,7 +1158,6 @@ textarea.password {
 .card-flash { animation: cardFlash .7s ease; }
 .value-flash { animation: valueFlash .7s ease; border-radius: 6px; }
 .job-turn { animation: jobTurn .45s ease; }
-.tool-card[open] .tool-body { animation: toolOpen .2s ease both; }
 button:active, .chip:active, .preset-btn:active { transform: translateY(1px) scale(.98); }
 button, .chip, .preset-btn { transition: transform .08s ease; }
 
@@ -1127,14 +1173,49 @@ button, .chip, .preset-btn { transition: transform .08s ease; }
 /* ------------------------------------------------------------------------
    Schermi piccoli
    ------------------------------------------------------------------------ */
+@media (min-width: 1101px) {
+  .masthead { flex-wrap: nowrap; }
+}
+@media (max-width: 1400px) {
+  .region-label { display: none; }
+}
+@media (max-width: 1100px) {
+  .masthead-side { justify-items: start; width: 100%; grid-template-columns: 1fr auto; align-items: center; }
+}
 @media (max-width: 980px) {
   .workbench { grid-template-columns: minmax(0, 1fr); }
   .credits-grid { grid-template-columns: minmax(0, 1fr); }
-  /* In colonna unica il pannello laterale si scioglie: sopra al modulo resta solo «Accesso rapido»,
-     le altre due schede scendono sotto, prima della guida. */
-  .side-panel { display: contents; }
-  #presetsCard { order: -1; }
-  #readerCard, #farmCard, #unlockCard { order: 1; }
+  /* In colonna unica: prima il modulo, poi il risultato; la password resta in una barra in fondo. */
+  .side-panel { position: static; max-height: none; overflow: visible; padding-right: 0; }
+  .page { padding-bottom: 86px; }
+  .mobile-pass {
+    position: fixed;
+    left: 10px;
+    right: 10px;
+    bottom: 10px;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border: 2px solid var(--win-edge);
+    border-radius: 12px;
+    background: linear-gradient(180deg, var(--win-top), var(--win-bottom));
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .5);
+    transition: transform .2s ease, opacity .2s ease;
+  }
+  .mobile-pass[hidden], .result-in-view .mobile-pass { transform: translateY(140%); opacity: 0; pointer-events: none; }
+  .mobile-pass code {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-family: var(--font-code);
+    font-size: .85rem;
+    color: #fff4c8;
+  }
+  .mobile-pass button { flex: 0 0 auto; padding: 8px 12px; }
 }
 @media (max-width: 720px) {
   .page { padding: 14px 12px 28px; gap: 14px; }
@@ -1147,8 +1228,13 @@ button, .chip, .preset-btn { transition: transform .08s ease; }
   .hero-team { gap: 8px; min-height: 0; }
   .hero-portrait { width: 42px; height: 42px; }
   .lang-picker-trigger { min-width: 0; padding: 7px 12px; }
-  .tool-summary { padding: 12px 14px; }
-  .tool-body { padding: 0 14px 14px; }
+  .start-bar { padding: 12px 14px; }
+  .start-tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; }
+  .start-tab { padding: 8px 10px; font-size: .92rem; }
+  .region-label { display: none; }
+  .masthead-tools { grid-column: 1 / -1; flex-wrap: wrap; }
+  .region-picker { flex: 1 1 140px; min-width: 0; }
+  .region-picker select { width: 100%; min-width: 0; }
   .masthead-tools { gap: 8px; }
   .repo-link { padding: 7px 10px; }
   .repo-link span { display: none; }

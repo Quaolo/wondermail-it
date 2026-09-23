@@ -1259,6 +1259,7 @@ function applyLanguage(nextLanguage, options = {}) {
   refreshMissionUi();
   updateOutputCards();
   Object.keys(statusMessages).forEach(renderStatus);
+  renderOriginBar();
 }
 
 // Icona indicativa a partire dal nome inglese ufficiale (le parole chiave sono in inglese).
@@ -1489,11 +1490,16 @@ function resolveInitialLanguage() {
   return getDefaultLanguage();
 }
 
-// Schede a comparsa del pannello laterale: si chiudono da sole quando si compila la missione a mano,
-// così «Info missione» resta in vista. Le aperture fatte dal codice (preset, lettura) non contano.
-const TOOL_CARD_IDS = ['readerCard', 'presetsCard'];
+// ---------------------------------------------------------------------------
+// Barra "Parti da": un solo pannello aperto alla volta
+// ---------------------------------------------------------------------------
 
-// Diventa vero mentre un preset o la lettura di una password riempiono il modulo da soli.
+// Leggi una password, Accesso rapido, Cerca un premio e Sblocca un dungeon sono modi diversi di cominciare:
+// ne serve uno alla volta. Compilando il modulo a mano il pannello aperto si chiude, così modulo e
+// risultato restano in vista.
+const START_PANEL_IDS = ['readerCard', 'presetsCard', 'farmCard', 'unlockCard'];
+
+// Diventa vero mentre un punto di partenza (preset, lettura, premio) riempie il modulo da solo.
 let fillingFormFromTool = false;
 
 function withToolCardsOpen(action) {
@@ -1505,13 +1511,177 @@ function withToolCardsOpen(action) {
   }
 }
 
+function isStartPanelOpen(id) {
+  const panel = document.getElementById(id);
+  return !!panel && !panel.hidden;
+}
+
+function openStartPanel(id) {
+  START_PANEL_IDS.forEach((panelId) => {
+    const panel = document.getElementById(panelId);
+    const tab = document.getElementById(`tab-${panelId}`);
+    const open = panelId === id;
+    if (panel) panel.hidden = !open;
+    if (tab) {
+      tab.setAttribute('aria-selected', open ? 'true' : 'false');
+      tab.classList.toggle('active', open);
+    }
+  });
+  const panel = document.getElementById(id);
+  if (panel) flashElement(panel, 'panel-in');
+  if (id === 'unlockCard' && !document.getElementById('unlockOutput')?.value) generateUnlockPassword(false);
+  if (id === 'readerCard') document.getElementById('importCode')?.focus({ preventScroll: true });
+}
+
+function closeStartPanels() {
+  START_PANEL_IDS.forEach((panelId) => {
+    const panel = document.getElementById(panelId);
+    const tab = document.getElementById(`tab-${panelId}`);
+    if (panel) panel.hidden = true;
+    if (tab) {
+      tab.setAttribute('aria-selected', 'false');
+      tab.classList.remove('active');
+    }
+  });
+}
+
+function toggleStartPanel(id) {
+  if (isStartPanelOpen(id)) closeStartPanels();
+  else openStartPanel(id);
+}
+
+// Modifica a mano del modulo: si chiude il pannello aperto e la riga dell'origine lo segnala.
 function closeToolCards(event) {
   if (fillingFormFromTool) return;
   const target = event && event.target;
-  TOOL_CARD_IDS.forEach((id) => {
-    const card = document.getElementById(id);
-    if (card && card.open && !(target && card.contains(target))) card.open = false;
+  if (target && (target.id === 'regionBox' || target.closest?.('#startBar'))) return;
+  closeStartPanels();
+  if (formOrigin && !formOrigin.edited) {
+    formOrigin.edited = true;
+    renderOriginBar();
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Da dove viene il contenuto del modulo, con Annulla
+// ---------------------------------------------------------------------------
+
+// { text, panel, before, changed, edited }: l'ultimo punto di partenza che ha compilato il modulo.
+let formOrigin = null;
+const FIELD_FLASH_MS = 1600;
+
+function snapshotForm() {
+  const form = document.getElementById('genForm');
+  const values = {};
+  if (form) {
+    form.querySelectorAll('input[id], select[id], textarea[id]').forEach((node) => {
+      values[node.id] = node.type === 'checkbox' ? node.checked : node.value;
+    });
+  }
+  return {
+    values,
+    code: document.getElementById('compactOutput')?.value || '',
+    region: getSelectedRegion()
+  };
+}
+
+// Campi del modulo cambiati tra due fotografie: il riquadro .field che li contiene, una volta sola.
+function changedFields(before, after) {
+  const fields = new Set();
+  Object.keys(after.values).forEach((id) => {
+    if (before.values[id] === after.values[id]) return;
+    const node = document.getElementById(id);
+    const field = node && node.closest('.field, .check-row, .field-pair > div');
+    if (field && field.offsetParent !== null) fields.add(field);
   });
+  return Array.from(fields);
+}
+
+// Quanti campi ha evidenziato l'ultimo punto di partenza (lo guardano anche i test).
+let lastHighlightCount = 0;
+
+function highlightFields(fields) {
+  lastHighlightCount = fields.length;
+  fields.forEach((field) => {
+    field.classList.remove('field-changed');
+    void field.offsetWidth;
+    field.classList.add('field-changed');
+    window.setTimeout(() => field.classList.remove('field-changed'), FIELD_FLASH_MS);
+  });
+}
+
+/**
+ * Esegue un punto di partenza che compila il modulo (preset, lettura, premio, missione simile):
+ * fotografa il modulo prima e dopo, evidenzia i campi cambiati e prepara «Annulla».
+ * `origin` = { text, panel }: funzione che scrive l'origine (si ritraduce) e pannello da riaprire con «Cambia».
+ */
+function runFormAction(origin, action) {
+  const before = snapshotForm();
+  const result = withToolCardsOpen(action);
+  const after = snapshotForm();
+  const fields = changedFields(before, after);
+  highlightFields(fields);
+  formOrigin = Object.assign({}, origin, { before, changed: fields.length, edited: false });
+  renderOriginBar();
+  return result;
+}
+
+function renderOriginBar() {
+  const bar = document.getElementById('originBar');
+  const text = document.getElementById('originText');
+  if (!bar || !text) return;
+  bar.hidden = !formOrigin;
+  if (!formOrigin) return;
+  let state;
+  if (formOrigin.edited) state = t('originEdited');
+  else if (formOrigin.changed === 1) state = t('originChangedOne');
+  else if (formOrigin.changed > 1) state = t('originChanged', { count: formOrigin.changed });
+  else state = t('originUnchanged');
+  text.textContent = `${formOrigin.text()} · ${state}`;
+  const undo = document.getElementById('originUndo');
+  if (undo) undo.hidden = formOrigin.edited || !formOrigin.before;
+  const change = document.getElementById('originChange');
+  if (change) change.hidden = !formOrigin.panel;
+}
+
+// Riporta il modulo com'era prima dell'ultimo punto di partenza. Se c'era una password valida si
+// ricarica quella (stessa missione, stesso seme); altrimenti si rimettono i valori dei campi.
+function undoFormAction() {
+  const before = formOrigin && formOrigin.before;
+  if (!before) return;
+  const decoded = before.code ? WMSParser.decodeWithRegion(before.code, before.region) : null;
+  withToolCardsOpen(() => {
+    setSelectedRegion(before.region);
+    if (decoded && decoded.crcOk) {
+      importDecodedStruct(decoded);
+    } else {
+      restoreFormValues(before.values);
+    }
+  });
+  const fields = changedFields(snapshotForm(), before);
+  formOrigin = null;
+  renderOriginBar();
+  generateCode();
+  highlightFields(fields);
+  setStatus('statusLine', 'originUndone', null, 'ok');
+}
+
+function restoreFormValues(values) {
+  const apply = (id) => {
+    const node = document.getElementById(id);
+    if (!node || !(id in values)) return;
+    if (node.type === 'checkbox') node.checked = values[id];
+    else node.value = values[id];
+  };
+  // Prima il tipo di missione, che decide sottotipi ed elenchi dei Pokémon, poi tutto il resto.
+  apply('missionTypeBox');
+  WMSGen.fillSubTypeList();
+  apply('missionSubTypeBox');
+  WMSGen.update();
+  Object.keys(values).forEach(apply);
+  WMSGen.update();
+  refreshMissionUi();
+  refreshSearchBoxSelections();
 }
 
 // Mela: ricompensa predefinita, così la combinazione iniziale è subito valida.
@@ -1602,7 +1772,7 @@ onReady(() => {
   document.querySelectorAll('.preset-btn').forEach((btn) => {
     btn.addEventListener('click', () => {
       requestPasswordAnimation();
-      applyPreset(btn.dataset.preset);
+      applyPresetFromButton(btn.dataset.preset);
     });
   });
 
@@ -1815,8 +1985,11 @@ function importCode() {
     return;
   }
 
-  const fullyMapped = withToolCardsOpen(() => importDecodedStruct(decoded));
   const values = () => ({ region: getRegionName(decoded.region) });
+  const fullyMapped = runFormAction({ text: () => t('originRead', values()), panel: 'readerCard' },
+    () => importDecodedStruct(decoded));
+  // Letta per intero: il pannello si richiude e restano in vista modulo e risultato.
+  if (fullyMapped) closeStartPanels();
   setStatus('importStatus', fullyMapped ? 'importCodeOk' : 'importCodePartial', values, fullyMapped ? 'ok' : 'warning');
   setStatus('statusLine', null);
   const card = document.getElementById('resultCard');
@@ -1949,6 +2122,15 @@ function randomizeEggMission() {
 
 function applyPreset(kind) {
   return withToolCardsOpen(() => applyPresetNow(kind));
+}
+
+// Preset scelto da «Accesso rapido»: come applyPreset, con origine e «Annulla».
+function applyPresetFromButton(kind) {
+  const button = document.querySelector(`.preset-btn[data-preset="${kind}"]`);
+  return runFormAction({
+    text: () => t('originPreset', { name: button ? button.textContent.trim() : kind }),
+    panel: 'presetsCard'
+  }, () => applyPresetNow(kind));
 }
 
 function applyPresetNow(kind) {
@@ -2735,7 +2917,12 @@ function renderFarmResults() {
 // Prepara la missione: Memo tesoro nella stanza scelta, con il dungeon che contiene il premio.
 function useFarmCombo(roomId, dungeonId, floorNumber = 1) {
   requestPasswordAnimation();
-  withToolCardsOpen(() => {
+  runFormAction({
+    text: () => (dungeonId === null
+      ? t('originFarmRoom', { room: roomId })
+      : t('originFarm', { room: roomId, dungeon: getDungeonName(dungeonId), floor: floorNumber })),
+    panel: 'farmCard'
+  }, () => {
     applyPresetNow('memo');
     const dungeonSelect = document.getElementById('dungeonBox');
     if (dungeonId !== null && dungeonSelect) {
@@ -2750,6 +2937,7 @@ function useFarmCombo(roomId, dungeonId, floorNumber = 1) {
     WMSGen.update();
     refreshMissionUi();
   });
+  closeStartPanels();
   generateCode();
 }
 
@@ -2853,7 +3041,7 @@ function showUnlockFromPassword(decoded) {
   setSelectByValue(select, decoded.struct.dungeon);
   unlockSeed = decoded.struct.flavorText;
   generateUnlockPassword(false);
-  card.open = true;
+  openStartPanel('unlockCard');
   flashElement(card, 'card-flash');
   return true;
 }
@@ -2889,16 +3077,32 @@ function freezeOutputMission() {
 
 function makeSimilarMission(kind) {
   const nextFloor = kind === 'nextFloor';
+  let created = null;
+  runFormAction({
+    text: () => (nextFloor
+      ? t('originSimilarFloor', { floor: created ? created.struct.floor : '' })
+      : t('originSimilarSeed', { seed: created ? created.struct.flavorText : '' })),
+    panel: null
+  }, () => {
+    created = makeSimilarMissionNow(nextFloor);
+  });
+  if (!created) {
+    formOrigin = null;
+    renderOriginBar();
+  }
+}
+
+function makeSimilarMissionNow(nextFloor) {
   const struct = freezeOutputMission();
   if (!struct) {
     setStatus('statusLine', 'similarUnavailable', null, 'error');
-    return;
+    return null;
   }
   if (nextFloor) {
     const next = isEggGlitchStruct(struct) ? null : getNextAllowedFloor(struct.dungeon, struct.floor);
     if (next === null) {
       setStatus('statusLine', 'similarLastFloor', null, 'warning');
-      return;
+      return null;
     }
     document.getElementById('floor').value = String(next);
   } else {
@@ -2915,6 +3119,7 @@ function makeSimilarMission(kind) {
     const values = { floor: created.struct.floor, seed: created.struct.flavorText };
     setStatus('statusLine', nextFloor ? 'similarDoneFloor' : 'similarDoneSeed', values, 'ok');
   }
+  return created;
 }
 
 // Primo piano valido sopra quello indicato: salta i piani che il gioco rifiuta. null se non ce ne sono.
@@ -3043,6 +3248,29 @@ function updateOutputCards() {
   renderJobCard();
   renderRoomCard();
   renderMissionSeries();
+  updateMobilePass();
+}
+
+// Telefono: la password resta raggiungibile in fondo allo schermo mentre si compila il modulo.
+function updateMobilePass() {
+  const bar = document.getElementById('mobilePass');
+  const code = document.getElementById('mobilePassCode');
+  const compact = document.getElementById('compactOutput')?.value || '';
+  if (!bar || !code) return;
+  bar.hidden = !compact;
+  code.textContent = compact ? prettyMailString(compact, 2, 7).replace(/\n/g, ' ') : '';
+}
+
+async function copyMobilePass(button) {
+  const text = prettyMailString(document.getElementById('compactOutput')?.value || '', 2, 7);
+  if (!text.trim()) return;
+  try {
+    await navigator.clipboard.writeText(text);
+    button.textContent = t('copiedShort');
+  } catch (e) {
+    button.textContent = t('copyFailedShort');
+  }
+  window.setTimeout(() => { button.textContent = t('copy'); }, 1400);
 }
 
 // Etichetta dello strumento obiettivo: nei Memo tesoro è il tesoro, nella Sala Proibita l'oggetto da trovare.
@@ -3075,9 +3303,30 @@ onReady(() => {
     makeSimilarMission('newSeed');
   });
   populateUnlockDungeons();
-  document.getElementById('unlockCard')?.addEventListener('toggle', (event) => {
-    if (event.target.open && !document.getElementById('unlockOutput')?.value) generateUnlockPassword(false);
+  document.querySelectorAll('.start-tab').forEach((tab) => {
+    tab.addEventListener('click', () => toggleStartPanel(tab.dataset.panel));
   });
+  document.getElementById('originUndo')?.addEventListener('click', undoFormAction);
+  document.getElementById('originChange')?.addEventListener('click', () => {
+    if (!formOrigin || !formOrigin.panel) return;
+    openStartPanel(formOrigin.panel);
+    document.getElementById('startBar')?.scrollIntoView({ behavior: wantsLessMotion() ? 'auto' : 'smooth', block: 'start' });
+  });
+  document.getElementById('originClose')?.addEventListener('click', () => {
+    formOrigin = null;
+    renderOriginBar();
+  });
+  document.getElementById('mobilePassCopy')?.addEventListener('click', (event) => copyMobilePass(event.currentTarget));
+  document.getElementById('mobilePassShow')?.addEventListener('click', () => {
+    document.getElementById('resultCard')?.scrollIntoView({ behavior: wantsLessMotion() ? 'auto' : 'smooth', block: 'start' });
+  });
+  // La barra sparisce quando la scheda della password è già sullo schermo.
+  const resultCard = document.getElementById('resultCard');
+  if (resultCard && 'IntersectionObserver' in window) {
+    new IntersectionObserver((entries) => {
+      entries.forEach((entry) => document.body.classList.toggle('result-in-view', entry.isIntersecting));
+    }).observe(resultCard);
+  }
   document.getElementById('unlockDungeonBox')?.addEventListener('change', () => generateUnlockPassword(false));
   document.getElementById('unlockNew')?.addEventListener('click', () => generateUnlockPassword(true));
   document.getElementById('unlockCopy')?.addEventListener('click', copyUnlockPassword);

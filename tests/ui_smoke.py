@@ -54,10 +54,14 @@ def serve() -> tuple[socketserver.TCPServer, str]:
 
 
 def open_tool_card(page, card_id: str) -> None:
-    """Apre una scheda a comparsa del pannello laterale (Leggi una password, Accesso rapido)."""
-    if not page.evaluate(f"document.getElementById('{card_id}').open"):
-        page.click(f"#{card_id} .tool-summary")
+    """Apre un pannello della barra «Parti da» (Leggi una password, Accesso rapido, ...)."""
+    if page.evaluate(f"document.getElementById('{card_id}').hidden"):
+        page.click(f"#tab-{card_id}")
         page.wait_for_timeout(80)
+
+
+def panel_open(page, card_id: str) -> bool:
+    return not page.evaluate(f"document.getElementById('{card_id}').hidden")
 
 
 def set_select(page, element_id: str, value) -> None:
@@ -130,12 +134,22 @@ def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
         check(page.is_visible("#repoLink") and "Quaolo/wondermail-it" in (page.get_attribute("#repoLink", "href") or ""),
               "pulsante del repository verso Quaolo/wondermail-it")
         check("wondermail_pdm" in page.inner_html(".origin"), "riferimento al progetto originale in fondo alla pagina")
-        check(not page.evaluate("document.getElementById('readerCard').open || document.getElementById('presetsCard').open"),
-              "«Leggi una password» e «Accesso rapido» partono chiuse")
-        check(page.evaluate("document.querySelector('.form-panel').getBoundingClientRect().top <= document.getElementById('readerCard').getBoundingClientRect().top + 1"),
-              "il modulo della missione parte in cima, non sotto le due schede")
-        check(page.evaluate("document.querySelector('.form-panel').getBoundingClientRect().bottom === document.querySelector('.side-panel').getBoundingClientRect().bottom"),
-              "le due colonne finiscono alla stessa altezza")
+        check(not any(panel_open(page, p) for p in ("readerCard", "presetsCard", "farmCard", "unlockCard")),
+              "i pannelli di «Parti da» partono chiusi")
+        check(page.evaluate("document.getElementById('startBar').getBoundingClientRect().bottom <= document.querySelector('.form-panel').getBoundingClientRect().top"),
+              "la barra «Parti da» sta sopra al modulo")
+        check(page.evaluate("getComputedStyle(document.querySelector('.side-panel')).position") == "sticky",
+              "la colonna del risultato resta sullo schermo")
+        check(page.evaluate("!!document.querySelector('.masthead #regionBox')"), "la versione del gioco sta in testata")
+        tall = page.evaluate("document.querySelector('.form-panel').getBoundingClientRect().height")
+        open_tool_card(page, "farmCard")
+        open_tool_card(page, "presetsCard")
+        check(not panel_open(page, "farmCard") and panel_open(page, "presetsCard"), "un solo pannello aperto alla volta")
+        check(abs(page.evaluate("document.querySelector('.form-panel').getBoundingClientRect().height") - tall) < 2,
+              "aprire un pannello non allunga il modulo")
+        page.click("#tab-presetsCard")
+        check(not panel_open(page, "presetsCard"), "cliccando di nuovo la scheda il pannello si chiude")
+        page.evaluate("document.getElementById('variantsBox').open = true")
         if not offline:
             before_team = page.evaluate("[...document.querySelectorAll('#heroTeam img')].map(i => i.dataset.monId)")
             page.click("#heroTeam")
@@ -147,8 +161,8 @@ def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
         check(page.is_visible("#importCode"), "la scheda «Leggi una password» si apre al clic")
         set_input(page, "floor", 2)
         page.wait_for_timeout(120)
-        check(not page.evaluate("document.getElementById('readerCard').open"),
-              "compilando la missione a mano la scheda si richiude")
+        check(not panel_open(page, "readerCard"),
+              "compilando la missione a mano il pannello si richiude")
         set_input(page, "floor", 1)
         code, status = generate(page)
         check(code.count("\n") == 1 and len(code.replace("\n", "").replace(" ", "")) == 34, f"password generata subito: {code!r}")
@@ -281,6 +295,35 @@ def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
         generate(page)
         check(page.is_hidden("#seriesResult"), "la serie sparisce quando cambia la password")
 
+        # Origine del modulo e Annulla
+        set_select(page, "missionTypeBox", 0)
+        set_select(page, "dungeonBox", 1)
+        set_input(page, "floor", 3)
+        generate(page)
+        before_code = page.input_value("#compactOutput")
+        open_tool_card(page, "presetsCard")
+        page.click('.preset-btn[data-preset="memo"]')
+        page.wait_for_timeout(250)
+        origin = page.text_content("#originText")
+        check(page.is_visible("#originBar") and "Memo tesoro" in origin and "cambiat" in origin,
+              f"la riga dell'origine dice da dove viene il modulo: {origin!r}")
+        check(page.evaluate("lastHighlightCount") > 0, "i campi cambiati si evidenziano")
+        page.click("#originUndo")
+        page.wait_for_timeout(250)
+        check(page.input_value("#compactOutput") == before_code and page.is_hidden("#originBar"),
+              "«Annulla» riporta la password di prima")
+        page.click('.preset-btn[data-preset="memo"]')
+        page.wait_for_timeout(200)
+        set_input(page, "floor", 2)
+        page.wait_for_timeout(150)
+        check("a mano" in page.text_content("#originText") and page.is_hidden("#originUndo"),
+              "dopo una modifica a mano l'origine lo dice e «Annulla» sparisce")
+        page.click("#originChange")
+        page.wait_for_timeout(100)
+        check(panel_open(page, "presetsCard"), "«Cambia» riapre il pannello da cui si era partiti")
+        page.click("#originClose")
+        check(page.is_hidden("#originBar"), "la riga dell'origine si può chiudere")
+
         # Sblocca un dungeon: ricetta di Lai-brary (Lettera di sfida di Jirachi, piano 0, stanza 149)
         open_tool_card(page, "unlockCard")
         set_select(page, "unlockDungeonBox", 67)
@@ -307,11 +350,11 @@ def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
         check(na == 67, "cambiando regione la password si rifà per l'America")
         set_select(page, "regionBox", "eu")
         eu_code = page.input_value("#unlockOutput")
-        page.evaluate("document.getElementById('unlockCard').open = false")
+        page.evaluate("closeStartPanels()")
         open_tool_card(page, "readerCard")
         page.fill("#importCode", eu_code)
         page.click("#importCodeBtn")
-        check("Cratere Oscuro" in page.text_content("#importStatus") and page.evaluate("document.getElementById('unlockCard').open"),
+        check("Cratere Oscuro" in page.text_content("#importStatus") and panel_open(page, "unlockCard"),
               "una password di sblocco letta apre la sua scheda")
 
         # Preset di Mewtwo: la password si aggiorna da sola
@@ -454,6 +497,8 @@ def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
             const hit = lists.flat().find(([item]) => !elsewhere.has(item) && item !== WMSkyFixedRooms.boxes.fallback);
             return hit[0];
         }""")
+        check(not panel_open(page, "farmCard"), "scelta la combinazione il pannello si richiude")
+        open_tool_card(page, "farmCard")
         set_select(page, "farmRewardBox", secret_item)
         page.wait_for_timeout(150)
         rows = page.eval_on_selector_all("#farmResults .farm-row-title", "els => els.map(e => e.textContent)")
@@ -516,11 +561,19 @@ def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
         open_tool_card(page, "presetsCard")
         page.click('.preset-btn[data-preset="memo"]')
         page.wait_for_timeout(200)
-        # Su telefono sopra la missione resta solo «Accesso rapido»
-        tops = page.evaluate("""Object.fromEntries(['presetsCard', 'genForm', 'readerCard', 'farmCard']
+        # Su telefono: «Parti da», poi il modulo, poi il risultato; la password resta in fondo allo schermo
+        tops = page.evaluate("""Object.fromEntries(['startBar', 'genForm', 'jobCard', 'resultCard']
             .map((id) => [id, Math.round(document.getElementById(id).getBoundingClientRect().top + window.scrollY)]))""")
-        check(tops["presetsCard"] < tops["genForm"] < tops["readerCard"] and tops["genForm"] < tops["farmCard"],
-              f"su telefono il modulo sta subito sotto «Accesso rapido»: {tops}")
+        check(tops["startBar"] < tops["genForm"] < tops["jobCard"] < tops["resultCard"],
+              f"su telefono l'ordine è Parti da, modulo, risultato: {tops}")
+        page.evaluate("window.scrollTo(0, 0)")
+        page.wait_for_timeout(250)
+        check(page.evaluate("getComputedStyle(document.getElementById('mobilePass')).opacity") == "1"
+              and len(page.text_content("#mobilePassCode").replace(" ", "")) == 34,
+              "su telefono la password è nella barra in fondo")
+        page.click("#mobilePassShow")
+        page.wait_for_timeout(700)
+        check(page.evaluate("document.body.classList.contains('result-in-view')"), "«Dettagli» porta alla scheda della password")
 
         overflow = page.evaluate("document.documentElement.scrollWidth - document.documentElement.clientWidth")
         check(overflow <= 0, f"nessuno scorrimento orizzontale su telefono ({overflow}px)")

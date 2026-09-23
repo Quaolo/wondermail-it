@@ -47,6 +47,14 @@
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C6.48 2 2 6.58 2 12.24c0 4.53 2.87 8.37 6.84 9.73.5.09.66-.22.66-.49 0-.24-.01-1.03-.01-1.87-2.78.62-3.37-1.21-3.37-1.21-.46-1.18-1.11-1.49-1.11-1.49-.91-.64.07-.63.07-.63 1 .07 1.53 1.06 1.53 1.06.9 1.58 2.36 1.12 2.93.86.09-.67.35-1.12.63-1.38-2.22-.26-4.55-1.14-4.55-5.06 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.31.1-2.72 0 0 .85-.28 2.78 1.05A9.45 9.45 0 0 1 12 6.84c.85 0 1.71.12 2.51.35 1.92-1.33 2.77-1.05 2.77-1.05.55 1.41.21 2.46.11 2.72.64.72 1.03 1.63 1.03 2.75 0 3.93-2.33 4.8-4.56 5.05.36.32.68.94.68 1.9 0 1.37-.01 2.47-.01 2.81 0 .27.17.59.67.49A10.18 10.18 0 0 0 22 12.24C22 6.58 17.52 2 12 2Z"></path></svg>
             <span>GitHub</span>
           </a>
+          <label class="region-picker" for="regionBox" data-i18n-title="regionHint">
+            <span class="region-label" data-i18n="regionLabelField">Versione del gioco</span>
+            <select name="regionBox" id="regionBox" form="genForm">
+              <option value="eu" data-i18n="region_eu_option">Europe</option>
+              <option value="na" data-i18n="region_na_option">North America</option>
+              <option value="jp" data-i18n="region_jp_option">Giappone</option>
+            </select>
+          </label>
           <div class="lang-picker" id="languagePicker">
             <button type="button" class="lang-picker-trigger" id="languagePickerToggle" aria-expanded="false" aria-controls="languagePickerMenu">
               <img id="languagePickerFlag" class="lang-picker-flag" src="assets/flags/it.svg" alt="">
@@ -60,8 +68,88 @@
       </div>
     </header>
 
+    <section class="window start-bar" id="startBar" aria-labelledby="startTitle">
+      <div class="start-head">
+        <h2 class="start-title" id="startTitle" data-i18n="startTitle">Parti da</h2>
+        <div class="start-tabs" role="tablist" aria-labelledby="startTitle">
+        <button type="button" class="start-tab" role="tab" id="tab-readerCard" data-panel="readerCard" aria-controls="readerCard" aria-selected="false"><span data-i18n="importCodeLabel">Leggi una password</span></button>
+        <button type="button" class="start-tab" role="tab" id="tab-presetsCard" data-panel="presetsCard" aria-controls="presetsCard" aria-selected="false"><span data-i18n="quickAccess">Accesso rapido</span></button>
+        <button type="button" class="start-tab" role="tab" id="tab-farmCard" data-panel="farmCard" aria-controls="farmCard" aria-selected="false"><span data-i18n="farmTitle">Cerca un premio</span></button>
+        <button type="button" class="start-tab" role="tab" id="tab-unlockCard" data-panel="unlockCard" aria-controls="unlockCard" aria-selected="false"><span data-i18n="unlockTitle">Sblocca un dungeon</span></button>
+        </div>
+      </div>
+      <section class="start-panel" id="readerCard" role="tabpanel" aria-labelledby="tab-readerCard" hidden>
+            <p class="hint" data-i18n="importCodeHint"></p>
+            <div class="reader-row">
+              <label class="sr-only" for="importCode" data-i18n="importCodeLabel">Leggi una password</label>
+              <textarea id="importCode" rows="2" spellcheck="false" autocapitalize="characters" placeholder="Incolla qui una password..." data-i18n-placeholder="importCodePlaceholder"></textarea>
+              <button type="button" id="importCodeBtn" class="primary" data-i18n="importCodeButton">Leggi</button>
+            </div>
+            <p class="status" id="importStatus" role="status" aria-live="polite"></p>
+      </section>
+      <section class="start-panel" id="presetsCard" role="tabpanel" aria-labelledby="tab-presetsCard" hidden>
+            <p class="hint" data-i18n="presetsHint"></p>
+            <div class="preset-grid">
+              <button type="button" class="preset-btn" data-preset="standard"><img class="preset-icon" src="assets/item-icons-pmdo/Apple-Red.png" alt=""><span data-i18n="presetStandard">Missione normale a caso</span></button>
+              <button type="button" class="preset-btn" data-preset="memo"><img class="preset-icon" src="assets/item-icons-pmdo/Box-Blue.png" alt=""><span data-i18n="presetMemo">Memo tesoro</span></button>
+              <button type="button" class="preset-btn" data-preset="egg"><img class="preset-icon" src="assets/item-icons-pmdo/Egg-Sea.png" alt=""><span data-i18n="presetEgg">Missione uovo (glitch)</span></button>
+              <button type="button" class="preset-btn" data-preset="mewtwo" data-boss="150"><img class="preset-icon preset-portrait" data-portrait="150" alt=""><span class="preset-label">Mewtwo</span></button>
+              <button type="button" class="preset-btn" data-preset="entei" data-boss="271"><img class="preset-icon preset-portrait" data-portrait="271" alt=""><span class="preset-label">Entei</span></button>
+              <button type="button" class="preset-btn" data-preset="raikou" data-boss="270"><img class="preset-icon preset-portrait" data-portrait="270" alt=""><span class="preset-label">Raikou</span></button>
+              <button type="button" class="preset-btn" data-preset="suicune" data-boss="272"><img class="preset-icon preset-portrait" data-portrait="272" alt=""><span class="preset-label">Suicune</span></button>
+              <button type="button" class="preset-btn" data-preset="outlaw"><img class="preset-icon preset-portrait" data-portrait="81" alt=""><span data-i18n="presetOutlaw">Ricercato a caso</span></button>
+              <button type="button" class="preset-btn" data-preset="surprise"><img class="preset-icon" src="assets/item-icons/Explorers-of-Sky---Star-icon.png" alt=""><span data-i18n="presetSurprise">Missione a sorpresa</span></button>
+            </div>
+      </section>
+      <section class="start-panel" id="farmCard" role="tabpanel" aria-labelledby="tab-farmCard" hidden>
+            <p class="hint" data-i18n="farmHint"></p>
+            <div class="field">
+              <label class="sr-only" for="farmRewardSearch" data-i18n="farmRewardLabel">Premio</label>
+              <div class="field-control-group">
+                <input id="farmRewardSearch" type="search" class="searchbox" placeholder="Cerca un premio..." data-i18n-placeholder="farmRewardPlaceholder" data-target="farmRewardBox">
+                <select id="farmRewardBox"></select>
+              </div>
+            </div>
+            <ul class="farm-results" id="farmResults"></ul>
+      </section>
+      <section class="start-panel" id="unlockCard" role="tabpanel" aria-labelledby="tab-unlockCard" hidden>
+            <p class="hint" data-i18n="unlockHint"></p>
+            <div class="field">
+              <label for="unlockDungeonBox" data-i18n="unlockDungeonLabel">Dungeon da sbloccare</label>
+              <select id="unlockDungeonBox"></select>
+            </div>
+            <p class="hint unlock-note" id="unlockNote" hidden></p>
+            <label class="sr-only" for="unlockOutput" data-i18n="resultTitle">Password</label>
+            <textarea id="unlockOutput" class="password" rows="2" readonly></textarea>
+            <div class="result-actions">
+              <button type="button" id="unlockCopy" class="primary" data-i18n="copy">Copia</button>
+              <button type="button" id="unlockNew" data-i18n="unlockNewPassword">Un'altra password</button>
+            </div>
+            <p id="unlockStatus" class="status" role="status"></p>
+            <div class="unlock-help">
+              <p class="field-label" data-i18n="unlockHelpTitle">Prima di usarla</p>
+              <ul>
+                <li data-i18n="unlockHelp1"></li>
+                <li data-i18n="unlockHelp2"></li>
+                <li data-i18n="unlockHelp3"></li>
+                <li data-i18n="unlockHelp4"></li>
+                <li class="unlock-danger" data-i18n="unlockHelp5"></li>
+              </ul>
+              <p><a href="https://laioxy.github.io/wondermail/anydungeon/" target="_blank" rel="noopener" data-i18n="unlockHelpLink">Pagina dello scopritore del glitch (Lai-brary)</a></p>
+            </div>
+      </section>
+    </section>
+
     <div class="workbench">
       <form id="genForm" class="window form-panel" autocomplete="off">
+        <div class="origin-bar" id="originBar" role="status" hidden>
+          <p class="origin-text" id="originText"></p>
+          <div class="origin-actions">
+            <button type="button" id="originUndo" class="ghost" data-i18n="originUndo">Annulla</button>
+            <button type="button" id="originChange" class="ghost" data-i18n="originChange">Cambia</button>
+            <button type="button" id="originClose" class="ghost origin-close" data-i18n-aria="originClose" data-i18n-title="originClose" aria-label="Chiudi">×</button>
+          </div>
+        </div>
         <section class="form-section" id="missionSectionCard">
           <h2 class="section-title"><span class="step">1</span><span data-i18n="missionSection">Missione</span></h2>
           <div class="field" id="missionTypeField">
@@ -204,15 +292,6 @@
             <div class="entity-preview" id="rewardItemPreview"></div>
           </div>
 
-          <div class="field" id="regionField">
-            <label for="regionBox" data-i18n="regionLabelField">Versione del gioco</label>
-            <select name="regionBox" id="regionBox">
-              <option value="eu" data-i18n="region_eu_option">Europa (anche italiano)</option>
-              <option value="na" data-i18n="region_na_option">Nord America e Australia</option>
-              <option value="jp" data-i18n="region_jp_option">Giappone</option>
-            </select>
-            <p class="hint" data-i18n="regionHint"></p>
-          </div>
         </section>
 
         <section class="form-section hidden" id="eggHelpCard">
@@ -231,94 +310,6 @@
       </form>
 
       <aside class="side-panel">
-        <details class="window tool-card" id="readerCard">
-          <summary class="tool-summary">
-            <span class="tool-title" id="readerTitle" data-i18n="importCodeLabel">Leggi una password</span>
-            <span class="tool-caret" aria-hidden="true"></span>
-          </summary>
-          <div class="tool-body">
-            <p class="hint" data-i18n="importCodeHint"></p>
-            <div class="reader-row">
-              <label class="sr-only" for="importCode" data-i18n="importCodeLabel">Leggi una password</label>
-              <textarea id="importCode" rows="2" spellcheck="false" autocapitalize="characters" placeholder="Incolla qui una password..." data-i18n-placeholder="importCodePlaceholder"></textarea>
-              <button type="button" id="importCodeBtn" class="primary" data-i18n="importCodeButton">Leggi</button>
-            </div>
-            <p class="status" id="importStatus" role="status" aria-live="polite"></p>
-          </div>
-        </details>
-
-        <details class="window tool-card" id="presetsCard">
-          <summary class="tool-summary">
-            <span class="tool-title" id="presetsTitle" data-i18n="quickAccess">Accesso rapido</span>
-            <span class="tool-caret" aria-hidden="true"></span>
-          </summary>
-          <div class="tool-body">
-            <p class="hint" data-i18n="presetsHint"></p>
-            <div class="preset-grid">
-              <button type="button" class="preset-btn" data-preset="standard"><img class="preset-icon" src="assets/item-icons-pmdo/Apple-Red.png" alt=""><span data-i18n="presetStandard">Missione normale a caso</span></button>
-              <button type="button" class="preset-btn" data-preset="memo"><img class="preset-icon" src="assets/item-icons-pmdo/Box-Blue.png" alt=""><span data-i18n="presetMemo">Memo tesoro</span></button>
-              <button type="button" class="preset-btn" data-preset="egg"><img class="preset-icon" src="assets/item-icons-pmdo/Egg-Sea.png" alt=""><span data-i18n="presetEgg">Missione uovo (glitch)</span></button>
-              <button type="button" class="preset-btn" data-preset="mewtwo" data-boss="150"><img class="preset-icon preset-portrait" data-portrait="150" alt=""><span class="preset-label">Mewtwo</span></button>
-              <button type="button" class="preset-btn" data-preset="entei" data-boss="271"><img class="preset-icon preset-portrait" data-portrait="271" alt=""><span class="preset-label">Entei</span></button>
-              <button type="button" class="preset-btn" data-preset="raikou" data-boss="270"><img class="preset-icon preset-portrait" data-portrait="270" alt=""><span class="preset-label">Raikou</span></button>
-              <button type="button" class="preset-btn" data-preset="suicune" data-boss="272"><img class="preset-icon preset-portrait" data-portrait="272" alt=""><span class="preset-label">Suicune</span></button>
-              <button type="button" class="preset-btn" data-preset="outlaw"><img class="preset-icon preset-portrait" data-portrait="81" alt=""><span data-i18n="presetOutlaw">Ricercato a caso</span></button>
-              <button type="button" class="preset-btn" data-preset="surprise"><img class="preset-icon" src="assets/item-icons/Explorers-of-Sky---Star-icon.png" alt=""><span data-i18n="presetSurprise">Missione a sorpresa</span></button>
-            </div>
-          </div>
-        </details>
-
-        <details class="window tool-card" id="farmCard">
-          <summary class="tool-summary">
-            <span class="tool-title" id="farmTitle" data-i18n="farmTitle">Cerca un premio</span>
-            <span class="tool-caret" aria-hidden="true"></span>
-          </summary>
-          <div class="tool-body">
-            <p class="hint" data-i18n="farmHint"></p>
-            <div class="field">
-              <label class="sr-only" for="farmRewardSearch" data-i18n="farmRewardLabel">Premio</label>
-              <div class="field-control-group">
-                <input id="farmRewardSearch" type="search" class="searchbox" placeholder="Cerca un premio..." data-i18n-placeholder="farmRewardPlaceholder" data-target="farmRewardBox">
-                <select id="farmRewardBox"></select>
-              </div>
-            </div>
-            <ul class="farm-results" id="farmResults"></ul>
-          </div>
-        </details>
-
-        <details class="window tool-card" id="unlockCard">
-          <summary class="tool-summary">
-            <span class="tool-title" data-i18n="unlockTitle">Sblocca un dungeon</span>
-            <span class="tool-caret" aria-hidden="true"></span>
-          </summary>
-          <div class="tool-body">
-            <p class="hint" data-i18n="unlockHint"></p>
-            <div class="field">
-              <label for="unlockDungeonBox" data-i18n="unlockDungeonLabel">Dungeon da sbloccare</label>
-              <select id="unlockDungeonBox"></select>
-            </div>
-            <p class="hint unlock-note" id="unlockNote" hidden></p>
-            <label class="sr-only" for="unlockOutput" data-i18n="resultTitle">Password</label>
-            <textarea id="unlockOutput" class="password" rows="2" readonly></textarea>
-            <div class="result-actions">
-              <button type="button" id="unlockCopy" class="primary" data-i18n="copy">Copia</button>
-              <button type="button" id="unlockNew" data-i18n="unlockNewPassword">Un'altra password</button>
-            </div>
-            <p id="unlockStatus" class="status" role="status"></p>
-            <div class="unlock-help">
-              <p class="field-label" data-i18n="unlockHelpTitle">Prima di usarla</p>
-              <ul>
-                <li data-i18n="unlockHelp1"></li>
-                <li data-i18n="unlockHelp2"></li>
-                <li data-i18n="unlockHelp3"></li>
-                <li data-i18n="unlockHelp4"></li>
-                <li class="unlock-danger" data-i18n="unlockHelp5"></li>
-              </ul>
-              <p><a href="https://laioxy.github.io/wondermail/anydungeon/" target="_blank" rel="noopener" data-i18n="unlockHelpLink">Pagina dello scopritore del glitch (Lai-brary)</a></p>
-            </div>
-          </div>
-        </details>
-
         <section class="window job-card" id="jobCard" aria-live="polite">
           <div class="job-head">
             <span class="portrait-frame job-portrait-frame"><img id="jobPortrait" alt=""></span>
@@ -348,6 +339,8 @@
             <input id="compactOutput" type="text" readonly>
           </div>
           <p id="statusLine" class="status" role="status"></p>
+          <details class="variants" id="variantsBox">
+            <summary data-i18n="variantsTitle">Varianti: missione simile e serie</summary>
           <div class="similar">
             <p class="field-label" data-i18n="similarTitle">Missione simile</p>
             <div class="similar-actions">
@@ -375,6 +368,7 @@
               <p id="seriesStatus" class="status" role="status"></p>
             </div>
           </div>
+          </details>
         </section>
 
         <section class="window room-card hidden" id="roomCard" aria-labelledby="roomTitle">
@@ -462,6 +456,11 @@
       </details>
       <p class="origin" data-i18n-html="originText"></p>
     </footer>
+    <div class="mobile-pass" id="mobilePass" hidden>
+      <code id="mobilePassCode"></code>
+      <button type="button" id="mobilePassCopy" class="primary" data-i18n="copy">Copia</button>
+      <button type="button" id="mobilePassShow" class="ghost" data-i18n="mobilePassShow">Dettagli</button>
+    </div>
   </main>
 </body>
 </html>
