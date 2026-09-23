@@ -121,8 +121,11 @@ def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
         page.wait_for_timeout(800)
         label = " (senza rete)" if offline else ""
 
-        # Avvio in italiano, con la nuova disposizione
-        check(page.evaluate("document.documentElement.lang") == "it", f"lingua predefinita italiana{label}")
+        # Avvio in inglese, poi si passa all'italiano per il resto dei controlli
+        check(page.evaluate("document.documentElement.lang") == "en", f"lingua predefinita inglese{label}")
+        check("Wonder Mail S" in page.title(), f"titolo inglese all'avvio: {page.title()}")
+        page.evaluate("applyLanguage('it')")
+        check(page.evaluate("document.documentElement.lang") == "it", f"passaggio all'italiano{label}")
         check("Missioni Speciali C" in page.title(), f"titolo italiano: {page.title()}")
         check(page.is_visible("#repoLink") and "Quaolo/wondermail-it" in (page.get_attribute("#repoLink", "href") or ""),
               "pulsante del repository verso Quaolo/wondermail-it")

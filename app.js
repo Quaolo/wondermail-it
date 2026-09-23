@@ -8,7 +8,7 @@ function onReady(fn) {
 }
 
 const LANGUAGE_STORAGE_KEY = 'wmsky-language';
-const DEFAULT_LANGUAGE = 'it';
+const DEFAULT_LANGUAGE = 'en';
 const FALLBACK_LANGUAGE = 'en';
 let currentLanguage = DEFAULT_LANGUAGE;
 
@@ -565,7 +565,7 @@ function getLocalizedDungeonName(dungeonId, fallbackLabel) {
 
 // Nome nell'altra lingua, per poter cercare sia "Grotta Marina" sia "Beach Cave".
 function getOtherLanguageText(list, id) {
-  const other = getCurrentLanguage() === FALLBACK_LANGUAGE ? DEFAULT_LANGUAGE : FALLBACK_LANGUAGE;
+  const other = getCurrentLanguage() === 'en' ? 'it' : 'en';
   const text = getGameText(other);
   return (text && text[list] && text[list][id]) || '';
 }

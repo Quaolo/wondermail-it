@@ -1,172 +1,171 @@
 # Missioni Speciali C
 
-Un generatore di password per le Missioni Speciali C di *Pokémon Mystery Dungeon: Esploratori del Cielo*
-(le Wonder Mail S della versione inglese). È in italiano e in inglese, e i nomi, le frasi e le mappe delle
-stanze vengono direttamente dal gioco.
+**English** · [Italiano](README.it.md)
 
-Sono partito da [wondermail_pdm](https://github.com/RedCoal27/wondermail_pdm) di RedCoal27. Strada facendo
-il progetto è cambiato parecchio: l'interfaccia è nuova, i dati sono estratti dal gioco invece che copiati
-dalle wiki e alcuni errori del vecchio generatore sono stati corretti.
+> This project started because I wanted a Wonder Mail S generator entirely in Italian, with the names and
+> sentences of the Italian version of the game: *Missioni Speciali C* is what Wonder Mail S is called there.
+> It then grew into a full generator in two languages, and the site now opens in English so that anyone can
+> use it. Italian is one click away.
 
-## Come si usa
+A password generator for Wonder Mail S in *Pokémon Mystery Dungeon: Explorers of Sky* (*Missioni Speciali C*
+in the Italian version). It works in English and Italian, and the names, sentences and room maps come
+straight from the game.
 
-Il sito è online qui: <https://quaolo.github.io/wondermail-it/>.
+I started from RedCoal27's [wondermail_pdm](https://github.com/RedCoal27/wondermail_pdm). Along the way the
+project changed a lot: the interface is new, the data is extracted from the game instead of being copied from
+wikis, and a few bugs of the old generator have been fixed.
 
-In locale non c'è niente da installare, basta aprire `index.html` nel browser. Se preferisci un piccolo server locale:
+## How to use it
+
+The site is online here: <https://quaolo.github.io/wondermail-it/>.
+
+To run it locally there is nothing to install, just open `index.html` in a browser. If you prefer a small
+local server:
 
 ```
 python -m http.server 8000
 ```
 
-e poi vai su <http://localhost:8000>. La lingua si cambia dal menu in alto a destra, oppure aggiungendo
-`?lang=en` all'indirizzo. Funziona anche offline, tranne i ritratti dei Pokémon che vengono caricati da
-PMDCollab.
+and then go to <http://localhost:8000>. The language can be changed from the menu in the top right corner
+(your choice is remembered) or by adding `?lang=it` or `?lang=en` to the address. Everything works offline
+except the Pokémon portraits, which are loaded from PMDCollab.
 
-Le password europee vanno bene per tutte le lingue della cartuccia europea, italiano compreso.
+European passwords work for every language of the European cartridge.
 
-## Cosa fa
+## What it does
 
-Di fianco al modulo ci sono due schede che si aprono con un clic: "Leggi una password" e "Accesso rapido".
-Nella prima incolli una password e il sito capisce di che regione è (Europa, America o Giappone), controlla
-che sia valida e carica la missione nel generatore, pronta da modificare; nella seconda trovi le scorciatoie
-per le missioni più cercate. Quando cominci a compilare la missione a mano si richiudono da sole, così resta
-spazio all'anteprima. Di fianco al
-modulo c'è l'anteprima della schermata "Info missione" del gioco, con committente, difficoltà e ricompensa.
-L'anteprima è sempre quella della password che stai per copiare.
+Next to the form there are two cards that open with a click: "Read a password" and "Quick access". In the
+first one you paste a password and the site works out its region (Europe, America or Japan), checks that it
+is valid and loads the mission into the generator, ready to be edited. The second one has shortcuts for the
+most wanted missions. As soon as you start filling in the mission by hand they close by themselves, so the
+preview has room. The preview shows the game's "Job Summary" screen, with client, difficulty and reward, and
+it always matches the password you are about to copy.
 
-Le missioni con una stanza speciale (Memo tesoro, Lettere di sfida, covi dei ricercati, Sala Proibita e Sala
-d'Oro) mostrano anche la mappa della stanza, con quello che c'è dentro e le regole che valgono lì. Per 12 dei
-30 Memo tesoro c'è anche una missione vera presa dalla wiki giapponese Grovyle, convertita per la tua regione.
+Missions with a special room (Treasure Memos, Challenge Letters, outlaw hideouts, the Sealed Chamber and the
+Golden Chamber) also show a map of the room, with what is inside and the rules that apply there. For 12 of
+the 30 Treasure Memos there is also a real mission taken from the Japanese Grovyle wiki, converted for your
+region.
 
-I quattro Pokémon in alto sono solo decorativi: se ci clicchi sopra cambia la squadra.
+The four Pokémon at the top are just decoration: click them and the team changes.
 
-Qualche animazione accompagna il lavoro: la password si scrive da sola, le finestre entrano con calma e i
-valori di "Info missione" si accendono quando cambiano. Se hai chiesto al sistema di ridurre le animazioni,
-il sito le toglie.
+A few animations go along with the work: the password types itself, the windows slide in gently and the
+values in "Job Summary" light up when they change. If you asked your system to reduce motion, the site turns
+them off.
 
-Negli accessi rapidi tre pulsanti tirano fuori una missione diversa a ogni clic: una missione normale, un
-arresto e una a sorpresa (può uscire di tutto, anche una Lettera di sfida o un Memo tesoro). Anche la missione
-uovo cambia specie ogni volta. I valori escono dagli elenchi del modulo, quindi la password è sempre una che
-il gioco accetta.
+In "Quick access" three buttons give you a different mission on every click: a normal mission, an outlaw and
+a surprise one (anything can come out, even a Challenge Letter or a Treasure Memo). The egg mission changes
+species every time too. The values come from the form's own lists, so the password is always one the game
+accepts.
 
-Altre cose comode: gli strumenti sono divisi per categoria (bacche, gomme, sfere, MT e così via) e si trovano
-anche cercando il nome inglese. Da una password puoi poi ricavare una missione gemella, al piano successivo o
-con un seme diverso. Per il gioco è una missione diversa, quindi puoi tenerle tutte e due nell'elenco.
+Other handy things: items are grouped by category (berries, Gummis, orbs, TMs and so on) and can also be found
+by their Italian name. From a password you can also make a twin mission, on the next floor or with a
+different seed. For the game it is a different mission, so you can keep both in your list.
 
-## Missioni che non finiscono mai
+## Missions that never end
 
-Il gioco non controlla quale stanza è scritta in un Memo tesoro. Se nella stanza non c'è il tesoro della
-missione, la missione non si completa e rimane nell'elenco, e ogni volta che torni nel dungeon ritrovi i premi
-della stanza. Il caso più conosciuto è questa password europea, al primo piano della Grotta Marina, che usa
-la stanza 81 (due Gommaincanto, una Mascheradoro e un Fantascrigno a ogni visita):
+The game does not check which room a Treasure Memo points to. If the mission treasure is not in the room, the
+mission can't be completed and stays in your list, and every time you go back to the dungeon you find the
+room's rewards again. The best known case is this European password, on the first floor of Beach Cave, which
+uses room 81 (two Wonder Gummis, a Golden Mask and a Wonder Chest on every visit):
 
 ```
 =27YY RQ+4%WP CCCTTPTP21 P#%33FM =+66N
 ```
 
-Nella scheda "Cerca un premio", di fianco al modulo, scegli il premio che ti interessa e il sito ti dice
-in quale stanza e in quale dungeon si trova, con la probabilità per ogni Tecalusso; un clic prepara la
-missione. Nel generatore queste stanze sono raccolte a parte, sotto "Stanze senza tesoro". Alcune contengono dei
-Tecalusso e quello che c'è dentro dipende dal dungeon della missione: in Riserva Marina, per esempio, ci sono
-Gomme di tutti i tipi. La tabella completa è nella scheda della stanza. Il trucco è stato provato dai giocatori
-con la stanza 81; per le altre l'ho ricavato dal codice del gioco e non l'ho ancora verificato.
+In the "Find a reward" card, next to the form, pick the reward you want and the site tells you which room
+and which dungeon it is in, with the odds for every Deluxe Box; one click sets up the mission. In the
+generator these rooms are listed separately, under "Rooms without treasure". Some of them have Deluxe Boxes,
+and what is inside depends on the mission's dungeon: in Marine Resort, for example, you get Gummis of every
+kind. The full table is in the room card. Players have tested the trick with room 81; for the other rooms I
+worked it out from the game code and haven't tried it yet.
 
-## Cosa cambia rispetto al generatore originale
+## What changed from the original generator
 
-- Le Lettere di sfida usano le stanze 150-154 e i covi 160-164, come nel gioco. Prima erano 145-160 e 161-165.
-- I Memo tesoro sono fatti come quelli veri: committente e bersaglio coincidono, nel Tecalusso c'è lo
-  strumento obiettivo e la ricompensa si sceglie. Prima erano bloccati su Turtwig e sulla Mela.
-- Quando legge una password controlla il checksum. Prima passava anche una stringa a caso su nove.
-- Riconosce le password giapponesi.
-- Il terzo membro delle Lettere di sfida e il complice dei covi finiscono davvero nella password.
-- Arbok maschio non diventa più Nidoran♂, e un valore fuori limite viene segnalato invece di dare una
-  password sbagliata.
-- L'elenco dei committenti segue le regole del gioco. Il vecchio generatore lasciava fuori una ventina di
-  Pokémon che il gioco accetta, tra cui Nidoqueen, Typhlosion, Treecko, Mudkip e Chimchar. Quelli che il gioco
-  rifiuta come committenti, come Grovyle o i leggendari, si possono comunque scegliere come bersaglio. Quando il
-  committente si unisce alla squadra, i Pokémon troppo grandi come Onix non compaiono.
-- Prima di dare la password il sito rifà i controlli del gioco (`IsMissionValid`): dungeon, piano (compresi
-  i piani che il gioco non accetta, di solito quello del capo), Pokémon, strumento obiettivo e ricompensa.
-  Così una password rifiutata dal gioco te la segnala subito, con il motivo.
-- Il numero di piani di ogni dungeon e la difficoltà delle missioni vengono dalle tabelle del gioco. Prima
-  erano raccolte dalla community e in 17 dungeon su 54 il limite dei piani era sbagliato: per esempio nella
-  Giungla del Mistero si fermava al 14 invece che al 29, e nelle Pianure Saetta arrivava al 20 invece che al 10.
-- Le icone degli strumenti seguono i dati del gioco: due strumenti che lì hanno la stessa icona ce l'hanno
-  anche qui, per esempio quasi tutti i semi o i nastri da tenere.
+- Challenge Letters use rooms 150-154 and hideouts 160-164, as in the game. They used to be 145-160 and
+  161-165.
+- Treasure Memos work like the real ones: client and target are the same Pokémon, the target item is in the
+  Deluxe Box and you choose the reward. They used to be locked to Turtwig and the Apple.
+- When reading a password the checksum is verified. Before, about one random string in nine got through.
+- Japanese passwords are recognized.
+- The third member of Challenge Letters and the accomplice in hideouts really end up in the password.
+- A male Arbok no longer turns into Nidoran♂, and an out of range value is reported instead of giving a wrong
+  password.
+- The list of clients follows the game's rules. The old generator left out about twenty Pokémon the game
+  accepts, including Nidoqueen, Typhlosion, Treecko, Mudkip and Chimchar. Those the game refuses as clients,
+  like Grovyle or the legendaries, can still be picked as targets. When the client joins your team, Pokémon
+  that are too big, like Onix, are not offered.
+- Before giving you the password the site repeats the game's own checks (`IsMissionValid`): dungeon, floor
+  (including the floors the game refuses, usually the boss floor), Pokémon, target item and reward. So a
+  password the game would reject is flagged right away, with the reason.
+- The number of floors of each dungeon and the mission difficulty come from the game's tables. They used to
+  be collected by the community, and in 17 dungeons out of 54 the floor limit was wrong: in Mystery Jungle,
+  for example, it stopped at 14 instead of 29, and in Amp Plains it went up to 20 instead of 10.
+- Item icons follow the game data: two items that share an icon in the game share it here too, for example
+  almost all seeds or the held ribbons.
 
-## Dati del gioco
+## Game data
 
-I file in `data/` si rigenerano con `tools/estrai_dati.py`, che legge la decompilazione
-[pret/pmd-sky](https://github.com/pret/pmd-sky). Non serve la ROM, basta Python 3.9 o più recente:
+The files in `data/` are rebuilt by `tools/estrai_dati.py`, which reads the
+[pret/pmd-sky](https://github.com/pret/pmd-sky) decompilation. No ROM is needed, just Python 3.9 or newer:
 
 ```
 python tools/estrai_dati.py
-python tools/estrai_dati.py --pmd-sky ../pmd-sky   # se hai già una copia di pret/pmd-sky
+python tools/estrai_dati.py --pmd-sky ../pmd-sky   # if you already have a copy of pret/pmd-sky
 ```
 
-Lo script scarica i file da un commit preciso e controlla che non siano cambiati. Da lì ricava i testi
-(nomi, descrizioni, frasi di "Info missione"), i dati degli strumenti e dei Pokémon (numero del Pokédex per i
-ritratti, chi può fare da committente), i piani e la difficoltà di ogni dungeon e le stanze speciali.
+The script downloads the files from a fixed commit and checks that they haven't changed. From there it gets
+the texts (names, descriptions, "Job Summary" sentences), item and Pokémon data (Pokédex number for the
+portraits, who can be a client), the floors and difficulty of every dungeon and the special rooms.
 
-Il resto del codice è JavaScript senza librerie: `lm.js` codifica e decodifica le password,
-`lmgenerate.js` descrive i tipi di missione, `app.js` e `stanze.js` gestiscono la pagina e le mappe.
-In `config.js` si può mettere l'indirizzo del repository per mostrare il pulsante GitHub in alto.
+The rest of the code is plain JavaScript with no libraries: `lm.js` encodes and decodes passwords,
+`lmgenerate.js` describes the mission types, `app.js` and `stanze.js` run the page and the maps. In
+`config.js` you can set the repository address to show the GitHub button at the top. The code and its
+comments are in Italian, which is where the project comes from.
 
-## Test
+## Tests
 
 ```
-node --test                  # codifica, stanze, Pokémon, piani, validità, premi, icone e traduzioni (Node 18+)
-python tests/ui_smoke.py     # prova la pagina in un browser vero, serve Playwright
+node --test                  # encoding, rooms, Pokémon, floors, validity, rewards, icons and translations (Node 18+)
+python tests/ui_smoke.py     # tries the page in a real browser, needs Playwright
 ```
 
-Il test della codifica confronta 60 password con quelle del generatore originale e sono identiche.
+The encoding test compares 60 passwords with those of the original generator and they are identical.
 
-## Cose ancora da verificare
+## Still to be checked
 
-- I tipi di ricompensa dal 4 al 6 hanno ancora i nomi del generatore originale, che non tornano del tutto con
-  quello che si sa del gioco.
-- Una password valida può comunque essere rifiutata dal gioco se il dungeon non è ancora sbloccato, se la
-  missione è già nell'elenco o se l'elenco è pieno: quelli dipendono dal salvataggio e il sito non li conosce.
-- Le stanze senza tesoro diverse dalla 81 vanno provate in gioco.
-- Il gioco dice quali strumenti condividono la stessa icona, ma non di che colore sono. Per alcuni i colori
-  li ho scelti io e potrebbero non corrispondere.
+- Reward types 4 to 6 still have the names from the original generator, which don't fully match what is known
+  about the game.
+- A valid password can still be refused by the game if the dungeon isn't unlocked yet, if the mission is
+  already in your list or if the list is full: those depend on your save file and the site can't know them.
+- The rooms without treasure other than 81 still have to be tried in the game.
+- The game says which items share the same icon, but not what color they are. For some of them I picked the
+  colors myself and they might not match.
 
-## Crediti
+## Credits
 
-- [wondermail_pdm](https://github.com/RedCoal27/wondermail_pdm) di RedCoal27, il progetto da cui sono partito
-- il vecchio generatore di Wonder Mail S, di pubblico dominio, e la versione francese di
+- RedCoal27's [wondermail_pdm](https://github.com/RedCoal27/wondermail_pdm), the project I started from
+- the old Wonder Mail S generator, in the public domain, and the French version by
   [SombrAbsol](https://github.com/SombrAbsol/SombrAbsol.github.io)
-- [pret/pmd-sky](https://github.com/pret/pmd-sky) per i file e le tabelle del gioco
-- [SkyTemple](https://github.com/SkyTemple/skytemple-files) per il formato dei testi e delle stanze
-- [pmdsky-debug](https://github.com/UsernameFodder/pmdsky-debug) per la documentazione delle funzioni del gioco
-- [Lai-brary](https://laioxy.github.io/wondermail/) per la tabella giapponese e il glitch dell'uovo
-- la [wiki Grovyle](https://wiki.grovyle.net/pokedun3/) per i Memo tesoro reali
-- [Pokémon Central Wiki](https://wiki.pokemoncentral.it/) per i nomi italiani delle forme alternative
-- [PMDCollab SpriteCollab](https://sprites.pmdcollab.org/) per i ritratti (di Spike Chunsoft e degli artisti
-  della community, CC BY-NC 4.0), che vengono caricati da GitHub e non sono inclusi qui
-- la [wiki di PMDO](https://wiki.pmdo.pmdcollab.org/) e i file di [PMDO](https://github.com/audinowho/DumpAsset)
-  per le icone degli strumenti
-- [Pixelify Sans](https://github.com/eifetx/Pixelify-Sans) per il carattere dei titoli (SIL Open Font License)
+- [pret/pmd-sky](https://github.com/pret/pmd-sky) for the game files and tables
+- [SkyTemple](https://github.com/SkyTemple/skytemple-files) for the text and room formats
+- [pmdsky-debug](https://github.com/UsernameFodder/pmdsky-debug) for the documentation of the game functions
+- [Lai-brary](https://laioxy.github.io/wondermail/) for the Japanese table and the egg glitch
+- the [Grovyle wiki](https://wiki.grovyle.net/pokedun3/) for the real Treasure Memos
+- [Pokémon Central Wiki](https://wiki.pokemoncentral.it/) for the Italian names of alternate forms
+- [PMDCollab SpriteCollab](https://sprites.pmdcollab.org/) for the portraits (by Spike Chunsoft and community
+  artists, CC BY-NC 4.0), which are loaded from GitHub and not included here
+- the [PMDO wiki](https://wiki.pmdo.pmdcollab.org/) and the [PMDO](https://github.com/audinowho/DumpAsset)
+  files for the item icons
+- [Pixelify Sans](https://github.com/eifetx/Pixelify-Sans) for the title font (SIL Open Font License)
 
-Ho sviluppato il progetto insieme a Claude.
+I developed this project together with Claude.
 
-## Licenza
+## License
 
-Il codice è rilasciato con licenza MIT, il testo completo è in [LICENSE](LICENSE). La licenza non copre i testi
-e i dati del gioco in `data/`, che restano dei rispettivi proprietari, né le risorse di altri elencate qui
-sopra, che hanno le loro licenze. Il codice di partenza di wondermail_pdm è stato pubblicato da RedCoal27 senza
-una licenza esplicita; il generatore di Wonder Mail S da cui derivano entrambi i progetti è di pubblico dominio.
+The code is released under the MIT license, the full text is in [LICENSE](LICENSE). The license does not
+cover the game texts and data in `data/`, which belong to their owners, nor the third party resources listed
+above, which have their own licenses. The starting code of wondermail_pdm was published by RedCoal27 without
+an explicit license; the Wonder Mail S generator both projects come from is in the public domain.
 
-*Pokémon Mystery Dungeon: Esploratori del Cielo* © Nintendo, Creatures, GAME FREAK, Spike Chunsoft. È un
-progetto amatoriale, senza scopo di lucro e non affiliato ai titolari dei diritti.
-
-## English
-
-A Wonder Mail S password generator and reader for *Pokémon Mystery Dungeon: Explorers of Sky*, in Italian and
-English. Names, job summary sentences and room maps come straight from the game data, extracted from the
-[pret/pmd-sky](https://github.com/pret/pmd-sky) decompilation (no ROM needed). It started from RedCoal27's
-[wondermail_pdm](https://github.com/RedCoal27/wondermail_pdm) and now has a new interface, Japanese password
-support, CRC checks, maps of every special room and a few fixes. It also covers the "endless" Treasure Memo
-trick: a memo pointing to a room without the mission treasure never ends and can be replayed for the room's
-rewards. Open `index.html` to use it and run `node --test` for the tests. Developed together with Claude.
-The code is MIT licensed; game texts and data belong to their owners.
+*Pokémon Mystery Dungeon: Explorers of Sky* © Nintendo, Creatures, GAME FREAK, Spike Chunsoft. This is a fan
+project, non-profit and not affiliated with the rights holders.
