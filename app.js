@@ -3251,6 +3251,17 @@ function updateOutputCards() {
   updateMobilePass();
 }
 
+// Colonna del risultato fissa: se entra nello schermo resta in cima, altrimenti scorre con la pagina e si
+// ferma quando se ne vede la fine (niente barra di scorrimento interna).
+const SIDE_PANEL_GAP = 12;
+
+function updateSidePanelSticky() {
+  const panel = document.querySelector('.side-panel');
+  if (!panel) return;
+  const room = window.innerHeight - panel.offsetHeight - SIDE_PANEL_GAP;
+  panel.style.top = `${Math.min(SIDE_PANEL_GAP, room)}px`;
+}
+
 // Telefono: la password resta raggiungibile in fondo allo schermo mentre si compila il modulo.
 function updateMobilePass() {
   const bar = document.getElementById('mobilePass');
@@ -3320,6 +3331,10 @@ onReady(() => {
   document.getElementById('mobilePassShow')?.addEventListener('click', () => {
     document.getElementById('resultCard')?.scrollIntoView({ behavior: wantsLessMotion() ? 'auto' : 'smooth', block: 'start' });
   });
+  updateSidePanelSticky();
+  window.addEventListener('resize', updateSidePanelSticky);
+  const sidePanel = document.querySelector('.side-panel');
+  if (sidePanel && 'ResizeObserver' in window) new ResizeObserver(updateSidePanelSticky).observe(sidePanel);
   // La barra sparisce quando la scheda della password è già sullo schermo.
   const resultCard = document.getElementById('resultCard');
   if (resultCard && 'IntersectionObserver' in window) {

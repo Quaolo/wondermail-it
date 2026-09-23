@@ -43,7 +43,7 @@ Below, on the left, is the form: whatever you started from, you can always tweak
 point fills it in, the fields that changed light up and the top of the form says where the mission comes
 from, with "Undo" to go back to how it was and "Change" to reopen that panel. On the right the result is
 always in view: a preview of the game's "Job Summary" screen, with client, difficulty and reward, the
-password to copy and the room map. The preview always matches the password you are about to copy. On a phone
+password to copy; the room map sits below the form. The preview always matches the password you are about to copy. On a phone
 the password also stays in a bar at the bottom of the screen.
 
 Missions with a special room (Treasure Memos, Challenge Letters, outlaw hideouts, the Sealed Chamber and the

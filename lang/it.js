@@ -83,7 +83,7 @@ window.WMSkyRegisterLocale('it', {
     itemSearchPlaceholder: 'Cerca uno strumento (anche col nome inglese)...',
     female: 'Femmina',
 
-    rewardSection: 'Ricompensa e regione',
+    rewardSection: 'Ricompensa',
     rewardTypeLabel: 'Tipo di ricompensa',
     rewardItemLabel: 'Strumento ricompensa',
     rewardSearchPlaceholder: 'Cerca uno strumento...',

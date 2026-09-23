@@ -43,8 +43,8 @@ Sotto, a sinistra, c'è il modulo: qualunque sia il punto di partenza, lo puoi s
 un punto di partenza lo compila, i campi cambiati si illuminano e in cima compare da dove viene la missione,
 con "Annulla" per tornare a com'era prima e "Cambia" per riaprire il pannello. A destra resta sempre in vista
 il risultato: l'anteprima della schermata "Info missione" del gioco, con committente, difficoltà e
-ricompensa, la password da copiare e la mappa della stanza. L'anteprima è sempre quella della password che
-stai per copiare. Su telefono la password resta anche in una barra in fondo allo schermo.
+ricompensa, e la password da copiare; la mappa della stanza sta sotto al modulo. L'anteprima è sempre quella
+della password che stai per copiare. Su telefono la password resta anche in una barra in fondo allo schermo.
 
 Le missioni con una stanza speciale (Memo tesoro, Lettere di sfida, covi dei ricercati, Sala Proibita e Sala
 d'Oro) mostrano anche la mappa della stanza, con quello che c'è dentro e le regole che valgono lì. Per 12 dei

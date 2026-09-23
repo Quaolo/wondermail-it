@@ -140,6 +140,10 @@ def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
               "la barra «Parti da» sta sopra al modulo")
         check(page.evaluate("getComputedStyle(document.querySelector('.side-panel')).position") == "sticky",
               "la colonna del risultato resta sullo schermo")
+        check(page.evaluate("getComputedStyle(document.querySelector('.side-panel')).overflowY") == "visible",
+              "la colonna del risultato non ha una barra di scorrimento propria")
+        check(page.evaluate("!!document.querySelector('.work-main #roomCard') && !document.querySelector('.side-panel #roomCard')"),
+              "la stanza sta sotto al modulo, non nella colonna del risultato")
         check(page.evaluate("!!document.querySelector('.masthead #regionBox')"), "la versione del gioco sta in testata")
         tall = page.evaluate("document.querySelector('.form-panel').getBoundingClientRect().height")
         open_tool_card(page, "farmCard")
@@ -562,9 +566,9 @@ def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
         page.click('.preset-btn[data-preset="memo"]')
         page.wait_for_timeout(200)
         # Su telefono: «Parti da», poi il modulo, poi il risultato; la password resta in fondo allo schermo
-        tops = page.evaluate("""Object.fromEntries(['startBar', 'genForm', 'jobCard', 'resultCard']
+        tops = page.evaluate("""Object.fromEntries(['startBar', 'genForm', 'jobCard', 'resultCard', 'roomCard']
             .map((id) => [id, Math.round(document.getElementById(id).getBoundingClientRect().top + window.scrollY)]))""")
-        check(tops["startBar"] < tops["genForm"] < tops["jobCard"] < tops["resultCard"],
+        check(tops["startBar"] < tops["genForm"] < tops["jobCard"] < tops["resultCard"] < tops["roomCard"],
               f"su telefono l'ordine è Parti da, modulo, risultato: {tops}")
         page.evaluate("window.scrollTo(0, 0)")
         page.wait_for_timeout(250)

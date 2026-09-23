@@ -83,7 +83,7 @@ window.WMSkyRegisterLocale('en', {
     itemSearchPlaceholder: 'Search for an item (Italian names work too)...',
     female: 'Female',
 
-    rewardSection: 'Reward and region',
+    rewardSection: 'Reward',
     rewardTypeLabel: 'Reward type',
     rewardItemLabel: 'Reward item',
     rewardSearchPlaceholder: 'Search for an item...',

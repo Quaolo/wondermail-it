@@ -141,6 +141,7 @@
     </section>
 
     <div class="workbench">
+      <div class="work-main">
       <form id="genForm" class="window form-panel" autocomplete="off">
         <div class="origin-bar" id="originBar" role="status" hidden>
           <p class="origin-text" id="originText"></p>
@@ -269,7 +270,7 @@
         </section>
 
         <section class="form-section" id="rewardSectionCard">
-          <h2 class="section-title"><span class="step">3</span><span data-i18n="rewardSection">Ricompensa e regione</span></h2>
+          <h2 class="section-title"><span class="step">3</span><span data-i18n="rewardSection">Ricompensa</span></h2>
           <div class="field" id="rewardTypeField">
             <label for="rewardTypeBox" data-i18n="rewardTypeLabel">Tipo di ricompensa</label>
             <select name="rewardTypeBox" id="rewardTypeBox">
@@ -308,6 +309,34 @@
           </div>
         </section>
       </form>
+        <section class="window room-card hidden" id="roomCard" aria-labelledby="roomTitle">
+          <div class="room-head">
+            <div>
+              <p class="eyebrow" id="roomKind"></p>
+              <h2 id="roomTitle"></h2>
+            </div>
+            <span class="badge" id="roomBadge"></span>
+          </div>
+          <div class="room-map" id="roomMap"></div>
+          <ul class="room-legend" id="roomLegend"></ul>
+          <p class="room-warning" id="roomWarning" hidden></p>
+          <ul class="room-facts" id="roomFacts"></ul>
+          <details class="room-boxes" id="roomBoxes" hidden>
+            <summary data-i18n="roomBoxesTitle">Cosa c'è nei Tecalusso in ogni dungeon</summary>
+            <p class="hint" data-i18n="roomBoxesHint"></p>
+            <ul class="room-boxes-list" id="roomBoxesList"></ul>
+          </details>
+          <div class="room-example" id="roomExample" hidden>
+            <p id="roomExampleText"></p>
+            <div class="room-example-row">
+              <code id="roomExampleCode"></code>
+              <button type="button" id="roomExampleCopy" data-i18n="copy">Copia</button>
+            </div>
+            <p class="status" id="roomExampleStatus" role="status"></p>
+          </div>
+          <p class="hint room-source" data-i18n="roomSource"></p>
+        </section>
+      </div>
 
       <aside class="side-panel">
         <section class="window job-card" id="jobCard" aria-live="polite">
@@ -371,33 +400,6 @@
           </details>
         </section>
 
-        <section class="window room-card hidden" id="roomCard" aria-labelledby="roomTitle">
-          <div class="room-head">
-            <div>
-              <p class="eyebrow" id="roomKind"></p>
-              <h2 id="roomTitle"></h2>
-            </div>
-            <span class="badge" id="roomBadge"></span>
-          </div>
-          <div class="room-map" id="roomMap"></div>
-          <ul class="room-legend" id="roomLegend"></ul>
-          <p class="room-warning" id="roomWarning" hidden></p>
-          <ul class="room-facts" id="roomFacts"></ul>
-          <details class="room-boxes" id="roomBoxes" hidden>
-            <summary data-i18n="roomBoxesTitle">Cosa c'è nei Tecalusso in ogni dungeon</summary>
-            <p class="hint" data-i18n="roomBoxesHint"></p>
-            <ul class="room-boxes-list" id="roomBoxesList"></ul>
-          </details>
-          <div class="room-example" id="roomExample" hidden>
-            <p id="roomExampleText"></p>
-            <div class="room-example-row">
-              <code id="roomExampleCode"></code>
-              <button type="button" id="roomExampleCopy" data-i18n="copy">Copia</button>
-            </div>
-            <p class="status" id="roomExampleStatus" role="status"></p>
-          </div>
-          <p class="hint room-source" data-i18n="roomSource"></p>
-        </section>
       </aside>
     </div>
 
