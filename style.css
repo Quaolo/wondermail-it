@@ -1188,6 +1188,8 @@ textarea.password {
   background: rgba(5, 12, 36, .35);
 }
 .floor-stat-label { color: var(--muted); font-size: .8rem; }
+/* Valori dei riquadri con il carattere dei titoli, come i numeri nelle finestre del gioco. */
+.floor-stat strong { font-family: var(--font-pixel); font-size: 1.1rem; font-weight: 600; letter-spacing: .02em; }
 .floor-stat-off strong { color: var(--dim); font-weight: 600; }
 .floor-sub { margin: 16px 0 8px; color: var(--gold); }
 .floor-mons {
