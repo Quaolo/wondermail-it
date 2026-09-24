@@ -115,6 +115,15 @@
               <label class="check-row board-check"><input type="checkbox" id="boardNoRestrictions"> <span data-i18n="boardNoRestrictions">Togli le restrizioni</span></label>
               <button type="button" id="boardNewDay" class="primary" data-i18n="boardNewDay">Nuovo giorno</button>
             </div>
+            <details class="board-dungeons" id="boardDungeons">
+              <summary id="boardDungeonsTitle"></summary>
+              <p class="hint" data-i18n="boardDungeonsHint"></p>
+              <div class="board-dungeons-actions">
+                <button type="button" class="ghost" id="boardDungeonsAll" data-i18n="boardDungeonsAll">Tutti completati</button>
+                <button type="button" class="ghost" id="boardDungeonsUnlockable" data-i18n="boardDungeonsUnlockable">Chiudi quelli che si aprono con una missione</button>
+              </div>
+              <ul class="board-dungeons-list" id="boardDungeonsList"></ul>
+            </details>
             <div class="board-groups" id="boardGroups"></div>
             <p class="hint" data-i18n="boardSource"></p>
       </section>
@@ -177,6 +186,9 @@
               <span id="subType" class="subtype-wrap" style="display: none"><select name="missionSubTypeBox" id="missionSubTypeBox" data-i18n-title="missionSubtypeLabel"></select></span>
             </div>
           </div>
+          <p class="hint hint-warning" id="missionNote" hidden></p>
+          <input type="hidden" id="keptTargetItem" name="keptTargetItem">
+          <input type="hidden" id="keptReward" name="keptReward">
           <div class="field hidden" id="pairField">
             <label for="pairBox" data-i18n="pairLabel">Coppia del gioco</label>
             <select id="pairBox" data-no-snapshot></select>

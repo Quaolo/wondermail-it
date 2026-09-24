@@ -481,16 +481,18 @@ def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
             const problems = [];
             let total = 0;
             const pairs = new Set();
-            for (let day = 0; day < 12; day += 1) {
-                newBoardDay();
+            for (let day = 0; day < 24; day += 1) {
+                // A metà: partita con i dungeon che si aprono con una missione ancora chiusi.
+                if (day === 12) document.getElementById('boardDungeonsUnlockable').click();
+                else newBoardDay();
                 for (const boardId of ['job', 'outlaw', 'cafe', 'bottle']) {
                     (boardDay[boardId] || []).forEach((mission, index) => {
                         total += 1;
                         useBoardMission(boardId, index);
                         const built = WMSGen.buildStruct();
-                        // Lo strumento obiettivo conta solo nelle missioni che lo mostrano (il modulo altrimenti mette una Mela).
-                        const keys = ['missionType', 'missionSpecial', 'client', 'target', 'target2', 'dungeon', 'floor'];
-                        if (WMSGen.getTypeData().useTargetItem) keys.push('targetItem');
+                        // Anche i valori che il modulo non mostra (strumento, valore della ricompensa in Poké) restano gli stessi.
+                        const keys = ['missionType', 'missionSpecial', 'client', 'target', 'target2', 'dungeon', 'floor',
+                            'targetItem', 'rewardType', 'reward'];
                         const same = keys.every((key) => built[key] === mission[key]);
                         const status = document.getElementById('statusLine');
                         if (!same || status.dataset.state !== 'ok' || !document.getElementById('jobLetterGuess').hidden) {
@@ -502,11 +504,20 @@ def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
                     });
                 }
             }
-            return { total, problems: problems.slice(0, 5), pairs: Array.from(pairs) };
+            const kinds = new Set();
+            for (let day = 0; day < 40; day += 1) {
+                newBoardDay();
+                ['job', 'cafe'].forEach((boardId) => (boardDay[boardId] || []).forEach((m) => kinds.add(`${m.missionType}.${m.missionSpecial}`)));
+            }
+            document.getElementById('boardDungeonsAll').click();
+            return { total, problems: problems.slice(0, 5), pairs: Array.from(pairs), unlocks: ['14.1', '6.4', '3.3'].filter((k) => kinds.has(k)),
+                     title: document.getElementById('boardDungeonsTitle').textContent };
         }""")
         check(board_check["total"] > 150 and not board_check["problems"],
               f"tutte le missioni della bacheca stanno nel modulo con il loro titolo: {board_check}")
         check(board_check["pairs"] == [True], f"le coppie della bacheca sono riconosciute nel menu: {board_check['pairs']}")
+        check(len(board_check["unlocks"]) == 3, f"con i dungeon chiusi escono le missioni che li aprono: {board_check['unlocks']}")
+        check("tutti completati" in board_check["title"], f"«Tutti completati» rimette la partita finita: {board_check['title']!r}")
         page.evaluate("closeStartPanels()")
 
         # Il piano della missione: dati di mappa_s.bin, frecce per guardare gli altri piani e «Usa questo piano»

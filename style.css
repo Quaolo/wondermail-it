@@ -619,6 +619,31 @@ select option, select optgroup { background: var(--panel); color: var(--text); }
 .board-controls { display: flex; flex-wrap: wrap; align-items: end; gap: 10px 16px; }
 .board-controls .field { margin: 0; min-width: 220px; }
 .board-check { margin: 0 0 10px; }
+.board-dungeons {
+  margin: 12px 0 14px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(5, 12, 36, .45);
+}
+.board-dungeons summary { color: var(--gold); cursor: pointer; }
+.board-dungeons[open] summary { margin-bottom: 8px; }
+.board-dungeons .hint { margin: 0 0 10px; }
+.board-dungeons-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.board-dungeons-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 6px 18px;
+  max-height: 360px;
+  margin: 0;
+  padding: 0 4px 0 0;
+  overflow-y: auto;
+  list-style: none;
+}
+.board-dungeons-list li { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; font-size: .88rem; }
+.board-dungeons-list label { min-width: 0; margin: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 400; }
+.board-dungeons-list select { flex: none; width: 132px; min-height: 32px; padding: 4px 6px; font-size: .85rem; }
+.board-dungeon-changed label { color: var(--gold); font-weight: 600; }
 .board-groups { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
 .board-group { display: grid; gap: 8px; align-content: start; }
 .board-group-title { margin: 0; font-size: .95rem; color: var(--gold); }

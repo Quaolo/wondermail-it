@@ -38,6 +38,8 @@ window.WMSkyRegisterLocale('en', {
 
     missionSection: 'Mission',
     missionTypeLabel: 'Mission type',
+    noteNewDungeon: 'In the game this job only shows up if you haven\'t opened one of these dungeons yet: {first}, {second}. It is what opens it. Not tested with a password yet.',
+    pairHintSevenTreasures: 'Spinda\'s Café only offers these requests in these seven dungeons, until you complete them: only they have a title. Not tested with a password yet.',
     pairLabel: 'Pair from the game',
     pairOther: 'Another pair (set in the fields)',
     pairHint: 'The game accepts any pair, but only these have a mission title.',
@@ -172,7 +174,15 @@ window.WMSkyRegisterLocale('en', {
     originRestrictionRemoved: 'Restriction removed',
     errorRestriction: 'The restriction isn\'t valid: it needs a type or a species the game accepts as a client.',
     boardTitle: 'Job board',
-    boardHint: 'A day of missions as the game prepares it: Job Bulletin Board, Outlaw Notice Board, Spinda\'s Café and a message in a bottle. The site imagines a finished game, with every dungeon open. Tap a mission to load it into the form.',
+    boardHint: 'A day of missions as the game prepares it: Job Bulletin Board, Outlaw Notice Board, Spinda\'s Café and a message in a bottle. The site imagines a game with the story finished; you pick which dungeons you have completed below. Tap a mission to load it into the form.',
+    boardDungeonsAllDone: 'Dungeons in your game: all completed',
+    boardDungeonsSome: 'Dungeons in your game: {count} not completed',
+    boardDungeonsHint: 'In the game normal jobs only go to completed dungeons. The ones that open a dungeon (Gabite Scale, new dungeon, Spinda\'s Café musical instruments) only show up while their dungeon is closed or not completed yet. The story is still treated as finished.',
+    boardDungeonsAll: 'All completed',
+    boardDungeonsUnlockable: 'Close the ones a job opens',
+    boardDungeonDone: 'Completed',
+    boardDungeonOpen: 'Open',
+    boardDungeonClosed: 'Closed',
     boardRankLabel: 'Team rank',
     boardNoRestrictions: 'Remove restrictions',
     boardNewDay: 'New day',
@@ -458,7 +468,8 @@ window.WMSkyRegisterLocale('en', {
     10: 'Arrest the outlaw (Magnemite)',
     11: 'Arrest the outlaw (Magnezone)',
     12: 'Challenge Letter',
-    13: 'Find the treasure (Treasure Memo)'
+    13: 'Find the treasure (Treasure Memo)',
+    14: 'Musical instrument (Spinda\'s Café)'
   },
   missionSubtypes: {
     1: { 0: 'Normal', 1: 'Their child', 2: 'A friend', 3: 'Their love or rival' },

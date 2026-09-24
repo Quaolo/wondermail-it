@@ -119,9 +119,45 @@ test('il modulo offre tutti i modelli del gioco con il loro agente', () => {
   const templates = G.missionText.templates;
   for (const row of templates) {
     const [, type, subtype] = row;
-    if (type > 12 || (type === 3 && subtype === 3)) continue; // strumenti musicali e dungeon nuovi: servono a sbloccare
+    if (type === 14 && subtype !== 1) continue; // gli altri modelli del tipo 14 non escono mai in bacheca
     // Negli arresti conta l'agente del modello (Magnemite o Magnezone), altrove basta il sottotipo.
     const client = type === 10 && (row[8] === 81 || row[8] === 504) ? row[8] : null;
     assert.ok(formEntryFor(type, subtype, client), `modello ${type}.${subtype} (committente ${row[8]})`);
   }
+});
+
+// Partita con dungeon chiusi: escono le missioni che li aprono, e le altre restano nei dungeon completati.
+const CLOSED = [0x5B, 0x60, 0x62, 73, 75, 77, 79, 81, 83, 85];
+const closedDays = [];
+for (let i = 0; i < 150; i += 1) {
+  const modes = Object.fromEntries(CLOSED.map((dungeon) => [dungeon, i % 2 ? 0 : 1]));
+  modes[1] = 1; // Grotta Marina aperta ma non completata
+  closedDays.push(B.generateDay({ rank: 12, random: prng(5000 + i), dungeonModes: modes }));
+}
+const closedMissions = closedDays.flatMap((day) => BOARDS.flatMap((board) => day[board].map((m) => ({ board, m }))));
+
+test('con dungeon chiusi escono le missioni che li aprono', () => {
+  const kinds = new Set(closedMissions.map(({ m }) => `${m.missionType}.${m.missionSpecial}`));
+  for (const kind of ['14.1', '6.4', '3.3']) assert.ok(kinds.has(kind), kind);
+  for (const { m } of closedMissions) {
+    if (m.missionType === 3 && m.missionSpecial === 3) {
+      assert.ok([0x60, 0x62].includes(m.dungeon), 'dungeon nuovo: Collina Folgore o Foresta Mezzanotte');
+      // All'ultimo piano che il gioco accetta (il piano del capo di solito è vietato).
+      const forbidden = window.WMSkyGameData.forbiddenFloors[m.dungeon] || [];
+      let last = window.WMSkyGameData.missionFloors[m.dungeon];
+      while (forbidden.includes(last)) last -= 1;
+      assert.equal(m.floor, last);
+    } else if (m.missionType === 14) {
+      assert.ok([73, 75, 77, 79, 81, 83, 85].includes(m.dungeon));
+    } else if (!(m.missionType === 6 && m.missionSpecial === 4)) {
+      assert.ok(!CLOSED.includes(m.dungeon) && m.dungeon !== 1, `missione normale nel dungeon ${m.dungeon}`);
+    }
+    assert.ok(formEntryFor(m.missionType, m.missionSpecial, m.client), `${m.missionType}.${m.missionSpecial} nel modulo`);
+  }
+});
+
+test('le Scaglie di Gabite escono solo con la Grotta Labirinto chiusa', () => {
+  const gabite = closedDays.flatMap((day, index) => BOARDS.flatMap((board) => day[board])
+    .filter((m) => m.missionType === 6 && m.missionSpecial === 4).map(() => index));
+  assert.ok(gabite.length && gabite.every((index) => index % 2 === 1));
 });

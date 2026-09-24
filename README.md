@@ -90,18 +90,27 @@ site shows what should come out, but marks it as not tested yet.
 The "Job board" card prepares a day of missions the way the game does every morning: the Job Bulletin Board,
 the Outlaw Notice Board, the Spinda's Café request and the message in a bottle. I rewrote the game's rules:
 which categories can come out, the Pokémon, dungeons and floors, items, rewards and restrictions. The game
-also looks at your save file, though, and the site can't know it, so it imagines a finished game with every
-dungeon open. The team rank is yours to pick, because it decides which missions can appear and whether they
-have restrictions. That's also why the missions that open a dungeon, like the musical instrument ones, never
-show up: in a finished game those dungeons are already open.
+also looks at your save file, though, and the site can't know it, so it imagines a game with the story
+finished. The team rank is yours to pick, because it decides which missions can appear and whether they have
+restrictions.
+
+You can also set every dungeon: completed, open or closed. As in the game, normal jobs only go to completed
+dungeons, while the ones that open a dungeon only show up while it's closed or not completed yet: the Gabite
+Scale for Labyrinth Cave, "explore a new dungeon" for Shimmer Hill and Midnight Forest, and Spinda's Café
+requests for the musical instruments of the seven dungeons that hold them. One button closes all of these
+dungeons at once. Your choice is saved in your browser.
 
 One click on a mission loads it into the form, with "Undo" to go back. The form has every variant the board
 uses: the child, friend, loved one or rival to rescue, the loved one to escort the client to, the precious
 treasure, the item that makes the client evolve, their favorite Gummi, fleeing outlaws and the different outlaw
 lists of Magnemite and Magnezone. For the variants that use fixed pairs in the game (Beedrill looking for
 Weedle, for example) there's a menu with the game's pairs. The game accepts other pairs too, but only these
-have a title. Togetic's Gabite Scale job is there as well: in the game it opens Labyrinth Cave, but I haven't
-tried it with a password yet.
+have a title. The jobs that open a dungeon in the game (Gabite Scale, new dungeon, musical instruments) are
+there too, but I haven't tried them with a password yet: the site says so under the mission type.
+
+In jobs that don't show a target item, and in those that pay in Poké, the password still holds a value you
+can't see. When you load a mission into the form, the site remembers it: if you change something else, that
+part stays as it was.
 
 Team restrictions (a partner of a certain type or a specific Pokémon) can now also be picked in the form,
 among the advanced options. "Job Summary" has a button to remove them, and the board has a box that removes
@@ -217,8 +226,8 @@ The encoding test compares 60 passwords with those of the original generator and
 - The job board follows the game's code, but I haven't compared it with a real board yet. A curious detail to
   check: when the reward is an egg, the game writes a number drawn from the item list as the species, so the
   egg species the site shows might not be the one that actually hatches.
-- The Gabite Scale job made with a password still has to be tried in the game: I don't know if it opens
-  Labyrinth Cave like the board one does.
+- The jobs that open a dungeon (Gabite Scale, new dungeon, Spinda's Café musical instruments) made with a
+  password still have to be tried in the game: I don't know if they open the dungeon like the board ones do.
 - The game says which items share the same icon, but not what color they are. For some of them I picked the
   colors myself and they might not match.
 

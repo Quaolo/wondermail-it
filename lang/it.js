@@ -38,6 +38,8 @@ window.WMSkyRegisterLocale('it', {
 
     missionSection: 'Missione',
     missionTypeLabel: 'Tipo di missione',
+    noteNewDungeon: 'Nel gioco questa missione compare solo se non hai ancora aperto uno di questi dungeon: {first}, {second}. Serve proprio ad aprirlo. Con una password non è stata provata.',
+    pairHintSevenTreasures: 'Il Caffè di Spinda propone queste richieste solo in questi sette dungeon, finché non li hai completati: il titolo esiste solo per loro. Con una password non sono state provate.',
     pairLabel: 'Coppia del gioco',
     pairOther: 'Un\'altra coppia (scelta nei campi)',
     pairHint: 'Il gioco accetta qualsiasi coppia, ma il titolo della missione esiste solo per queste.',
@@ -172,7 +174,15 @@ window.WMSkyRegisterLocale('it', {
     originRestrictionRemoved: 'Restrizione tolta',
     errorRestriction: 'La restrizione non è valida: serve un tipo oppure una specie che il gioco accetta come committente.',
     boardTitle: 'Bacheca',
-    boardHint: 'Una giornata di missioni come la prepara il gioco: bacheca delle missioni, bacheca dei ricercati, Caffè di Spinda e messaggio in bottiglia. Il sito immagina una partita finita, con tutti i dungeon aperti. Tocca una missione per portarla nel modulo.',
+    boardHint: 'Una giornata di missioni come la prepara il gioco: bacheca delle missioni, bacheca dei ricercati, Caffè di Spinda e messaggio in bottiglia. Il sito immagina una partita con la storia finita; quali dungeon hai completato lo scegli qui sotto. Tocca una missione per portarla nel modulo.',
+    boardDungeonsAllDone: 'Dungeon della tua partita: tutti completati',
+    boardDungeonsSome: 'Dungeon della tua partita: {count} non completati',
+    boardDungeonsHint: 'Nel gioco le missioni normali vanno solo nei dungeon completati. Quelle per aprire un dungeon (Scaglie di Gabite, dungeon nuovo, strumenti musicali del Caffè di Spinda) compaiono solo finché il loro dungeon è chiuso o non ancora completato. La storia resta considerata finita.',
+    boardDungeonsAll: 'Tutti completati',
+    boardDungeonsUnlockable: 'Chiudi quelli che si aprono con una missione',
+    boardDungeonDone: 'Completato',
+    boardDungeonOpen: 'Aperto',
+    boardDungeonClosed: 'Chiuso',
     boardRankLabel: 'Grado della squadra',
     boardNoRestrictions: 'Togli le restrizioni',
     boardNewDay: 'Nuovo giorno',
@@ -458,7 +468,8 @@ window.WMSkyRegisterLocale('it', {
     10: 'Arresta il ricercato (Magnemite)',
     11: 'Arresta il ricercato (Magnezone)',
     12: 'Lettera di sfida',
-    13: 'Trova il tesoro (Memo tesoro)'
+    13: 'Trova il tesoro (Memo tesoro)',
+    14: 'Strumento musicale (Caffè di Spinda)'
   },
   missionSubtypes: {
     1: { 0: 'Normale', 1: 'Il suo cucciolo', 2: 'Un suo amico', 3: 'Il suo amore o rivale' },

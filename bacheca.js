@@ -6,11 +6,13 @@
   di RESCUE/rescue.bin e del codice estratte da tools/estrai_dati.py (data/dati_gioco.js: board e
   missionText.templates).
 
-  Il gioco decide in base al salvataggio. Qui si simula una partita a fine gioco: storia finita, tutti i
-  dungeon aperti e completati, tutti i Pokémon incontrati, nessuna missione già accettata. Il grado della
-  squadra invece si sceglie, perché decide quali categorie di missioni possono uscire e se ci sono
-  restrizioni. Conseguenze di queste scelte, come nel gioco: niente missioni per esplorare un dungeon
-  nuovo, per le Scaglie di Gabite o per gli strumenti musicali, che servono ad aprire dungeon ancora chiusi.
+  Il gioco decide in base al salvataggio. Qui si simula una partita con la storia finita, tutti i Pokémon
+  incontrati e nessuna missione già accettata. Il grado della squadra si sceglie, perché decide quali
+  categorie di missioni possono uscire e se ci sono restrizioni. Anche lo stato dei dungeon si può scegliere
+  (`options.dungeonModes`: 0 chiuso, 1 aperto ma non completato, 3 completato; di base tutti completati).
+  Le missioni normali vanno solo nei dungeon completati (CanDungeonBeUsedForMission), mentre quelle per
+  esplorare un dungeon nuovo, le Scaglie di Gabite e gli strumenti musicali compaiono solo finché il loro
+  dungeon non è aperto o completato: con tutti i dungeon completati non escono, come a fine gioco.
 
   Il caso è quello del browser (Math.random), non il generatore del gioco: le probabilità sono le stesse,
   ma non si può riprodurre la bacheca di una partita vera.
@@ -49,6 +51,13 @@
   const FIRST_BOX_ITEM = 364;
   const UNSTORABLE_ITEMS = [0, 183, 187, 178];
   const THROWN_ITEMS_ALLOWED = [9, 10];
+  // MISSION_DUNGEON_UNLOCK_TABLE: dungeon che una missione può aprire (Grotta Labirinto, con le Scaglie di
+  // Gabite; Collina Folgore e Foresta Mezzanotte, con "esplora un dungeon nuovo").
+  const LABYRINTH_CAVE = 0x5B;
+  const NEW_DUNGEON_UNLOCKS = [0x60, 0x62];
+  // enum dungeon_mode di pret: chiuso, aperto, completato ma non accessibile, aperto e completato.
+  const DMODE_CLOSED = 0;
+  const DMODE_OPEN_AND_REQUEST = 3;
 
   function data() {
     return root.WMSkyGameData || {};
@@ -236,9 +245,22 @@
     return null;
   }
 
-  // CanDungeonBeUsedForMission, a fine gioco.
-  function canUseDungeon(dungeon) {
-    return tables().board.dungeons.includes(dungeon);
+  // Stato del dungeon nella partita simulata (GetDungeonMode): di base aperto e completato.
+  function dungeonMode(day, dungeon) {
+    const mode = day.modes[dungeon];
+    return Number.isFinite(mode) ? mode : DMODE_OPEN_AND_REQUEST;
+  }
+
+  // CanDungeonBeUsedForMission: tra i dungeon ammessi, solo quelli aperti e completati.
+  function canUseDungeon(day, dungeon) {
+    return tables().board.dungeons.includes(dungeon) && dungeonMode(day, dungeon) === DMODE_OPEN_AND_REQUEST;
+  }
+
+  // sub_0206282C: dungeon che "esplora un dungeon nuovo" può proporre (chiusi e mai visitati; la Grotta
+  // Labirinto è esclusa perché ha la sua missione, quella delle Scaglie di Gabite).
+  function newDungeonChoices(day) {
+    return NEW_DUNGEON_UNLOCKS.filter((dungeon) => dungeonMode(day, dungeon) === DMODE_CLOSED
+      && !day.all.some((other) => other.missionType === 3 && other.missionSpecial === 3 && other.dungeon === dungeon));
   }
 
   // ---------------------------------------------------------------------
@@ -258,12 +280,16 @@
     const template = tab.templates[templateIndex];
     const type = template[T.type];
     const subtype = template[T.subtype];
-    // Scaglie di Gabite: solo finché la Grotta Labirinto è chiusa.
-    if (type === 6 && subtype === 4) return null;
+    // Scaglie di Gabite: solo finché la Grotta Labirinto è chiusa (CheckDungeonMissionUnlockConditions).
+    if (type === 6 && subtype === 4 && dungeonMode(day, LABYRINTH_CAVE) !== DMODE_CLOSED) return null;
     // Sfide dei leggendari: una alla volta (il leggendario non deve essere già in squadra).
     if (type === 11 && subtype >= 1 && subtype <= 5 && hasSimilar(day, type, subtype)) return null;
-    // Strumenti musicali: solo se il dungeon è ancora chiuso.
-    if (type === 14 && subtype === 1) return null;
+    // Strumenti musicali: solo se il dungeon non è completato, una alla volta e senza altre missioni lì.
+    if (type === 14 && subtype === 1) {
+      const dungeon = template[T.dungeon];
+      if (dungeonMode(day, dungeon) === DMODE_OPEN_AND_REQUEST) return null;
+      if (hasSimilar(day, type, subtype) || placeTaken(day, dungeon, -1, false)) return null;
+    }
     return { index: templateIndex, template };
   }
 
@@ -295,14 +321,23 @@
     let place = null;
     if (dungeonCase === 0 || dungeonCase === 1) {
       const dungeon = template[T.dungeon];
-      if (dungeonCase === 0 && !canUseDungeon(dungeon)) return RETRY;
+      if (dungeonCase === 0 && !canUseDungeon(day, dungeon)) return RETRY;
       place = pickPlace(day, [dungeon], joining, random);
       if (!place) return joining ? RETRY : STOP;
       if (type !== 14 && place.floor > maxMissionFloor(type, subtype, dungeon)) return RETRY;
     } else if (dungeonCase === 5) {
-      return RETRY; // dungeon nuovi da esplorare: a fine gioco sono tutti aperti
+      // Esplora un dungeon nuovo: uno dei dungeon ancora chiusi, all'ultimo piano che il gioco accetta.
+      if (type !== 3 || subtype !== 3) return RETRY;
+      const choices = newDungeonChoices(day);
+      if (!choices.length) return RETRY;
+      place = pickPlace(day, choices, joining, random);
+      if (!place) return RETRY;
+      let floor = maxMissionFloor(type, subtype, place.dungeon);
+      while (floor > 0 && isForbidden(place.dungeon, floor)) floor -= 1;
+      if (!floor) return RETRY;
+      place.floor = floor;
     } else {
-      place = pickPlace(day, tab.board.dungeons, joining, random);
+      place = pickPlace(day, day.usable, joining, random);
       if (!place) return joining ? RETRY : STOP;
       const members = tab.board.maxMembers[place.dungeon];
       const rank = baseRank(place.dungeon, place.floor);
@@ -539,7 +574,8 @@
 
   /**
    * Una giornata di missioni come la prepara il gioco: bacheca delle missioni, bacheca dei ricercati,
-   * Caffè di Spinda e messaggio in bottiglia. `options.rank` è il grado della squadra (0-12).
+   * Caffè di Spinda e messaggio in bottiglia. `options.rank` è il grado della squadra (0-12),
+   * `options.dungeonModes` lo stato dei dungeon ({ id: 0 | 1 | 3 }, quelli mancanti sono completati).
    * Restituisce { job: [...], outlaw: [...], cafe: [...], bottle: [...] } con strutture di WMSParser,
    * più `template` (indice del modello di rescue.bin) in ogni missione.
    */
@@ -549,7 +585,8 @@
     const random = makeRandom(opts.random);
     const rank = Number.isFinite(opts.rank) ? opts.rank : 12;
     const counts = { job: random.range(4, 8) + 1, outlaw: random.range(4, 8) + 1, cafe: 1, bottle: 1 };
-    const day = { rank, all: [], job: [], outlaw: [], cafe: [], bottle: [] };
+    const day = { rank, modes: opts.dungeonModes || {}, all: [], job: [], outlaw: [], cafe: [], bottle: [] };
+    day.usable = tables().board.dungeons.filter((dungeon) => canUseDungeon(day, dungeon));
     BOARDS.forEach((board) => {
       const weights = categoryWeights(board, rank);
       if (!weights.some(Boolean)) return;
@@ -578,6 +615,8 @@
   root.WMSkyBoard = {
     generateDay,
     missionRank,
+    // Dungeon di cui si può scegliere lo stato: quelli delle missioni della bacheca.
+    dungeons: () => (tables() ? tables().board.dungeons.slice() : []),
     // Per i test.
     _internal: { categoryWeights, checkMonster, canUseMonster, pickPlace, BOARDS }
   };

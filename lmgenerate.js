@@ -43,7 +43,8 @@ var WMSGenData = {
       { name: 'Normal', specialType: 0 },
       { name: 'Sealed Chamber', specialType: 1, specialFloor: 165, useTargetItem: true },
       { name: 'Golden Chamber', specialType: 2, specialFloor: 111 },
-      { name: 'New Dungeon', specialType: 3, advancedOnly: true }
+      // Esplora un dungeon nuovo: nel gioco apre un dungeon chiuso (vedi la nota nel modulo).
+      { name: 'New Dungeon', specialType: 3, unlocks: true, note: 'newDungeon' }
     ] },
 
     { name: 'prospectWithClient', mainType: 4, specialType: 0, useTargetItem: true, clientIsTarget: true },
@@ -55,7 +56,7 @@ var WMSGenData = {
       { name: 'Rare treasure', specialType: 1 },
       { name: 'Evolution item', specialType: 2, gamePairs: true },
       { name: 'Favorite Gummi', specialType: 3, gamePairs: true },
-      { name: 'Gabite Scale', specialType: 4, gamePairs: true, forceClient: 176 }
+      { name: 'Gabite Scale', specialType: 4, gamePairs: true, forceClient: 176, unlocks: true }
     ] },
     { name: 'deliverItem', mainType: 7, specialType: 0, useTargetItem: true, clientIsTarget: true },
     { name: 'searchForClient', mainType: 8, specialType: 0 },
@@ -105,7 +106,11 @@ var WMSGenData = {
     // Memo tesoro: come nelle missioni vere, committente e bersaglio coincidono e lo strumento
     // obiettivo è il tesoro chiuso nel Tecalusso della stanza (PlaceFixedRoomTile, GetSpecialTargetItem).
     // Il generatore storico imponeva Turtwig, nessuna ricompensa e una Mela come tesoro.
-    { name: 'treasureMemo', mainType: 12, specialType: 0, clientIsTarget: true, useTargetItem: true, specialFloorFromList: 'treasurehunt' }
+    { name: 'treasureMemo', mainType: 12, specialType: 0, clientIsTarget: true, useTargetItem: true, specialFloorFromList: 'treasurehunt' },
+
+    // Richieste del Caffè di Spinda per gli strumenti musicali (tipo 14, sottotipo 1): il testo dipende solo
+    // dal dungeon, e il gioco le propone solo nei sette dungeon dei modelli (menu delle coppie del gioco).
+    { name: 'sevenTreasures', mainType: 14, specialType: 1, gamePairs: true, unlocks: true }
   ],
 
   validDungeons: [
@@ -566,8 +571,8 @@ var WMSGen = {
       var rewardMon = parseInt(this.getComboBoxValue('rewardPokemonBox'), 10);
       struct.reward = rewardMon > 0 ? rewardMon : struct.client;
     } else {
-      // Il gioco vuole comunque un valore: una Mela.
-      struct.reward = 109;
+      // Il gioco vuole comunque un valore: quello letto dalla password (o dalla bacheca), altrimenti una Mela.
+      struct.reward = readKept(this.form.keptReward) || 109;
     }
 
     // Strumento obiettivo
@@ -576,7 +581,8 @@ var WMSGen = {
     } else if (typeData.useTargetItem) {
       struct.targetItem = parseInt(this.getComboBoxValue('targetItemBox'), 10);
     } else {
-      struct.targetItem = 109;
+      // Missioni che non mostrano lo strumento: resta quello della password letta, così la missione non cambia.
+      struct.targetItem = readKept(this.form.keptTargetItem) || 109;
     }
 
     // Dungeon e piano
@@ -738,6 +744,12 @@ function getTargetItemError(itemId, mainType) {
     return 'thrown';
   }
   return null;
+}
+
+// Valore conservato in un campo nascosto del modulo (0 se vuoto).
+function readKept(input) {
+  var value = input ? parseInt(input.value, 10) : NaN;
+  return value > 0 ? value : 0;
 }
 
 function getValidItemIds() {

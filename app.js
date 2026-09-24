@@ -583,12 +583,18 @@ function relabelDungeonSelect() {
 }
 
 // Piano massimo che il gioco accetta in una missione (sub_02063424 della decompilazione).
+const STAR_CAVE = 0xAE;
+
 function getDungeonFloorLimit(dungeonId) {
   const numeric = parseInt(dungeonId, 10);
   const floors = window.WMSkyGameData && window.WMSkyGameData.missionFloors;
   if (!Number.isFinite(numeric) || !floors) return 99;
   const limit = floors[numeric];
-  return Number.isFinite(limit) && limit >= 1 ? limit : 99;
+  if (!(Number.isFinite(limit) && limit >= 1)) return 99;
+  // sub_02063424 toglie l'ultimo piano della Caverna Stellata, ma non per la sfida di Jirachi.
+  const typeData = getCurrentTypeData();
+  if (numeric === STAR_CAVE && typeData && typeData.mainType === 11 && typeData.specialType === 5) return limit + 1;
+  return limit;
 }
 
 function syncDungeonFloorLimit(forceClamp = false) {
@@ -770,15 +776,17 @@ function getGamePairs(typeData) {
   const seen = new Set();
   const pairs = [];
   templates.forEach((row) => {
-    // Colonne: testo, tipo, sottotipo, caso e valore di strumento, dungeon, committente e bersaglio (0 = fisso).
-    if (row[1] !== typeData.mainType || row[2] !== typeData.specialType || row[7] !== 0) return;
+    // Colonne: testo, tipo, sottotipo, caso e valore di strumento, dungeon, committente e bersaglio (0 = fisso;
+    // per il dungeon anche 1). Le richieste degli strumenti musicali hanno fisso solo il dungeon.
+    if (row[1] !== typeData.mainType || row[2] !== typeData.specialType) return;
     const pair = {
-      client: row[8],
+      client: row[7] === 0 ? row[8] : null,
       target: row[9] === 0 ? row[10] : null,
       item: row[3] === 1 ? row[4] : null,
       dungeon: row[5] === 1 ? row[6] : null
     };
-    const id = `${pair.client}-${pair.target}-${pair.item}`;
+    if (pair.client === null && pair.dungeon === null) return;
+    const id = `${pair.client}-${pair.target}-${pair.item}-${pair.dungeon}`;
     if (seen.has(id)) return;
     seen.add(id);
     pairs.push(pair);
@@ -799,14 +807,16 @@ function findCurrentGamePair(typeData, pairs) {
   const client = typeData.forceClient || formMonId('clientBox', 'clientF');
   const target = formMonId('targetBox', 'targetF');
   const item = parseInt(document.getElementById('targetItemBox')?.value, 10);
-  return pairs.findIndex((pair) => pair.client % 600 === client % 600
+  const dungeon = parseInt(document.getElementById('dungeonBox')?.value, 10);
+  return pairs.findIndex((pair) => (pair.client === null || pair.client % 600 === client % 600)
     && (pair.target === null || pair.target % 600 === target % 600)
-    && (pair.item === null || pair.item === item));
+    && (pair.item === null || pair.item === item)
+    && (pair.dungeon === null || typeData.mainType !== 14 || pair.dungeon === dungeon));
 }
 
 function applyGamePair(typeData, pair) {
   if (!pair) return;
-  if (!hasOwn(typeData, 'forceClient')) applyPokemonToField('clientBox', 'clientF', pair.client);
+  if (pair.client !== null && !hasOwn(typeData, 'forceClient')) applyPokemonToField('clientBox', 'clientF', pair.client);
   if (pair.target !== null) applyPokemonToField('targetBox', 'targetF', pair.target);
   if (pair.item !== null) applyItemToField('targetItemBox', pair.item);
   if (pair.dungeon !== null) {
@@ -833,13 +843,26 @@ function ensureGamePair(random = false) {
   if (!pairs.length || isEggGlitchEnabled()) return;
   if (!random && findCurrentGamePair(typeData, pairs) !== -1) return;
   const client = formMonId('clientBox', 'clientF') % 600;
-  const sameClient = pairs.filter((pair) => pair.client % 600 === client);
+  const sameClient = pairs.filter((pair) => pair.client !== null && pair.client % 600 === client);
   applyGamePair(typeData, pickRandom(!random && sameClient.length ? sameClient : pairs));
 }
 
 function gamePairLabel(pair) {
+  if (pair.client === null) return getLocalizedDungeonName(pair.dungeon, String(pair.dungeon));
   const second = pair.target !== null ? getLocalizedPokemonName(pair.target) : getItemDisplayName(pair.item);
   return `${getLocalizedPokemonName(pair.client)} → ${second}`;
+}
+
+// Nota sotto il tipo di missione per le varianti che nel gioco aprono un dungeon e non sono state provate.
+function updateMissionNote() {
+  const note = document.getElementById('missionNote');
+  if (!note) return;
+  const typeData = getCurrentTypeData();
+  // Collina Folgore e Foresta Mezzanotte: i dungeon di MISSION_DUNGEON_UNLOCK_TABLE per questa missione.
+  const text = typeData && typeData.note === 'newDungeon' && !isEggGlitchEnabled()
+    ? t('noteNewDungeon', { first: getDungeonName(0x60), second: getDungeonName(0x62) }) : '';
+  note.hidden = !text;
+  note.textContent = text;
 }
 
 function updateGamePairPicker() {
@@ -873,10 +896,18 @@ function updateGamePairPicker() {
   select.value = current === -1 ? '' : String(current);
   const hint = document.getElementById('pairHint');
   if (hint) {
-    if (typeData.mainType === 6 && typeData.specialType === 4) hint.textContent = t('pairHintGabite');
+    if (typeData.mainType === 14) hint.textContent = t('pairHintSevenTreasures');
+    else if (typeData.mainType === 6 && typeData.specialType === 4) hint.textContent = t('pairHintGabite');
     else if (typeData.mainType === 6) hint.textContent = t('pairHintItem');
     else hint.textContent = t('pairHint');
   }
+}
+
+function setKeptValues(targetItem, reward) {
+  const item = document.getElementById('keptTargetItem');
+  const money = document.getElementById('keptReward');
+  if (item) item.value = targetItem > 0 ? String(targetItem) : '';
+  if (money) money.value = reward > 0 ? String(reward) : '';
 }
 
 function isEggGlitchStruct(struct) {
@@ -973,6 +1004,13 @@ function importDecodedStruct(result) {
   setRestrictionFields(struct);
 
   WMSGen.update();
+  // Valori che il modulo non mostra (strumento delle missioni che non lo usano, valore della ricompensa in
+  // Poké): si tengono da parte, così rigenerando la password la missione resta la stessa.
+  const importedType = eggGlitch ? null : WMSGen.getTypeData();
+  setKeptValues(
+    importedType && !importedType.useTargetItem ? struct.targetItem : 0,
+    importedType && !importedType.noReward && struct.rewardType === 0 ? struct.reward : 0
+  );
   syncDungeonFloorLimit(true);
   refreshMissionUi();
 
@@ -1502,6 +1540,7 @@ function relabelLocalizedControls() {
   populateRewardPokemonList(true);
   populateRestrictionValues();
   renderBoard();
+  renderBoardDungeons();
   refreshSearchBoxSelections();
 }
 
@@ -1744,6 +1783,7 @@ function getEggPokemonPreviewData(selectId, label, meta) {
 function refreshMissionUi() {
   updateMissionFieldVisibility();
   updateGamePairPicker();
+  updateMissionNote();
   syncDungeonFloorLimit();
   updateMissionDifficultyHint();
   updateEntityPreviews();
@@ -2374,7 +2414,8 @@ function randomizeMission(typeIndexes, options = {}) {
     if (subSelect && subSelect.options.length) {
       setSelectByValue(subSelect, pickRandom(Array.from(subSelect.options, (option) => option.value)));
       const chosen = WMSGen.getTypeData();
-      if (options.plainRooms && chosen && (chosen.specialFloor !== undefined || chosen.specialFloorFromList)) {
+      // Le varianti che aprono un dungeon (Scaglie di Gabite, dungeon nuovo) non escono a caso.
+      if (chosen && (chosen.unlocks || (options.plainRooms && (chosen.specialFloor !== undefined || chosen.specialFloorFromList)))) {
         setSelectByValue(subSelect, subSelect.options[0].value);
       }
     }
@@ -2427,6 +2468,7 @@ function applyPresetFromButton(kind) {
 }
 
 function applyPresetNow(kind) {
+  setKeptValues(0, 0);
   const typeSelect = document.getElementById('missionTypeBox');
   const subSelect = document.getElementById('missionSubTypeBox');
   const eggGlitch = document.getElementById('eggGlitch');
@@ -3377,6 +3419,7 @@ function renderFarmResults() {
 
 // Prepara la missione: Memo tesoro nella stanza scelta, con il dungeon che contiene il premio.
 function useFarmCombo(roomId, dungeonId, floorNumber = 1) {
+  setKeptValues(0, 0);
   requestPasswordAnimation();
   runFormAction({
     text: () => (dungeonId === null
@@ -3433,8 +3476,99 @@ function populateBoardRanks() {
 function newBoardDay() {
   if (!window.WMSkyBoard) return;
   const rank = parseInt(document.getElementById('boardRank')?.value || String(BOARD_DEFAULT_RANK), 10);
-  boardDay = WMSkyBoard.generateDay({ rank });
+  boardDay = WMSkyBoard.generateDay({ rank, dungeonModes: boardDungeonModes });
   renderBoard();
+}
+
+// ---------------------------------------------------------------------------
+// Stato dei dungeon nella partita simulata dalla bacheca
+// ---------------------------------------------------------------------------
+
+// { dungeon: 0 chiuso | 1 aperto ma non completato }; i dungeon che mancano sono completati. Si ricorda nel
+// browser di chi usa il sito (solo come comodità: senza archivio si riparte da tutti completati).
+const BOARD_DUNGEONS_STORAGE_KEY = 'wmsky-board-dungeons';
+const BOARD_DUNGEON_MODES = [3, 1, 0];
+// Dungeon che si aprono con una missione: Grotta Labirinto (Scaglie di Gabite), Collina Folgore e Foresta
+// Mezzanotte (dungeon nuovo), i sette dungeon degli strumenti musicali del Caffè di Spinda.
+const BOARD_UNLOCKABLE_DUNGEONS = [0x5B, 0x60, 0x62, 73, 75, 77, 79, 81, 83, 85];
+let boardDungeonModes = loadBoardDungeonModes();
+
+function loadBoardDungeonModes() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(BOARD_DUNGEONS_STORAGE_KEY) || '{}');
+    const modes = {};
+    Object.entries(stored || {}).forEach(([dungeon, mode]) => {
+      if (mode === 0 || mode === 1) modes[dungeon] = mode;
+    });
+    return modes;
+  } catch (error) {
+    return {};
+  }
+}
+
+function saveBoardDungeonModes() {
+  try {
+    localStorage.setItem(BOARD_DUNGEONS_STORAGE_KEY, JSON.stringify(boardDungeonModes));
+  } catch (error) {
+    /* archiviazione non disponibile: la scelta vale solo per questa visita */
+  }
+}
+
+function renderBoardDungeons() {
+  const list = document.getElementById('boardDungeonsList');
+  if (!list || !window.WMSkyBoard) return;
+  const notDone = Object.keys(boardDungeonModes).length;
+  document.getElementById('boardDungeonsTitle').textContent = notDone
+    ? t('boardDungeonsSome', { count: notDone }) : t('boardDungeonsAllDone');
+  list.textContent = '';
+  const labels = { 3: t('boardDungeonDone'), 1: t('boardDungeonOpen'), 0: t('boardDungeonClosed') };
+  WMSkyBoard.dungeons().forEach((dungeon) => {
+    const item = document.createElement('li');
+    const mode = Number.isFinite(boardDungeonModes[dungeon]) ? boardDungeonModes[dungeon] : 3;
+    item.classList.toggle('board-dungeon-changed', mode !== 3);
+    const id = `boardDungeon${dungeon}`;
+    const label = document.createElement('label');
+    label.htmlFor = id;
+    label.textContent = getDungeonName(dungeon);
+    const select = document.createElement('select');
+    select.id = id;
+    select.dataset.dungeon = String(dungeon);
+    BOARD_DUNGEON_MODES.forEach((value) => {
+      const option = document.createElement('option');
+      option.value = String(value);
+      option.textContent = labels[value];
+      select.appendChild(option);
+    });
+    select.value = String(mode);
+    item.append(label, select);
+    list.appendChild(item);
+  });
+}
+
+function setBoardDungeonModes(modes) {
+  boardDungeonModes = modes;
+  saveBoardDungeonModes();
+  renderBoardDungeons();
+  newBoardDay();
+}
+
+function setupBoardDungeons() {
+  document.getElementById('boardDungeonsList')?.addEventListener('change', (event) => {
+    const select = event.target.closest('select[data-dungeon]');
+    if (!select) return;
+    const modes = Object.assign({}, boardDungeonModes);
+    const mode = parseInt(select.value, 10);
+    if (mode === 3) delete modes[select.dataset.dungeon];
+    else modes[select.dataset.dungeon] = mode;
+    setBoardDungeonModes(modes);
+  });
+  document.getElementById('boardDungeonsAll')?.addEventListener('click', () => setBoardDungeonModes({}));
+  document.getElementById('boardDungeonsUnlockable')?.addEventListener('click', () => {
+    const modes = Object.assign({}, boardDungeonModes);
+    BOARD_UNLOCKABLE_DUNGEONS.forEach((dungeon) => { modes[dungeon] = 0; });
+    setBoardDungeonModes(modes);
+  });
+  renderBoardDungeons();
 }
 
 // Missione della bacheca con o senza restrizione, secondo la casella.
@@ -3551,6 +3685,7 @@ function setupBoard() {
     if (button) useBoardMission(button.dataset.board, parseInt(button.dataset.index, 10));
   });
   populateBoardRanks();
+  setupBoardDungeons();
 }
 
 // ---------------------------------------------------------------------------
