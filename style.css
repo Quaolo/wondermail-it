@@ -7,6 +7,8 @@
   font-weight: 400;
   font-display: swap;
   src: url(assets/fonts/pixelify-sans-latin-400-normal.woff2) format('woff2');
+  /* Niente cifre: il 5 del font sembra una S, quindi i numeri usano il font dell'interfaccia. */
+  unicode-range: U+0000-002F, U+003A-FFFF;
 }
 @font-face {
   font-family: 'Pixelify Sans';
@@ -14,6 +16,8 @@
   font-weight: 600;
   font-display: swap;
   src: url(assets/fonts/pixelify-sans-latin-600-normal.woff2) format('woff2');
+  /* Niente cifre: il 5 del font sembra una S, quindi i numeri usano il font dell'interfaccia. */
+  unicode-range: U+0000-002F, U+003A-FFFF;
 }
 
 :root {
@@ -594,7 +598,21 @@ details > summary { cursor: pointer; font-weight: 700; }
 }
 .region-picker:focus-within { border-color: var(--gold); }
 .region-label { padding: 0 8px; font-size: .68rem; line-height: 1.2; letter-spacing: .02em; color: var(--muted); white-space: nowrap; }
-.region-picker select { width: auto; min-height: 0; padding: 0 8px 4px; border: 0; background: transparent; box-shadow: none; font-weight: 700; cursor: pointer; }
+.region-picker select {
+  width: auto;
+  min-height: 0;
+  padding: 0 26px 4px 8px;
+  border: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  /* Freccia disegnata da noi: quella del sistema, su Windows, compariva in un riquadro chiaro. */
+  background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5l5 5 5-5' fill='none' stroke='%23b0bde2' stroke-width='2'/%3E%3C/svg%3E") no-repeat right 8px center / 11px 8px;
+  box-shadow: none;
+  font-weight: 700;
+  cursor: pointer;
+}
+/* Voci dei menu a tendina: su Windows l'elenco è chiaro e il testo, bianco, non si leggeva. */
+select option, select optgroup { background: var(--panel); color: var(--text); }
 
 /* Barra della password su telefono */
 .mobile-pass { display: none; }
