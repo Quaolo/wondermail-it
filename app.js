@@ -3856,9 +3856,199 @@ async function copySeriesText(text, all) {
 }
 
 // Anteprima e stanza seguono sempre la password mostrata.
+// ---------------------------------------------------------------------------
+// Il piano della missione (dati di BALANCE/mappa_s.bin, data/piani.js)
+// ---------------------------------------------------------------------------
+
+// Piano che la scheda sta mostrando: parte da quello della missione, e con le frecce si guardano gli altri
+// piani dello stesso dungeon senza cambiare la missione.
+let floorView = null;
+const FLOOR_ITEMS_SHOWN = 8;
+const WEATHER_RANDOM = 8;
+
+function getFloorData(dungeon, floor) {
+  const data = window.WMSkyFloors;
+  const row = data && data.byDungeon && data.byDungeon[dungeon];
+  const entry = row && row[floor - 1];
+  if (!Array.isArray(entry)) return null;
+  const layout = {};
+  data.layoutFields.forEach((field, index) => { layout[field] = data.layouts[entry[0]][index]; });
+  return { layout, monsters: data.monsters[entry[1]], traps: data.traps[entry[2]], items: data.items[entry[3]] };
+}
+
+function formatChance(value) {
+  const number = new Intl.NumberFormat(getCurrentLanguage(), { maximumFractionDigits: value < 1 ? 2 : 1 });
+  return `${number.format(value)}%`;
+}
+
+function floorGameText(key) {
+  const text = getGameText(getJobTextLanguage()) || getGameText(FALLBACK_LANGUAGE) || {};
+  return text[key];
+}
+
+function makeFloorStat(label, value, muted) {
+  const item = document.createElement('li');
+  item.className = `floor-stat${muted ? ' floor-stat-off' : ''}`;
+  const name = document.createElement('span');
+  name.className = 'floor-stat-label';
+  name.textContent = label;
+  const strong = document.createElement('strong');
+  strong.textContent = value;
+  item.append(name, strong);
+  return item;
+}
+
+function renderFloorStats(layout) {
+  const list = document.getElementById('floorStats');
+  list.textContent = '';
+  const places = floorGameText('floorPlaces') || {};
+  const weather = layout.weather === WEATHER_RANDOM ? t('floorWeatherRandom')
+    : ((floorGameText('weather') || [])[layout.weather] || String(layout.weather));
+  list.append(makeFloorStat(t('floorWeather'), weather));
+  list.append(makeFloorStat(t('floorVision'), layout.darkness
+    ? t('floorVisionRange', { tiles: layout.darkness }) : t('floorVisionClear')));
+  list.append(makeFloorStat(places.kecleonShop || 'Kecleon', formatChance(layout.kecleonShop), !layout.kecleonShop));
+  list.append(makeFloorStat(places.monsterHouse || 'Monster House', formatChance(layout.monsterHouse), !layout.monsterHouse));
+  // Scale nascoste: 0 Bazar Segreto, 1 Sala Segreta, 255 l'uno o l'altra (floor_properties di pret).
+  let hidden;
+  if (layout.hiddenStairsType === 0) hidden = places.secretBazaar;
+  else if (layout.hiddenStairsType === 1) hidden = places.secretRoom;
+  else hidden = t('floorHiddenEither', { bazaar: places.secretBazaar, room: places.secretRoom });
+  list.append(makeFloorStat(t('floorHiddenStairs', { place: hidden }), formatChance(layout.hiddenStairs), !layout.hiddenStairs));
+}
+
+function renderFloorMonsters(monsters) {
+  const list = document.getElementById('floorMonsters');
+  list.textContent = '';
+  (monsters || []).forEach(([monId, level, chance]) => {
+    const item = document.createElement('li');
+    item.className = 'floor-mon';
+    const name = getLocalizedPokemonName(monId);
+    const text = document.createElement('span');
+    text.className = 'floor-mon-text';
+    const title = document.createElement('strong');
+    title.textContent = name;
+    const detail = document.createElement('span');
+    detail.textContent = `${t('floorLevel', { level })} · ${formatChance(chance)}`;
+    text.append(title, detail);
+    item.append(createFallbackImage(getPokemonImage(monId, name), 'floor-mon-portrait'), text);
+    list.append(item);
+  });
+  document.getElementById('floorMonstersEmpty').hidden = !!(monsters && monsters.length);
+}
+
+function makeFloorItem(itemId, chance) {
+  const item = document.createElement('li');
+  const name = getItemDisplayName(itemId);
+  item.append(createFallbackImage(getItemImage(itemId, name, true), 'job-item-icon'),
+    document.createTextNode(`${name} · ${formatChance(chance)}`));
+  return item;
+}
+
+function renderFloorItems(items) {
+  const list = document.getElementById('floorItems');
+  const more = document.getElementById('floorItemsMore');
+  const moreList = document.getElementById('floorItemsMoreList');
+  list.textContent = '';
+  moreList.textContent = '';
+  (items || []).forEach(([itemId, chance], index) => {
+    (index < FLOOR_ITEMS_SHOWN ? list : moreList).append(makeFloorItem(itemId, chance));
+  });
+  const extra = Math.max(0, (items || []).length - FLOOR_ITEMS_SHOWN);
+  more.hidden = !extra;
+  document.getElementById('floorItemsMoreTitle').textContent = t('floorItemsMore', { count: extra });
+}
+
+function renderFloorTraps(traps) {
+  const names = floorGameText('traps') || [];
+  document.getElementById('floorTraps').textContent = (traps || [])
+    .map(([trapId, chance]) => `${names[trapId] || trapId} ${formatChance(chance)}`)
+    .join(' · ');
+}
+
+function renderFloorCard() {
+  const card = document.getElementById('floorCard');
+  if (!card) return;
+  const result = getOutputMission();
+  const struct = result && result.struct;
+  const valid = struct && !isEggGlitchStruct(struct) && getFloorData(struct.dungeon, struct.floor);
+  card.classList.toggle('hidden', !valid);
+  if (!valid) {
+    floorView = null;
+    return;
+  }
+
+  const limit = getDungeonFloorLimit(struct.dungeon);
+  const missionKey = `${struct.dungeon}/${struct.floor}`;
+  if (!floorView || floorView.missionKey !== missionKey) {
+    floorView = { missionKey, dungeon: struct.dungeon, floor: struct.floor };
+  }
+  const floor = floorView.floor;
+  const data = getFloorData(struct.dungeon, floor) || valid;
+  const lang = getJobTextLanguage();
+  document.getElementById('floorTitle').textContent =
+    `${getDungeonName(struct.dungeon)} · ${WMSkyJobText.formatFloor(floor, struct.dungeon, lang)}`;
+  document.getElementById('floorPrev').disabled = floor <= 1;
+  document.getElementById('floorNext').disabled = floor >= limit;
+
+  const other = floor !== struct.floor;
+  const forbidden = WMSGen.getForbiddenFloors(struct.dungeon).includes(floor);
+  const note = document.getElementById('floorOther');
+  note.hidden = !other;
+  if (other) {
+    const values = { floor: WMSkyJobText.formatFloor(struct.floor, struct.dungeon, lang) };
+    document.getElementById('floorOtherText').textContent = forbidden
+      ? t('floorOtherForbidden', values) : t('floorOther', values);
+    document.getElementById('floorUse').hidden = forbidden;
+  }
+
+  // Missioni con una stanza speciale: forma, strumenti e trappole sono quelli della stanza.
+  const plan = window.WMSkyRooms
+    ? WMSkyRooms.getRoomPlan({ mainType: struct.missionType, specialType: struct.missionSpecial }) : null;
+  const notes = [];
+  if (plan && !other) notes.push(t('floorMissionRoom'));
+  if (data.layout.fixedRoom) notes.push(t('floorFixedRoom', { room: data.layout.fixedRoom }));
+  const noteBox = document.getElementById('floorNote');
+  noteBox.hidden = !notes.length;
+  noteBox.textContent = notes.join(' ');
+
+  renderFloorStats(data.layout);
+  renderFloorMonsters(data.monsters);
+  renderFloorItems(data.items);
+  renderFloorTraps(data.traps);
+}
+
+function moveFloorView(step) {
+  if (!floorView) return;
+  const limit = getDungeonFloorLimit(floorView.dungeon);
+  let floor = floorView.floor + step;
+  // Si saltano i piani che il gruppo del dungeon non ha (nessun dato).
+  while (floor >= 1 && floor <= limit && !getFloorData(floorView.dungeon, floor)) floor += step;
+  if (floor < 1 || floor > limit) return;
+  floorView.floor = floor;
+  renderFloorCard();
+}
+
+// «Usa questo piano»: il piano guardato diventa quello della missione, come se lo si scrivesse nel modulo.
+function useViewedFloor() {
+  if (!floorView) return;
+  const input = document.getElementById('floor');
+  if (!input) return;
+  input.value = String(floorView.floor);
+  input.dispatchEvent(new Event('change', { bubbles: true }));
+  generateCode();
+}
+
+function setupFloorCard() {
+  document.getElementById('floorPrev')?.addEventListener('click', () => moveFloorView(-1));
+  document.getElementById('floorNext')?.addEventListener('click', () => moveFloorView(1));
+  document.getElementById('floorUse')?.addEventListener('click', useViewedFloor);
+}
+
 function updateOutputCards() {
   renderJobCard();
   renderRoomCard();
+  renderFloorCard();
   renderMissionSeries();
   updateMobilePass();
 }
@@ -3923,6 +4113,7 @@ onReady(() => {
   });
   setupJobTextPicker();
   setupBoard();
+  setupFloorCard();
   document.getElementById('similarNewSeed')?.addEventListener('click', () => {
     requestPasswordAnimation();
     makeSimilarMission('newSeed');

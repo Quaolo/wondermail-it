@@ -107,6 +107,18 @@ Team restrictions (a partner of a certain type or a specific Pokémon) can now a
 among the advanced options. "Job Summary" has a button to remove them, and the board has a box that removes
 them from every mission.
 
+## The mission floor
+
+Below the room there's a card with the floor the mission takes you to, from the game's dungeon data: the
+weather, how far you can see in hallways, the odds of finding a Kecleon Shop, a Monster House or hidden stairs,
+the Pokémon that appear with their level, the items on the ground and the traps, each with the odds the game
+uses to pick it. The arrows show the other floors of the same dungeon without touching the mission, and if you
+like one better you can switch to it with a click. It's mostly handy for missions you repeat: you can see at a
+glance which floor is easier, or where the hidden stairs lead to the Secret Room.
+
+For missions with a special room (Treasure Memo, challenges, hideouts) the room takes the floor's place, so
+its layout, items and traps are the room's own: the card says so.
+
 ## Unlocking a dungeon
 
 The "Unlock a dungeon" card sets up the trick found by Lai-brary: a Jirachi Challenge Letter with another
@@ -177,7 +189,8 @@ python tools/estrai_dati.py --pmd-sky ../pmd-sky   # if you already have a copy 
 The script downloads the files from a fixed commit and checks that they haven't changed. From there it gets
 the texts (names, descriptions, "Job Summary" sentences, mission titles and descriptions with the tables to
 pick them), the tables the game uses to fill the job board, item and Pokémon data (Pokédex number for the
-portraits, who can be a client), the floors and difficulty of every dungeon and the special rooms.
+portraits, who can be a client), the floors and difficulty of every dungeon, the special rooms and what's on
+every floor (weather, Pokémon, items and traps, from `mappa_s.bin`).
 
 The rest of the code is plain JavaScript with no libraries: `lm.js` encodes and decodes passwords,
 `lmgenerate.js` describes the mission types, `testi_missione.js` picks the title and description, `bacheca.js` prepares the job board missions, `app.js` and `stanze.js` run the page and the maps. In
@@ -187,7 +200,7 @@ comments are in Italian, which is where the project comes from.
 ## Tests
 
 ```
-node --test                  # encoding, rooms, Pokémon, floors, validity, rewards, texts, job board, icons and translations (Node 18+)
+node --test                  # encoding, rooms, Pokémon, floors, validity, rewards, texts, job board, floor data, icons and translations (Node 18+)
 python tests/ui_smoke.py     # tries the page in a real browser, needs Playwright
 ```
 
@@ -214,7 +227,7 @@ The encoding test compares 60 passwords with those of the original generator and
 - the old Wonder Mail S generator, in the public domain, and the French version by
   [SombrAbsol](https://github.com/SombrAbsol/SombrAbsol.github.io)
 - [pret/pmd-sky](https://github.com/pret/pmd-sky) for the game files and tables
-- [SkyTemple](https://github.com/SkyTemple/skytemple-files) for the text and room formats
+- [SkyTemple](https://github.com/SkyTemple/skytemple-files) for the text, room and dungeon floor formats
 - [pmdsky-debug](https://github.com/UsernameFodder/pmdsky-debug) for the documentation of the game functions
 - [Lai-brary](https://laioxy.github.io/wondermail/) for the Japanese table, the egg glitch and the dungeon unlock glitch
 - [Sonictrainer's Wonder Mail S FAQ](https://gamefaqs.gamespot.com/ds/955859-pokemon-mystery-dungeon-explorers-of-sky/faqs/58573)

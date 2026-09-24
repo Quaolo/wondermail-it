@@ -16,6 +16,7 @@
   <script src="data/testi_gioco_it.js"></script>
   <script src="data/testi_gioco_en.js"></script>
   <script src="data/stanze_fisse.js"></script>
+  <script src="data/piani.js"></script>
   <script src="data/esempi_memo.js"></script>
   <script src="item_icon_map.js"></script>
   <script src="lang/locales.js"></script>
@@ -378,6 +379,37 @@
             <p class="status" id="roomExampleStatus" role="status"></p>
           </div>
           <p class="hint room-source" data-i18n="roomSource"></p>
+        </section>
+
+        <section class="window floor-card hidden" id="floorCard" aria-labelledby="floorTitle">
+          <div class="room-head">
+            <div>
+              <p class="eyebrow" data-i18n="floorKind">Il piano della missione</p>
+              <h2 id="floorTitle"></h2>
+            </div>
+            <div class="floor-nav">
+              <button type="button" class="ghost" id="floorPrev" data-i18n-title="floorPrev" data-i18n-aria="floorPrev" title="Piano precedente">&#8249;</button>
+              <button type="button" class="ghost" id="floorNext" data-i18n-title="floorNext" data-i18n-aria="floorNext" title="Piano successivo">&#8250;</button>
+            </div>
+          </div>
+          <div class="floor-other" id="floorOther" hidden>
+            <p id="floorOtherText"></p>
+            <button type="button" id="floorUse" data-i18n="floorUse">Usa questo piano</button>
+          </div>
+          <p class="hint floor-note" id="floorNote" hidden></p>
+          <ul class="floor-stats" id="floorStats"></ul>
+          <h3 class="floor-sub" data-i18n="floorMonsters">Pokémon che compaiono</h3>
+          <ul class="floor-mons" id="floorMonsters"></ul>
+          <p class="hint" id="floorMonstersEmpty" data-i18n="floorMonstersEmpty" hidden></p>
+          <h3 class="floor-sub" data-i18n="floorItems">Strumenti a terra</h3>
+          <ul class="floor-items" id="floorItems"></ul>
+          <details class="floor-more" id="floorItemsMore" hidden>
+            <summary id="floorItemsMoreTitle"></summary>
+            <ul class="floor-items" id="floorItemsMoreList"></ul>
+          </details>
+          <h3 class="floor-sub" data-i18n="floorTrapsTitle">Trappole</h3>
+          <p class="floor-traps" id="floorTraps"></p>
+          <p class="hint room-source" data-i18n="floorSource"></p>
         </section>
       </div>
 

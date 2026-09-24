@@ -1138,6 +1138,79 @@ textarea.password {
   color: #ffd3da;
   font-size: .92rem;
 }
+/* Il piano della missione (mappa_s.bin) */
+.room-head > .floor-nav { display: flex; gap: 6px; }
+.floor-nav button { min-width: 40px; padding: 4px 10px; font-size: 1.2rem; line-height: 1; }
+.floor-other {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 12px;
+  margin: 0 0 12px;
+  padding: 8px 12px;
+  border: 1px dashed var(--gold);
+  border-radius: 10px;
+  color: var(--gold);
+  font-size: .9rem;
+}
+.floor-other p { margin: 0; }
+.floor-note { margin: 0 0 12px; }
+.floor-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.floor-stat {
+  display: grid;
+  gap: 2px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(5, 12, 36, .35);
+}
+.floor-stat-label { color: var(--muted); font-size: .8rem; }
+.floor-stat-off strong { color: var(--dim); font-weight: 600; }
+.floor-sub { margin: 16px 0 8px; color: var(--gold); }
+.floor-mons {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.floor-mon { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.floor-mon-portrait {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border: 2px solid var(--line-strong);
+  border-radius: 8px;
+  background: var(--panel);
+  object-fit: cover;
+}
+.floor-mon-text { display: grid; min-width: 0; font-size: .88rem; }
+.floor-mon-text strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.floor-mon-text span { color: var(--muted); font-size: .82rem; }
+.floor-items {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 6px 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: .88rem;
+}
+.floor-items li { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.floor-more { margin-top: 8px; }
+.floor-more summary { color: var(--gold); cursor: pointer; }
+.floor-more[open] summary { margin-bottom: 8px; }
+.floor-traps { margin: 0; color: var(--text); font-size: .9rem; }
+
 /* Contenuto dei Tecalusso per dungeon (stanze senza tesoro) */
 .room-boxes {
   margin-top: 14px;
@@ -1280,7 +1353,7 @@ button, .chip, .preset-btn { transition: transform .08s ease; }
   .side-panel { position: static; }
   /* In colonna unica la stanza scende dopo il risultato: modulo, Info missione, Password, Stanza. */
   .work-main { display: contents; }
-  #roomCard { order: 1; }
+  #roomCard, #floorCard { order: 1; }
   .page { padding-bottom: 86px; }
   .mobile-pass {
     position: fixed;

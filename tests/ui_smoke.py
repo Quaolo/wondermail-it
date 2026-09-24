@@ -509,6 +509,25 @@ def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
         check(board_check["pairs"] == [True], f"le coppie della bacheca sono riconosciute nel menu: {board_check['pairs']}")
         page.evaluate("closeStartPanels()")
 
+        # Il piano della missione: dati di mappa_s.bin, frecce per guardare gli altri piani e «Usa questo piano»
+        set_select(page, "missionTypeBox", 0)
+        set_select(page, "dungeonBox", 1)
+        set_input(page, "floor", 1)
+        generate(page)
+        page.wait_for_timeout(150)
+        check(page.is_visible("#floorCard") and page.locator("#floorMonsters .floor-mon").count() == 4,
+              f"piano 1 della Grotta Marina con 4 Pokémon: {page.locator('#floorMonsters .floor-mon').count()}")
+        stats = page.text_content("#floorStats")
+        check("Meteo" in stats and "Sereno" in stats and "2 caselle" in stats, f"meteo e buio del piano: {stats!r}")
+        check("Mattomagica 100%" in page.text_content("#floorTraps"), "trappole del piano")
+        page.click("#floorNext")
+        check(page.is_visible("#floorOther") and "P. -2" in page.text_content("#floorTitle"),
+              f"la freccia mostra il piano successivo: {page.text_content('#floorTitle')!r}")
+        page.click("#floorUse")
+        page.wait_for_timeout(200)
+        struct = decode_output(page, "eu")["struct"]
+        check(struct["floor"] == 2 and page.is_hidden("#floorOther"), f"«Usa questo piano» cambia la missione: piano {struct['floor']}")
+
         # Varianti a coppie: scegliendo il sottotipo arriva una coppia del gioco, e il menu la cambia
         set_select(page, "missionTypeBox", 1)
         set_select(page, "missionSubTypeBox", 1)

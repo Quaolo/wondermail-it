@@ -107,6 +107,18 @@ Le restrizioni (un compagno di un certo tipo o un Pokémon preciso) ora si posso
 tra le opzioni avanzate. In "Info missione" c'è un pulsante per toglierle, e nella bacheca una casella che le
 toglie a tutte le missioni.
 
+## Il piano della missione
+
+Sotto la stanza c'è una scheda con il piano dove porta la missione, presa dai dati dei dungeon del gioco: il
+meteo, quanto si vede nei corridoi, la probabilità di trovare il negozio di Kecleon, un covo di Pokémon o le
+scale nascoste, i Pokémon che compaiono con il loro livello, gli strumenti a terra e le trappole, ognuno con la
+probabilità con cui il gioco lo sceglie. Con le frecce guardi gli altri piani dello stesso dungeon senza
+toccare la missione, e se uno ti piace di più lo usi con un clic. Serve soprattutto per le missioni da
+ripetere: si vede subito quale piano è più comodo, o dove le scale nascoste portano alla Sala Segreta.
+
+Per le missioni con una stanza speciale (Memo tesoro, sfide, covi) la stanza prende il posto del piano, quindi
+forma, strumenti e trappole sono quelli della stanza: la scheda lo dice.
+
 ## Sbloccare un dungeon
 
 La scheda "Sblocca un dungeon" prepara il trucco scoperto da Lai-brary: una Lettera di sfida di Jirachi con un
@@ -177,7 +189,8 @@ python tools/estrai_dati.py --pmd-sky ../pmd-sky   # se hai già una copia di pr
 Lo script scarica i file da un commit preciso e controlla che non siano cambiati. Da lì ricava i testi
 (nomi, descrizioni, frasi di "Info missione", titoli e descrizioni delle missioni con le tabelle per
 sceglierli), le tabelle con cui il gioco riempie la bacheca, i dati degli strumenti e dei Pokémon (numero del Pokédex per i
-ritratti, chi può fare da committente), i piani e la difficoltà di ogni dungeon e le stanze speciali.
+ritratti, chi può fare da committente), i piani e la difficoltà di ogni dungeon, le stanze speciali e cosa
+c'è su ogni piano (meteo, Pokémon, strumenti e trappole, da `mappa_s.bin`).
 
 Il resto del codice è JavaScript senza librerie: `lm.js` codifica e decodifica le password,
 `lmgenerate.js` descrive i tipi di missione, `testi_missione.js` sceglie titolo e descrizione, `bacheca.js` prepara le missioni della bacheca, `app.js` e `stanze.js` gestiscono la pagina e le mappe.
@@ -186,7 +199,7 @@ In `config.js` si può mettere l'indirizzo del repository per mostrare il pulsan
 ## Test
 
 ```
-node --test                  # codifica, stanze, Pokémon, piani, validità, premi, testi, bacheca, icone e traduzioni (Node 18+)
+node --test                  # codifica, stanze, Pokémon, piani, validità, premi, testi, bacheca, dati dei piani, icone e traduzioni (Node 18+)
 python tests/ui_smoke.py     # prova la pagina in un browser vero, serve Playwright
 ```
 
@@ -213,7 +226,7 @@ Il test della codifica confronta 60 password con quelle del generatore originale
 - il vecchio generatore di Wonder Mail S, di pubblico dominio, e la versione francese di
   [SombrAbsol](https://github.com/SombrAbsol/SombrAbsol.github.io)
 - [pret/pmd-sky](https://github.com/pret/pmd-sky) per i file e le tabelle del gioco
-- [SkyTemple](https://github.com/SkyTemple/skytemple-files) per il formato dei testi e delle stanze
+- [SkyTemple](https://github.com/SkyTemple/skytemple-files) per il formato dei testi, delle stanze e dei piani dei dungeon
 - [pmdsky-debug](https://github.com/UsernameFodder/pmdsky-debug) per la documentazione delle funzioni del gioco
 - [Lai-brary](https://laioxy.github.io/wondermail/) per la tabella giapponese, il glitch dell'uovo e quello per sbloccare i dungeon
 - la [guida alle Wonder Mail S di Sonictrainer](https://gamefaqs.gamespot.com/ds/955859-pokemon-mystery-dungeon-explorers-of-sky/faqs/58573)
