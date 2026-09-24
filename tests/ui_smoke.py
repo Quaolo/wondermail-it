@@ -402,7 +402,7 @@ def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
         # Preset di Mewtwo: la password si aggiorna da sola
         open_tool_card(page, "presetsCard")
         page.click('.preset-btn[data-preset="mewtwo"]')
-        page.wait_for_timeout(150)
+        generate(page)
         struct = decode_output(page, "eu")["struct"]
         check((struct["missionType"], struct["missionSpecial"], struct["client"], struct["specialFloor"]) == (11, 1, 150, 145),
               f"Lettera di sfida di Mewtwo senza premere Genera: {(struct['missionType'], struct['missionSpecial'], struct['client'], struct['specialFloor'])}")
@@ -476,6 +476,62 @@ def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
               f"missione della bacheca nel modulo: {page.text_content('#originText')!r}")
         check(page.text_content("#jobLetterTitle") == wanted_title,
               f"Info missione mostra la missione scelta: {page.text_content('#jobLetterTitle')!r}")
+        # Ogni missione della bacheca entra nel modulo così com'è (varianti comprese) e ha il suo titolo
+        board_check = page.evaluate("""() => {
+            const problems = [];
+            let total = 0;
+            const pairs = new Set();
+            for (let day = 0; day < 12; day += 1) {
+                newBoardDay();
+                for (const boardId of ['job', 'outlaw', 'cafe', 'bottle']) {
+                    (boardDay[boardId] || []).forEach((mission, index) => {
+                        total += 1;
+                        useBoardMission(boardId, index);
+                        const built = WMSGen.buildStruct();
+                        // Lo strumento obiettivo conta solo nelle missioni che lo mostrano (il modulo altrimenti mette una Mela).
+                        const keys = ['missionType', 'missionSpecial', 'client', 'target', 'target2', 'dungeon', 'floor'];
+                        if (WMSGen.getTypeData().useTargetItem) keys.push('targetItem');
+                        const same = keys.every((key) => built[key] === mission[key]);
+                        const status = document.getElementById('statusLine');
+                        if (!same || status.dataset.state !== 'ok' || !document.getElementById('jobLetterGuess').hidden) {
+                            problems.push(`${mission.missionType}.${mission.missionSpecial}`);
+                        }
+                        if (!document.getElementById('pairField').classList.contains('hidden')) {
+                            pairs.add(document.getElementById('pairBox').value !== '');
+                        }
+                    });
+                }
+            }
+            return { total, problems: problems.slice(0, 5), pairs: Array.from(pairs) };
+        }""")
+        check(board_check["total"] > 150 and not board_check["problems"],
+              f"tutte le missioni della bacheca stanno nel modulo con il loro titolo: {board_check}")
+        check(board_check["pairs"] == [True], f"le coppie della bacheca sono riconosciute nel menu: {board_check['pairs']}")
+        page.evaluate("closeStartPanels()")
+
+        # Varianti a coppie: scegliendo il sottotipo arriva una coppia del gioco, e il menu la cambia
+        set_select(page, "missionTypeBox", 1)
+        set_select(page, "missionSubTypeBox", 1)
+        page.wait_for_timeout(150)
+        check(page.is_visible("#pairField") and page.input_value("#pairBox") != "",
+              "soccorso del cucciolo: il modulo parte da una coppia del gioco")
+        check(page.is_hidden("#jobLetterGuess"), "la coppia del gioco ha il suo titolo")
+        set_select(page, "pairBox", 0)
+        generate(page)
+        struct = decode_output(page, "eu")["struct"]
+        check((struct["missionType"], struct["missionSpecial"], struct["client"], struct["target"]) == (1, 1, 15, 13),
+              f"coppia Beedrill → Weedle nella password: {(struct['client'], struct['target'])}")
+        set_select(page, "missionTypeBox", 6)
+        set_select(page, "missionSubTypeBox", 4)
+        generate(page)
+        struct = decode_output(page, "eu")["struct"]
+        check((struct["client"], struct["targetItem"], struct["dungeon"]) == (176, 92, 91),
+              f"Scaglie di Gabite: Togetic, strumento e dungeon del gioco: {(struct['client'], struct['targetItem'], struct['dungeon'])}")
+        set_select(page, "missionTypeBox", 10)
+        subtypes = page.evaluate("Array.from(document.getElementById('missionSubTypeBox').options, (o) => o.text)")
+        check(len(subtypes) == 5 and "In fuga" in subtypes, f"arresti con Magnemite come nel gioco: {subtypes}")
+        set_select(page, "missionTypeBox", 0)
+
         set_select(page, "boardRank", 0)
         open_tool_card(page, "boardCard")
         page.wait_for_timeout(150)

@@ -24,8 +24,19 @@
 var WMSGenData = {
   missionTypes: [
     { name: 'rescueClient', mainType: 0, specialType: 0, clientIsTarget: true },
-    { name: 'rescueTarget', mainType: 1, specialType: 0 },
-    { name: 'escortToTarget', mainType: 2, specialType: 0 },
+    // Sottotipi di soccorso e accompagnamento (enum mission_subtype_rescue_target ed escort_to_target di pret):
+    // cambiano solo i dialoghi. Il gioco non controlla le coppie, ma il titolo esce solo per quelle dei
+    // modelli di rescue.bin (`gamePairs`: l'app le propone in un menu).
+    { name: 'rescueTarget', mainType: 1, subTypes: [
+      { name: 'Normal', specialType: 0 },
+      { name: 'Child', specialType: 1, gamePairs: true },
+      { name: 'Friend', specialType: 2, gamePairs: true },
+      { name: 'Lover or rival', specialType: 3, gamePairs: true }
+    ] },
+    { name: 'escortToTarget', mainType: 2, subTypes: [
+      { name: 'Normal', specialType: 0 },
+      { name: 'Loved one', specialType: 1, gamePairs: true }
+    ] },
 
     // Nella Sala Proibita lo strumento obiettivo è quello che si trova nella stanza.
     { name: 'exploreWithClient', mainType: 3, clientIsTarget: true, subTypes: [
@@ -37,7 +48,15 @@ var WMSGenData = {
 
     { name: 'prospectWithClient', mainType: 4, specialType: 0, useTargetItem: true, clientIsTarget: true },
     { name: 'guideClient', mainType: 5, specialType: 0, clientIsTarget: true },
-    { name: 'findItem', mainType: 6, specialType: 0, useTargetItem: true, clientIsTarget: true },
+    // Trova lo strumento (enum mission_subtype_find_item): elenco comune, elenco raro, strumento che fa
+    // evolvere il committente, Gomma del suo tipo, Scaglie di Gabite per Togetic (apre la Grotta Labirinto).
+    { name: 'findItem', mainType: 6, useTargetItem: true, clientIsTarget: true, subTypes: [
+      { name: 'Normal', specialType: 0 },
+      { name: 'Rare treasure', specialType: 1 },
+      { name: 'Evolution item', specialType: 2, gamePairs: true },
+      { name: 'Favorite Gummi', specialType: 3, gamePairs: true },
+      { name: 'Gabite Scale', specialType: 4, gamePairs: true, forceClient: 176 }
+    ] },
     { name: 'deliverItem', mainType: 7, specialType: 0, useTargetItem: true, clientIsTarget: true },
     { name: 'searchForClient', mainType: 8, specialType: 0 },
 
@@ -47,19 +66,31 @@ var WMSGenData = {
       { name: 'Fleeing target', specialType: 2 }
     ] },
 
+    // Arresti (enum mission_subtype_outlaw): i sottotipi 0-3 sono missioni normali con elenchi di ricercati
+    // diversi. Nei modelli di rescue.bin 0, 1 e 7 sono di Magnezone, 2, 3 e 5 di Magnemite, 4 e 6 di tutti e
+    // due: con l'agente sbagliato il gioco accetta la password ma non ha un titolo per la missione, quindi
+    // quelle combinazioni non si offrono (compaiono solo leggendo una password che le usa). Gli indici 0-3
+    // sono quelli storici.
     { name: 'arrestMagnemite', mainType: 10, forceClient: 81, subTypes: [
-      { name: 'Normal', specialType: 0 },
+      { name: 'Normal', specialType: 0, advancedOnly: true },
       { name: 'Escort', specialType: 4 },
       { name: 'Special floor', specialType: 6, useTarget2: true, specialFloorFromList: 'thievesden' },
-      { name: 'Monster House', specialType: 7 }
+      { name: 'Monster House', specialType: 7, advancedOnly: true },
+      { name: 'Normal B', specialType: 1, advancedOnly: true },
+      { name: 'Normal C', specialType: 2 },
+      { name: 'Normal D', specialType: 3 },
+      { name: 'Fleeing', specialType: 5 }
     ] },
 
-    // Stessa lista di prima, con Magnezone.
     { name: 'arrestMagnezone', mainType: 10, forceClient: 504, subTypes: [
       { name: 'Normal', specialType: 0 },
       { name: 'Escort', specialType: 4 },
       { name: 'Special floor', specialType: 6, useTarget2: true, specialFloorFromList: 'thievesden' },
-      { name: 'Monster House', specialType: 7 }
+      { name: 'Monster House', specialType: 7 },
+      { name: 'Normal B', specialType: 1 },
+      { name: 'Normal C', specialType: 2, advancedOnly: true },
+      { name: 'Normal D', specialType: 3, advancedOnly: true },
+      { name: 'Fleeing', specialType: 5, advancedOnly: true }
     ] },
 
     { name: 'challengeLetter', mainType: 11, subTypes: [
@@ -254,7 +285,13 @@ var WMSGen = {
     if (typeData && typeData.subTypes) {
       var box = this.form.missionSubTypeBox;
       while (box.options.length) box.remove(0);
-      for (var i = 0; i < typeData.subTypes.length; i++) {
+      // In ordine di sottotipo del gioco: gli indici restano quelli dell'elenco.
+      var order = typeData.subTypes.map(function (entry, index) { return index; });
+      order.sort(function (a, b) {
+        return typeData.subTypes[a].specialType - typeData.subTypes[b].specialType;
+      });
+      for (var j = 0; j < order.length; j++) {
+        var i = order[j];
         if (!typeData.subTypes[i].advancedOnly || this.advanced) {
           addOptionToSelect(box, i, typeData.subTypes[i].name);
         }

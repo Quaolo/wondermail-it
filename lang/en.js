@@ -38,6 +38,11 @@ window.WMSkyRegisterLocale('en', {
 
     missionSection: 'Mission',
     missionTypeLabel: 'Mission type',
+    pairLabel: 'Pair from the game',
+    pairOther: 'Another pair (set in the fields)',
+    pairHint: 'The game accepts any pair, but only these have a mission title.',
+    pairHintItem: 'The pairs the game uses: pick one or change client and item in the fields.',
+    pairHintGabite: 'Togetic\'s job that opens Labyrinth Cave in the game. Not tested with a password yet.',
     missionSubtypeLabel: 'Mission variant',
     dungeonLabel: 'Dungeon',
     dungeonPlaceholder: 'Search for a dungeon (Italian names work too)...',
@@ -429,10 +434,13 @@ window.WMSkyRegisterLocale('en', {
     13: 'Find the treasure (Treasure Memo)'
   },
   missionSubtypes: {
+    1: { 0: 'Normal', 1: 'Their child', 2: 'A friend', 3: 'Their love or rival' },
+    2: { 0: 'Normal', 1: 'To their love' },
     3: { 0: 'Normal', 1: 'Sealed Chamber', 2: 'Golden Chamber', 3: 'New dungeon' },
+    6: { 0: 'Normal', 1: 'Precious treasure', 2: 'Evolution item', 3: 'Favorite Gummi', 4: 'Gabite Scale' },
     9: { 0: 'Normal', 1: 'Hidden outlaw', 2: 'Fleeing outlaw' },
-    10: { 0: 'Normal', 1: 'With escort', 2: 'Outlaw hideout', 3: 'Monster House' },
-    11: { 0: 'Normal', 1: 'With escort', 2: 'Outlaw hideout', 3: 'Monster House' },
+    10: { 0: 'Normal A', 1: 'With escort', 2: 'Outlaw hideout', 3: 'Monster House', 4: 'Normal B', 5: 'Normal C', 6: 'Normal D', 7: 'Fleeing' },
+    11: { 0: 'Normal A', 1: 'With escort', 2: 'Outlaw hideout', 3: 'Monster House', 4: 'Normal B', 5: 'Normal C', 6: 'Normal D', 7: 'Fleeing' },
     12: { 0: 'Normal', 1: 'Mewtwo', 2: 'Entei', 3: 'Raikou', 4: 'Suicune', 5: 'Jirachi' }
   },
   rewardTypes: {

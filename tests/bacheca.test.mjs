@@ -2,6 +2,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
+import { readFileSync } from 'node:fs';
 
 const require = createRequire(import.meta.url);
 globalThis.window = globalThis.window || {};
@@ -90,5 +91,37 @@ test('in una giornata niente due missioni nello stesso piano e una sola sfida pe
     assert.equal(new Set(places).size, places.length);
     const legends = missions.filter((m) => m.missionType === 11 && m.missionSpecial > 0).map((m) => m.missionSpecial);
     assert.equal(new Set(legends).size, legends.length);
+  }
+});
+
+// Il modulo deve saper rappresentare ogni missione della bacheca (tipo, sottotipo e agente degli arresti),
+// senza ricorrere ai sottotipi nascosti.
+const genSource = readFileSync(new URL('../lmgenerate.js', import.meta.url), 'utf8');
+const genContext = {};
+new Function('window', 'document', `${genSource}; this.WMSGenData = WMSGenData;`).call(genContext, window, {});
+const formEntries = genContext.WMSGenData.missionTypes.flatMap((type) => (type.subTypes || [{}])
+  .map((sub) => Object.assign({}, type, sub))
+  .filter((entry) => !entry.advancedOnly && !type.advancedOnly));
+
+function formEntryFor(type, subtype, client) {
+  return formEntries.find((entry) => entry.mainType === type && (entry.specialType || 0) === subtype
+    && (client === null || entry.forceClient === undefined || entry.forceClient === client % 600));
+}
+
+test('il modulo offre tutte le varianti della bacheca', () => {
+  for (const { m } of all) {
+    assert.ok(formEntryFor(m.missionType, m.missionSpecial, m.client),
+      `tipo ${m.missionType}.${m.missionSpecial} con committente ${m.client}`);
+  }
+});
+
+test('il modulo offre tutti i modelli del gioco con il loro agente', () => {
+  const templates = G.missionText.templates;
+  for (const row of templates) {
+    const [, type, subtype] = row;
+    if (type > 12 || (type === 3 && subtype === 3)) continue; // strumenti musicali e dungeon nuovi: servono a sbloccare
+    // Negli arresti conta l'agente del modello (Magnemite o Magnezone), altrove basta il sottotipo.
+    const client = type === 10 && (row[8] === 81 || row[8] === 504) ? row[8] : null;
+    assert.ok(formEntryFor(type, subtype, client), `modello ${type}.${subtype} (committente ${row[8]})`);
   }
 });

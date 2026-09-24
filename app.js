@@ -711,7 +711,8 @@ function findMissionSelectionForStruct(struct) {
       }
     }
 
-    if ((type.specialType || 0) === struct.missionSpecial) {
+    // Un tipo con sottotipi vale solo tramite uno di essi (per esempio l'agente giusto negli arresti).
+    if (!type.subTypes && (type.specialType || 0) === struct.missionSpecial) {
       return { typeIndex, subtypeIndex: null };
     }
   }
@@ -748,6 +749,134 @@ function applyItemToField(selectId, itemId) {
   if (!Number.isFinite(numeric)) return;
   ensureSelectOption(select, numeric, getItemDisplayName(numeric));
   setSelectByValue(select, numeric);
+}
+
+// ---------------------------------------------------------------------------
+// Coppie del gioco (sottotipi con `gamePairs` in WMSGenData.missionTypes)
+// ---------------------------------------------------------------------------
+
+// Per il cucciolo, l'amico, l'amore o il rivale da soccorrere, l'amore da raggiungere, lo strumento che fa
+// evolvere il committente, la sua Gomma preferita e le Scaglie di Gabite il gioco usa coppie fisse, una per
+// modello di RESCUE/rescue.bin. Il gioco accetta anche altre coppie, ma per soccorso e accompagnamento solo
+// queste hanno un titolo (MatchMissionTemplateToMission).
+const gamePairCache = new Map();
+
+function getGamePairs(typeData) {
+  if (!typeData || !typeData.gamePairs) return [];
+  const key = `${typeData.mainType}.${typeData.specialType}`;
+  if (gamePairCache.has(key)) return gamePairCache.get(key);
+  const templates = (window.WMSkyGameData && window.WMSkyGameData.missionText
+    && window.WMSkyGameData.missionText.templates) || [];
+  const seen = new Set();
+  const pairs = [];
+  templates.forEach((row) => {
+    // Colonne: testo, tipo, sottotipo, caso e valore di strumento, dungeon, committente e bersaglio (0 = fisso).
+    if (row[1] !== typeData.mainType || row[2] !== typeData.specialType || row[7] !== 0) return;
+    const pair = {
+      client: row[8],
+      target: row[9] === 0 ? row[10] : null,
+      item: row[3] === 1 ? row[4] : null,
+      dungeon: row[5] === 1 ? row[6] : null
+    };
+    const id = `${pair.client}-${pair.target}-${pair.item}`;
+    if (seen.has(id)) return;
+    seen.add(id);
+    pairs.push(pair);
+  });
+  gamePairCache.set(key, pairs);
+  return pairs;
+}
+
+function formMonId(selectId, femaleId) {
+  const value = parseInt(document.getElementById(selectId)?.value, 10);
+  if (!Number.isFinite(value)) return 0;
+  return WMSGen.getTrueMonID(value, !!document.getElementById(femaleId)?.checked);
+}
+
+// Indice della coppia che corrisponde al modulo, -1 se non è una coppia del gioco. Le forme femminili
+// (ID + 600, anche nei modelli del gioco e sui piani pari della bacheca) valgono come la specie.
+function findCurrentGamePair(typeData, pairs) {
+  const client = typeData.forceClient || formMonId('clientBox', 'clientF');
+  const target = formMonId('targetBox', 'targetF');
+  const item = parseInt(document.getElementById('targetItemBox')?.value, 10);
+  return pairs.findIndex((pair) => pair.client % 600 === client % 600
+    && (pair.target === null || pair.target % 600 === target % 600)
+    && (pair.item === null || pair.item === item));
+}
+
+function applyGamePair(typeData, pair) {
+  if (!pair) return;
+  if (!hasOwn(typeData, 'forceClient')) applyPokemonToField('clientBox', 'clientF', pair.client);
+  if (pair.target !== null) applyPokemonToField('targetBox', 'targetF', pair.target);
+  if (pair.item !== null) applyItemToField('targetItemBox', pair.item);
+  if (pair.dungeon !== null) {
+    const dungeonSelect = document.getElementById('dungeonBox');
+    if (dungeonSelect) {
+      ensureSelectOption(dungeonSelect, pair.dungeon, getLocalizedDungeonName(pair.dungeon, String(pair.dungeon)));
+      setSelectByValue(dungeonSelect, pair.dungeon);
+      syncDungeonFloorLimit(true);
+      // Il piano del capo di solito è vietato: si scende al primo piano accettato.
+      const floorInput = document.getElementById('floor');
+      const forbidden = WMSGen.getForbiddenFloors(pair.dungeon);
+      let floor = parseInt(floorInput?.value, 10) || 1;
+      while (floor > 1 && forbidden.includes(floor)) floor -= 1;
+      if (floorInput) floorInput.value = String(floor);
+    }
+  }
+}
+
+// Scelto un sottotipo a coppie, se il modulo non ne ha una si passa a una del gioco: meglio quella con lo
+// stesso committente (per esempio la sua Gomma), altrimenti una a caso.
+function ensureGamePair(random = false) {
+  const typeData = getCurrentTypeData();
+  const pairs = getGamePairs(typeData);
+  if (!pairs.length || isEggGlitchEnabled()) return;
+  if (!random && findCurrentGamePair(typeData, pairs) !== -1) return;
+  const client = formMonId('clientBox', 'clientF') % 600;
+  const sameClient = pairs.filter((pair) => pair.client % 600 === client);
+  applyGamePair(typeData, pickRandom(!random && sameClient.length ? sameClient : pairs));
+}
+
+function gamePairLabel(pair) {
+  const second = pair.target !== null ? getLocalizedPokemonName(pair.target) : getItemDisplayName(pair.item);
+  return `${getLocalizedPokemonName(pair.client)} → ${second}`;
+}
+
+function updateGamePairPicker() {
+  const field = document.getElementById('pairField');
+  const select = document.getElementById('pairBox');
+  if (!field || !select) return;
+  const typeData = getCurrentTypeData();
+  const pairs = isEggGlitchEnabled() ? [] : getGamePairs(typeData);
+  field.classList.toggle('hidden', !pairs.length);
+  if (!pairs.length) return;
+
+  const key = `${typeData.mainType}.${typeData.specialType}.${getCurrentLanguage()}`;
+  if (select.dataset.key !== key) {
+    select.dataset.key = key;
+    select.innerHTML = '';
+    const other = document.createElement('option');
+    other.value = '';
+    other.textContent = t('pairOther');
+    select.appendChild(other);
+    pairs
+      .map((pair, index) => ({ index, label: gamePairLabel(pair) }))
+      .sort((a, b) => a.label.localeCompare(b.label))
+      .forEach((entry) => {
+        const option = document.createElement('option');
+        option.value = String(entry.index);
+        option.textContent = entry.label;
+        select.appendChild(option);
+      });
+  }
+  const current = findCurrentGamePair(typeData, pairs);
+  select.value = current === -1 ? '' : String(current);
+  const hint = document.getElementById('pairHint');
+  if (hint) {
+    if (typeData.mainType === 6 && typeData.specialType === 4) hint.textContent = t('pairHintGabite');
+    else if (typeData.mainType === 6) hint.textContent = t('pairHintItem');
+    else hint.textContent = t('pairHint');
+  }
 }
 
 function isEggGlitchStruct(struct) {
@@ -1614,6 +1743,7 @@ function getEggPokemonPreviewData(selectId, label, meta) {
 
 function refreshMissionUi() {
   updateMissionFieldVisibility();
+  updateGamePairPicker();
   syncDungeonFloorLimit();
   updateMissionDifficultyHint();
   updateEntityPreviews();
@@ -1717,6 +1847,7 @@ function snapshotForm() {
   const values = {};
   if (form) {
     form.querySelectorAll('input[id], select[id], textarea[id]').forEach((node) => {
+      if (node.dataset.noSnapshot !== undefined) return;
       values[node.id] = node.type === 'checkbox' ? node.checked : node.value;
     });
   }
@@ -1878,6 +2009,11 @@ onReady(() => {
           setSelectByValue(targetItem, DEFAULT_TREASURE_ITEM);
         }
       }
+      if (id === 'missionTypeBox' || id === 'missionSubTypeBox') {
+        // Con un sottotipo a coppie si parte da una coppia del gioco (elenchi del nuovo tipo già pronti).
+        WMSGen.update();
+        ensureGamePair();
+      }
       WMSGen.update();
       refreshMissionUi();
       scheduleLiveGeneration();
@@ -1887,6 +2023,16 @@ onReady(() => {
       refreshMissionUi();
       scheduleLiveGeneration(['floor', 'specialFloor', 'flavorText'].includes(id) ? 220 : 120);
     });
+  });
+
+  document.getElementById('pairBox')?.addEventListener('change', (event) => {
+    closeToolCards(event);
+    const typeData = getCurrentTypeData();
+    const pair = getGamePairs(typeData)[parseInt(event.target.value, 10)];
+    if (pair) applyGamePair(typeData, pair);
+    WMSGen.update();
+    refreshMissionUi();
+    scheduleLiveGeneration();
   });
 
   document.getElementById('allPokemonForms')?.addEventListener('change', (event) => {
@@ -2248,6 +2394,8 @@ function randomizeMission(typeIndexes, options = {}) {
       WMSGen.update();
     }
     pickRandomOption('rewardItemBox');
+    WMSGen.update();
+    ensureGamePair(true);
 
     WMSGen.update();
     refreshMissionUi();
@@ -3387,8 +3535,8 @@ function useBoardMission(boardId, index) {
   const fullyMapped = runFormAction({ text: () => t('originBoard', { board: group.title() }), panel: 'boardCard' },
     () => importDecodedStruct(decoded));
   closeStartPanels();
-  // Alcune missioni della bacheca hanno sottotipi che il modulo non offre: la password resta giusta,
-  // ma cambiando il modulo si otterrebbe un'altra missione.
+  // Il modulo offre tutte le varianti della bacheca (test in bacheca.test.mjs); l'avviso resta per sicurezza:
+  // la password sarebbe comunque giusta, ma cambiando il modulo si otterrebbe un'altra missione.
   setStatus('statusLine', fullyMapped ? 'boardUsed' : 'boardPartial', null, fullyMapped ? 'ok' : 'warning');
   const job = document.getElementById('jobCard');
   if (job) flashElement(job, 'card-flash');

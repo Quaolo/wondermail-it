@@ -38,6 +38,11 @@ window.WMSkyRegisterLocale('it', {
 
     missionSection: 'Missione',
     missionTypeLabel: 'Tipo di missione',
+    pairLabel: 'Coppia del gioco',
+    pairOther: 'Un\'altra coppia (scelta nei campi)',
+    pairHint: 'Il gioco accetta qualsiasi coppia, ma il titolo della missione esiste solo per queste.',
+    pairHintItem: 'Le coppie che usa il gioco: scegline una o cambia committente e strumento nei campi.',
+    pairHintGabite: 'La missione di Togetic che nel gioco apre la Grotta Labirinto. Con una password non è stata ancora provata.',
     missionSubtypeLabel: 'Variante della missione',
     dungeonLabel: 'Dungeon',
     dungeonPlaceholder: 'Cerca un dungeon (anche col nome inglese)...',
@@ -429,10 +434,13 @@ window.WMSkyRegisterLocale('it', {
     13: 'Trova il tesoro (Memo tesoro)'
   },
   missionSubtypes: {
+    1: { 0: 'Normale', 1: 'Il suo cucciolo', 2: 'Un suo amico', 3: 'Il suo amore o rivale' },
+    2: { 0: 'Normale', 1: 'Dal suo amore' },
     3: { 0: 'Normale', 1: 'Sala Proibita', 2: 'Sala d\'Oro', 3: 'Nuovo dungeon' },
+    6: { 0: 'Normale', 1: 'Tesoro prezioso', 2: 'Strumento per evolversi', 3: 'Gomma preferita', 4: 'Scaglie di Gabite' },
     9: { 0: 'Normale', 1: 'Ricercato nascosto', 2: 'Ricercato in fuga' },
-    10: { 0: 'Normale', 1: 'Con scorta', 2: 'Covo del ricercato', 3: 'Covo di Pokémon' },
-    11: { 0: 'Normale', 1: 'Con scorta', 2: 'Covo del ricercato', 3: 'Covo di Pokémon' },
+    10: { 0: 'Normale A', 1: 'Con scorta', 2: 'Covo del ricercato', 3: 'Covo di Pokémon', 4: 'Normale B', 5: 'Normale C', 6: 'Normale D', 7: 'In fuga' },
+    11: { 0: 'Normale A', 1: 'Con scorta', 2: 'Covo del ricercato', 3: 'Covo di Pokémon', 4: 'Normale B', 5: 'Normale C', 6: 'Normale D', 7: 'In fuga' },
     12: { 0: 'Normale', 1: 'Mewtwo', 2: 'Entei', 3: 'Raikou', 4: 'Suicune', 5: 'Jirachi' }
   },
   rewardTypes: {

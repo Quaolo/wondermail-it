@@ -95,9 +95,13 @@ dungeon open. The team rank is yours to pick, because it decides which missions 
 have restrictions. That's also why the missions that open a dungeon, like the musical instrument ones, never
 show up: in a finished game those dungeons are already open.
 
-One click on a mission loads it into the form, with "Undo" to go back. Some board missions use variants the
-form doesn't have: the password stays right, but if you then change the form it becomes a different mission,
-and the site tells you so.
+One click on a mission loads it into the form, with "Undo" to go back. The form has every variant the board
+uses: the child, friend, loved one or rival to rescue, the loved one to escort the client to, the precious
+treasure, the item that makes the client evolve, their favorite Gummi, fleeing outlaws and the different outlaw
+lists of Magnemite and Magnezone. For the variants that use fixed pairs in the game (Beedrill looking for
+Weedle, for example) there's a menu with the game's pairs. The game accepts other pairs too, but only these
+have a title. Togetic's Gabite Scale job is there as well: in the game it opens Labyrinth Cave, but I haven't
+tried it with a password yet.
 
 Team restrictions (a partner of a certain type or a specific Pokémon) can now also be picked in the form,
 among the advanced options. "Job Summary" has a button to remove them, and the board has a box that removes
@@ -199,6 +203,8 @@ The encoding test compares 60 passwords with those of the original generator and
 - The job board follows the game's code, but I haven't compared it with a real board yet. A curious detail to
   check: when the reward is an egg, the game writes a number drawn from the item list as the species, so the
   egg species the site shows might not be the one that actually hatches.
+- The Gabite Scale job made with a password still has to be tried in the game: I don't know if it opens
+  Labyrinth Cave like the board one does.
 - The game says which items share the same icon, but not what color they are. For some of them I picked the
   colors myself and they might not match.
 

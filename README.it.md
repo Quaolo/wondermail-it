@@ -95,9 +95,13 @@ partita finita, con tutti i dungeon aperti. Il grado della squadra invece lo sce
 missioni possono comparire e se hanno restrizioni. Per questo non escono le missioni che servono ad aprire un
 dungeon, come quelle degli strumenti musicali: in una partita finita quei dungeon sono già aperti.
 
-Un clic su una missione la porta nel modulo, con "Annulla" per tornare indietro. Alcune missioni della bacheca
-usano varianti che il modulo non ha: la password resta giusta, ma se poi cambi il modulo diventa un'altra
-missione, e il sito te lo dice.
+Un clic su una missione la porta nel modulo, con "Annulla" per tornare indietro. Il modulo ha tutte le
+varianti che la bacheca usa: il cucciolo, l'amico, l'amore o il rivale da soccorrere, l'amore da raggiungere,
+il tesoro prezioso, lo strumento che fa evolvere il committente, la sua Gomma preferita, i ricercati in fuga e
+gli elenchi di ricercati di Magnemite e Magnezone. Per le varianti che nel gioco hanno coppie fisse (Beedrill
+che cerca Weedle, per esempio) c'è un menu con le coppie del gioco. Il gioco accetta anche le altre, ma solo
+queste hanno un titolo. C'è anche la missione di Togetic con le Scaglie di Gabite, che nel gioco apre la
+Grotta Labirinto: con una password non l'ho ancora provata.
 
 Le restrizioni (un compagno di un certo tipo o un Pokémon preciso) ora si possono anche scegliere nel modulo,
 tra le opzioni avanzate. In "Info missione" c'è un pulsante per toglierle, e nella bacheca una casella che le
@@ -198,6 +202,8 @@ Il test della codifica confronta 60 password con quelle del generatore originale
   curioso da controllare: quando la ricompensa è un uovo, il gioco scrive come specie un numero estratto
   dall'elenco degli strumenti, quindi la specie dell'uovo che mostra il sito potrebbe non essere quella che
   nasce davvero.
+- La missione delle Scaglie di Gabite creata con una password va provata in gioco: non so se apre la Grotta
+  Labirinto come quella della bacheca.
 - Il gioco dice quali strumenti condividono la stessa icona, ma non di che colore sono. Per alcuni i colori
   li ho scelti io e potrebbero non corrispondere.
 
