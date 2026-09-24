@@ -799,20 +799,24 @@ def read_mappa_traps(mappa: bytes, offset: int) -> list[list]:
 def read_mappa_layout(mappa: bytes, offset: int) -> list[int]:
     """Campi utili della struttura del piano (nomi di SkyTemple, MappaFloorLayout):
     meteo, buio, negozio di Kecleon %, covo di Pokémon %, tipo e % delle scale nascoste, QI dei nemici,
-    Poké massime, densità di strumenti e trappole, stanza fissa del piano."""
+    Poké massime, densità di strumenti e trappole, stanza fissa del piano, % di covo senza strumenti e
+    densità degli strumenti sepolti."""
     b = mappa[offset:offset + MAPPA_LAYOUT_SIZE]
     return [b[0x04], b[0x16], b[0x07], b[0x08], b[0x1A], b[0x1B], struct.unpack_from("<H", b, 0x1C)[0],
-            b[0x17] * 5, b[0x0F], b[0x10], b[0x12]]
+            b[0x17] * 5, b[0x0F], b[0x10], b[0x12], b[0x19], b[0x14]]
 
 
 FLOOR_LAYOUT_FIELDS = ["weather", "darkness", "kecleonShop", "monsterHouse", "hiddenStairsType",
-                       "hiddenStairs", "enemyIq", "maxPoke", "itemDensity", "trapDensity", "fixedRoom"]
+                       "hiddenStairs", "enemyIq", "maxPoke", "itemDensity", "trapDensity", "fixedRoom",
+                       "itemlessHouse", "buriedDensity"]
 
 
 def build_floors(mappa: bytes, rodata: bytes, item_category: list[int]) -> dict:
-    """Dati di ogni piano delle missioni: struttura, Pokémon, trappole e strumenti a terra. Elenchi uguali
-    tra piani diversi sono scritti una volta sola; `byDungeon` dà per ogni piano [struttura, Pokémon,
-    trappole, strumenti] come indici negli elenchi, oppure -1."""
+    """Dati di ogni piano delle missioni: struttura, Pokémon, trappole e strumenti (a terra, nel negozio di
+    Kecleon, nel covo di Pokémon e sepolti: SPAWN_REGULAR, SPAWN_KECLEON_SHOP, SPAWN_MONSTER_HOUSE e
+    SPAWN_BURIED di GetItemIdToSpawn). Elenchi uguali tra piani diversi sono scritti una volta sola;
+    `byDungeon` dà per ogni piano [struttura, Pokémon, trappole, strumenti a terra, negozio, covo, sepolti]
+    come indici negli elenchi (gli strumenti stanno tutti in `items`), oppure -1."""
     pointers, entries = mappa_floors(mappa, rodata)
     tables = {"layouts": {}, "monsters": {}, "traps": {}, "items": {}}
 
@@ -839,13 +843,17 @@ def build_floors(mappa: bytes, rodata: bytes, item_category: list[int]) -> dict:
             if entry < 0:
                 out.append(-1)
                 continue
-            layout, monsters, traps, items = struct.unpack_from("<4H", mappa, entry)
+            layout, monsters, traps, *item_lists = struct.unpack_from("<7H", mappa, entry)
+
+            def items(list_index: int) -> int:
+                return index("items", list_index, lambda: secret_room_items(
+                    *read_mappa_item_list(mappa, pointer("items", list_index)), item_category, POKE_ITEM, 2))
+
             out.append([
                 index("layouts", layout, lambda: read_mappa_layout(mappa, pointers["layouts"] + MAPPA_LAYOUT_SIZE * layout)),
                 index("monsters", monsters, lambda: read_mappa_monsters(mappa, pointer("monsters", monsters))),
                 index("traps", traps, lambda: read_mappa_traps(mappa, pointer("traps", traps))),
-                index("items", items, lambda: secret_room_items(*read_mappa_item_list(mappa, pointer("items", items)),
-                                                                item_category, POKE_ITEM, 2)),
+                *(items(list_index) for list_index in item_lists),
             ])
         by_dungeon[str(dungeon)] = out
 

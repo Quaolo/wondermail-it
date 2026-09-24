@@ -3873,7 +3873,15 @@ function getFloorData(dungeon, floor) {
   if (!Array.isArray(entry)) return null;
   const layout = {};
   data.layoutFields.forEach((field, index) => { layout[field] = data.layouts[entry[0]][index]; });
-  return { layout, monsters: data.monsters[entry[1]], traps: data.traps[entry[2]], items: data.items[entry[3]] };
+  return {
+    layout,
+    monsters: data.monsters[entry[1]],
+    traps: data.traps[entry[2]],
+    items: data.items[entry[3]],
+    shop: data.items[entry[4]],
+    house: data.items[entry[5]],
+    buried: data.items[entry[6]]
+  };
 }
 
 function formatChance(value) {
@@ -3959,6 +3967,34 @@ function renderFloorItems(items) {
   document.getElementById('floorItemsMoreTitle').textContent = t('floorItemsMore', { count: extra });
 }
 
+// Negozio di Kecleon, covo di Pokémon e strumenti sepolti: elenchi a parte, aperti a richiesta, solo se sul
+// piano possono esserci.
+function renderFloorPlaceItems(id, items, shown, title, note) {
+  const box = document.getElementById(id);
+  if (!box) return;
+  box.hidden = !shown || !(items && items.length);
+  if (box.hidden) return;
+  box.querySelector('summary').textContent = title;
+  const hint = box.querySelector('.hint');
+  hint.hidden = !note;
+  hint.textContent = note || '';
+  const list = box.querySelector('ul');
+  list.textContent = '';
+  items.forEach(([itemId, chance]) => list.append(makeFloorItem(itemId, chance)));
+}
+
+function renderFloorPlaces(data) {
+  const places = floorGameText('floorPlaces') || {};
+  const layout = data.layout;
+  renderFloorPlaceItems('floorShop', data.shop, layout.kecleonShop > 0,
+    t('floorShopItems', { place: places.kecleonShop }), '');
+  renderFloorPlaceItems('floorHouse', data.house, layout.monsterHouse > 0,
+    t('floorHouseItems', { place: places.monsterHouse }),
+    layout.itemlessHouse ? t('floorHouseEmpty', { chance: formatChance(layout.itemlessHouse) }) : '');
+  renderFloorPlaceItems('floorBuried', data.buried, layout.buriedDensity > 0, t('floorBuriedItems'),
+    t('floorBuriedHint', { skill: (floorGameText('extra') || {}).absoluteMover || '' }));
+}
+
 function renderFloorTraps(traps) {
   const names = floorGameText('traps') || [];
   document.getElementById('floorTraps').textContent = (traps || [])
@@ -4015,6 +4051,7 @@ function renderFloorCard() {
   renderFloorStats(data.layout);
   renderFloorMonsters(data.monsters);
   renderFloorItems(data.items);
+  renderFloorPlaces(data);
   renderFloorTraps(data.traps);
 }
 

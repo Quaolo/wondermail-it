@@ -112,7 +112,8 @@ them from every mission.
 Below the room there's a card with the floor the mission takes you to, from the game's dungeon data: the
 weather, how far you can see in hallways, the odds of finding a Kecleon Shop, a Monster House or hidden stairs,
 the Pokémon that appear with their level, the items on the ground and the traps, each with the odds the game
-uses to pick it. The arrows show the other floors of the same dungeon without touching the mission, and if you
+uses to pick it. If the floor can have a Kecleon Shop or a Monster House, you can also open the list of
+what they hold, and the same goes for items buried in the walls. The arrows show the other floors of the same dungeon without touching the mission, and if you
 like one better you can switch to it with a click. It's mostly handy for missions you repeat: you can see at a
 glance which floor is easier, or where the hidden stairs lead to the Secret Room.
 

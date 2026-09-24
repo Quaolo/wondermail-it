@@ -520,6 +520,8 @@ def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
         stats = page.text_content("#floorStats")
         check("Meteo" in stats and "Sereno" in stats and "2 caselle" in stats, f"meteo e buio del piano: {stats!r}")
         check("Mattomagica 100%" in page.text_content("#floorTraps"), "trappole del piano")
+        places = page.evaluate("[...document.querySelectorAll('#floorCard .floor-place')].map((box) => box.hidden)")
+        check(places == [True, True, True], f"Grotta Marina P1: niente negozio, covo o strumenti sepolti: {places}")
         page.click("#floorNext")
         check(page.is_visible("#floorOther") and "P. -2" in page.text_content("#floorTitle"),
               f"la freccia mostra il piano successivo: {page.text_content('#floorTitle')!r}")
@@ -527,6 +529,12 @@ def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
         page.wait_for_timeout(200)
         struct = decode_output(page, "eu")["struct"]
         check(struct["floor"] == 2 and page.is_hidden("#floorOther"), f"«Usa questo piano» cambia la missione: piano {struct['floor']}")
+        set_select(page, "dungeonBox", 70)
+        set_input(page, "floor", 12)
+        generate(page)
+        page.wait_for_timeout(150)
+        shop = page.evaluate("[document.getElementById('floorShop').hidden, document.querySelectorAll('#floorShop li').length]")
+        check(shop[0] is False and shop[1] > 10, f"Rovine Nascoste P12: il negozio di Kecleon ha il suo elenco: {shop}")
 
         # Varianti a coppie: scegliendo il sottotipo arriva una coppia del gioco, e il menu la cambia
         set_select(page, "missionTypeBox", 1)

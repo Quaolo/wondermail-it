@@ -1226,6 +1226,7 @@ textarea.password {
 .floor-more { margin-top: 8px; }
 .floor-more summary { color: var(--gold); cursor: pointer; }
 .floor-more[open] summary { margin-bottom: 8px; }
+.floor-place .hint { margin: 0 0 8px; }
 .floor-traps { margin: 0; color: var(--text); font-size: .9rem; }
 
 /* Contenuto dei Tecalusso per dungeon (stanze senza tesoro) */

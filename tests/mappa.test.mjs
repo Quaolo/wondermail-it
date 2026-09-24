@@ -77,3 +77,13 @@ test('meteo, scale nascoste e posti speciali hanno i nomi del gioco', () => {
   assert.ok(layouts.some((layout) => layout.weather === 7), 'qualche piano con la neve');
   assert.ok(layouts.some((layout) => layout.hiddenStairs > 0), 'qualche piano con le scale nascoste');
 });
+
+test('negozio, covo e strumenti sepolti hanno i loro elenchi', () => {
+  const entries = Object.values(F.byDungeon).flat().filter(Array.isArray);
+  assert.ok(entries.every((entry) => entry.length === 7));
+  const used = (column) => [...new Set(entries.map((entry) => entry[column]))].map((index) => F.items[index]);
+  // Nel negozio di Kecleon non si vendono Poké.
+  assert.ok(used(4).every((list) => list.every(([item]) => item !== 183)));
+  assert.ok(used(5).length > 1 && used(6).length >= 1);
+  assert.ok(F.layoutFields.includes('itemlessHouse') && F.layoutFields.includes('buriedDensity'));
+});

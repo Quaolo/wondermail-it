@@ -112,7 +112,9 @@ toglie a tutte le missioni.
 Sotto la stanza c'è una scheda con il piano dove porta la missione, presa dai dati dei dungeon del gioco: il
 meteo, quanto si vede nei corridoi, la probabilità di trovare il negozio di Kecleon, un covo di Pokémon o le
 scale nascoste, i Pokémon che compaiono con il loro livello, gli strumenti a terra e le trappole, ognuno con la
-probabilità con cui il gioco lo sceglie. Con le frecce guardi gli altri piani dello stesso dungeon senza
+probabilità con cui il gioco lo sceglie. Se sul piano possono esserci il negozio di Kecleon o un covo di
+Pokémon, a richiesta si apre anche l'elenco di quello che contengono, e lo stesso per gli strumenti sepolti
+nei muri. Con le frecce guardi gli altri piani dello stesso dungeon senza
 toccare la missione, e se uno ti piace di più lo usi con un clic. Serve soprattutto per le missioni da
 ripetere: si vede subito quale piano è più comodo, o dove le scale nascoste portano alla Sala Segreta.
 
