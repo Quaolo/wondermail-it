@@ -237,7 +237,7 @@ Il test della codifica confronta 60 password con quelle del generatore originale
   della community, CC BY-NC 4.0), che vengono caricati da GitHub e non sono inclusi qui
 - la [wiki di PMDO](https://wiki.pmdo.pmdcollab.org/) e i file di [PMDO](https://github.com/audinowho/DumpAsset)
   per le icone degli strumenti
-- [Pixelify Sans](https://github.com/eifetx/Pixelify-Sans) per il carattere dei titoli (SIL Open Font License)
+- [Pixelify Sans](https://github.com/eifetx/Pixelify-Sans) per il carattere dei titoli (SIL Open Font License; qui con il 5 ridisegnato, perché sembrava una S)
 
 Ho sviluppato il progetto insieme a Claude.
 

@@ -238,7 +238,7 @@ The encoding test compares 60 passwords with those of the original generator and
   artists, CC BY-NC 4.0), which are loaded from GitHub and not included here
 - the [PMDO wiki](https://wiki.pmdo.pmdcollab.org/) and the [PMDO](https://github.com/audinowho/DumpAsset)
   files for the item icons
-- [Pixelify Sans](https://github.com/eifetx/Pixelify-Sans) for the title font (SIL Open Font License)
+- [Pixelify Sans](https://github.com/eifetx/Pixelify-Sans) for the title font (SIL Open Font License; here with a redrawn 5, since it looked like an S)
 
 I developed this project together with Claude.
 

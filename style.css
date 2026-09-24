@@ -1,14 +1,13 @@
 /* Missioni Speciali C: tema "Esploratori del Cielo".
    Finestre in stile menu del gioco (blu con bordo chiaro), cielo notturno, dettagli pixel art. */
 
+/* Pixelify Sans con il 5 ridisegnato (angolo squadrato, senza ricciolo): l'originale sembrava una S. */
 @font-face {
   font-family: 'Pixelify Sans';
   font-style: normal;
   font-weight: 400;
   font-display: swap;
   src: url(assets/fonts/pixelify-sans-latin-400-normal.woff2) format('woff2');
-  /* Niente cifre: il 5 del font sembra una S, quindi i numeri usano il font dell'interfaccia. */
-  unicode-range: U+0000-002F, U+003A-FFFF;
 }
 @font-face {
   font-family: 'Pixelify Sans';
@@ -16,8 +15,6 @@
   font-weight: 600;
   font-display: swap;
   src: url(assets/fonts/pixelify-sans-latin-600-normal.woff2) format('woff2');
-  /* Niente cifre: il 5 del font sembra una S, quindi i numeri usano il font dell'interfaccia. */
-  unicode-range: U+0000-002F, U+003A-FFFF;
 }
 
 :root {
