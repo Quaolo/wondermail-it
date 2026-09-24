@@ -361,6 +361,14 @@ var WMSGen = {
       }
     }
 
+    // Restrizioni (IsMissionValid): un tipo sotto 18, oppure una specie che può fare da committente.
+    var restriction = this.readRestriction();
+    if (restriction.type === 0 && restriction.value >= 18) {
+      errors.push(tr('errorRestriction'));
+    } else if (restriction.type === 1 && (gameData().missionClients || []).indexOf(restriction.value) === -1) {
+      errors.push(tr('errorRestriction'));
+    }
+
     if (clientJoinsTeam(typeData.mainType) && !typeData.forceClient) {
       var client = parseInt(this.getComboBoxValue('clientBox'), 10);
       if (hasLargeBody(client)) {
@@ -452,16 +460,29 @@ var WMSGen = {
   },
 
   /**
+   * Restrizione della squadra scelta nel modulo: tipo 0 con un tipo elementare (1-17), tipo 1 con una
+   * specie; "nessuna" è tipo 0 con valore 0, come nelle missioni della bacheca.
+   */
+  readRestriction: function () {
+    var kind = this.form.restrictionKindBox ? this.form.restrictionKindBox.value : 'none';
+    var value = this.form.restrictionValueBox ? parseInt(this.form.restrictionValueBox.value, 10) : 0;
+    if (kind === 'type' && value > 0) return { type: 0, value: value };
+    if (kind === 'species' && value > 0) return { type: 1, value: value };
+    return { type: 0, value: 0 };
+  },
+
+  /**
    * Costruisce la missione dai valori del modulo (senza codificarla).
    */
   buildStruct: function () {
     var eggGlitch = this.isEggGlitch();
     var typeData = this.getTypeData();
+    var restriction = this.readRestriction();
     var struct = {
       nullBits: 0,
       mailType: 4,
-      restriction: 0,
-      restrictionType: 0,
+      restriction: eggGlitch ? 0 : restriction.value,
+      restrictionType: eggGlitch ? 0 : restriction.type,
       missionType: eggGlitch ? 6 : typeData.mainType,
       missionSpecial: eggGlitch ? 0 : typeData.specialType,
       rewardType: eggGlitch ? 5 : parseInt(this.getComboBoxValue('rewardTypeBox'), 10)

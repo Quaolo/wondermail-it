@@ -22,6 +22,7 @@
   <script src="lang/it.js"></script>
   <script src="lang/en.js"></script>
   <script src="testi_missione.js"></script>
+  <script src="bacheca.js"></script>
   <script src="stanze.js" defer></script>
   <script src="app.js" defer></script>
 </head>
@@ -75,6 +76,7 @@
         <div class="start-tabs" role="tablist" aria-labelledby="startTitle">
         <button type="button" class="start-tab" role="tab" id="tab-readerCard" data-panel="readerCard" aria-controls="readerCard" aria-selected="false"><span data-i18n="importCodeLabel">Leggi una password</span></button>
         <button type="button" class="start-tab" role="tab" id="tab-presetsCard" data-panel="presetsCard" aria-controls="presetsCard" aria-selected="false"><span data-i18n="quickAccess">Accesso rapido</span></button>
+        <button type="button" class="start-tab" role="tab" id="tab-boardCard" data-panel="boardCard" aria-controls="boardCard" aria-selected="false"><span data-i18n="boardTitle">Bacheca</span></button>
         <button type="button" class="start-tab" role="tab" id="tab-farmCard" data-panel="farmCard" aria-controls="farmCard" aria-selected="false"><span data-i18n="farmTitle">Cerca un premio</span></button>
         <button type="button" class="start-tab" role="tab" id="tab-unlockCard" data-panel="unlockCard" aria-controls="unlockCard" aria-selected="false"><span data-i18n="unlockTitle">Sblocca un dungeon</span></button>
         </div>
@@ -101,6 +103,19 @@
               <button type="button" class="preset-btn" data-preset="outlaw"><img class="preset-icon preset-portrait" data-portrait="81" alt=""><span data-i18n="presetOutlaw">Ricercato a caso</span></button>
               <button type="button" class="preset-btn" data-preset="surprise"><img class="preset-icon" src="assets/item-icons/Explorers-of-Sky---Star-icon.png" alt=""><span data-i18n="presetSurprise">Missione a sorpresa</span></button>
             </div>
+      </section>
+      <section class="start-panel" id="boardCard" role="tabpanel" aria-labelledby="tab-boardCard" hidden>
+            <p class="hint" data-i18n="boardHint"></p>
+            <div class="board-controls">
+              <div class="field">
+                <label for="boardRank" data-i18n="boardRankLabel">Grado della squadra</label>
+                <select id="boardRank"></select>
+              </div>
+              <label class="check-row board-check"><input type="checkbox" id="boardNoRestrictions"> <span data-i18n="boardNoRestrictions">Togli le restrizioni</span></label>
+              <button type="button" id="boardNewDay" class="primary" data-i18n="boardNewDay">Nuovo giorno</button>
+            </div>
+            <div class="board-groups" id="boardGroups"></div>
+            <p class="hint" data-i18n="boardSource"></p>
       </section>
       <section class="start-panel" id="farmCard" role="tabpanel" aria-labelledby="tab-farmCard" hidden>
             <p class="hint" data-i18n="farmHint"></p>
@@ -210,6 +225,19 @@
                 <button type="button" id="randomSeedBtn" data-i18n="flavorTextRandom">Nuovo seme casuale</button>
               </div>
               <p class="hint" data-i18n="flavorTextHint"></p>
+            </div>
+            <div class="field" id="restrictionField">
+              <label for="restrictionKindBox" data-i18n="restrictionLabel">Restrizione della squadra</label>
+              <div class="inline-row">
+                <select id="restrictionKindBox" name="restrictionKindBox">
+                  <option value="none" data-i18n="restrictionNone">Nessuna</option>
+                  <option value="type" data-i18n="restrictionKindType">Un compagno di un tipo</option>
+                  <option value="species" data-i18n="restrictionKindSpecies">Un Pokémon preciso</option>
+                </select>
+                <label class="sr-only" for="restrictionValueBox" data-i18n="restrictionValueLabel">Tipo o Pokémon richiesto</label>
+                <select id="restrictionValueBox" name="restrictionValueBox" hidden></select>
+              </div>
+              <p class="hint" data-i18n="restrictionHint"></p>
             </div>
           </details>
         </section>

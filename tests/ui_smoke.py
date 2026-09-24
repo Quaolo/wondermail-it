@@ -446,6 +446,42 @@ def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
         page.wait_for_timeout(200)
         check(decode_output(page, "eu")["struct"]["flavorText"] == 1234, "Annulla rimette il seme di prima")
 
+        # Restrizioni: dal modulo alla password, e il pulsante per toglierla
+        set_select(page, "restrictionKindBox", "type")
+        page.wait_for_timeout(100)
+        set_select(page, "restrictionValueBox", 2)
+        page.wait_for_timeout(300)
+        struct = decode_output(page, "eu")["struct"]
+        check((struct["restrictionType"], struct["restriction"]) == (0, 2), f"restrizione di tipo nella password: {(struct['restrictionType'], struct['restriction'])}")
+        check("Fuoco" in page.text_content("#jobFields"), "Info missione mostra la restrizione con il nome del tipo")
+        page.click("#removeRestrictionBtn")
+        page.wait_for_timeout(250)
+        struct = decode_output(page, "eu")["struct"]
+        check((struct["restrictionType"], struct["restriction"]) == (0, 0) and page.input_value("#restrictionKindBox") == "none",
+              "«Togli» toglie la restrizione dalla password e dal modulo")
+
+        # Bacheca: una giornata di missioni, un clic ne porta una nel modulo
+        page.click("#tab-boardCard")
+        page.wait_for_timeout(200)
+        jobs = page.locator("#boardGroups .board-job")
+        check(jobs.count() >= 12 and page.locator("#boardRank option").count() == 13,
+              f"bacheca con {jobs.count()} missioni e 13 gradi della squadra")
+        page.click("#boardNewDay")
+        page.wait_for_timeout(150)
+        first = page.locator("#boardGroups .board-job").first
+        wanted_title = first.locator(".board-job-title").text_content()
+        first.click()
+        page.wait_for_timeout(300)
+        check(not panel_open(page, "boardCard") and "Bacheca" in page.text_content("#originText"),
+              f"missione della bacheca nel modulo: {page.text_content('#originText')!r}")
+        check(page.text_content("#jobLetterTitle") == wanted_title,
+              f"Info missione mostra la missione scelta: {page.text_content('#jobLetterTitle')!r}")
+        set_select(page, "boardRank", 0)
+        open_tool_card(page, "boardCard")
+        page.wait_for_timeout(150)
+        check(page.locator("#boardGroups .board-job-restriction").count() == 0, "con il Rango Normale niente restrizioni")
+        page.evaluate("closeStartPanels()")
+
         # Lettura di una password giapponese
         open_tool_card(page, "readerCard")
         page.fill("#importCode", JP_CODES[0])

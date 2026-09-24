@@ -585,6 +585,42 @@ details > summary { cursor: pointer; font-weight: 700; }
 /* Barra della password su telefono */
 .mobile-pass { display: none; }
 
+/* Bacheca: una giornata di missioni come le prepara il gioco */
+#boardCard { max-width: 1100px; }
+.board-controls { display: flex; flex-wrap: wrap; align-items: end; gap: 10px 16px; }
+.board-controls .field { margin: 0; min-width: 220px; }
+.board-check { margin: 0 0 10px; }
+.board-groups { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+.board-group { display: grid; gap: 8px; align-content: start; }
+.board-group-title { margin: 0; font-size: .95rem; color: var(--gold); }
+.board-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.board-job {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgba(12, 24, 57, .7);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.board-job:hover { border-color: var(--line-strong); }
+.board-job .job-mini-portrait { width: 36px; height: 36px; }
+.board-job-copy { display: grid; gap: 2px; min-width: 0; }
+.board-job-title { font-weight: 700; overflow-wrap: anywhere; }
+.board-job-meta { color: var(--muted); font-size: .84rem; overflow-wrap: anywhere; }
+.board-job-restriction { color: var(--gold); font-size: .82rem; }
+.board-empty { color: var(--dim); font-size: .88rem; margin: 0; }
+#restrictionKindBox { flex: 0 1 auto; width: auto; min-width: 0; }
+#restrictionValueBox { flex: 1 1 12em; min-width: 0; }
+.job-restriction { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.job-inline-btn { padding: 3px 10px; font-size: .82rem; border-radius: 999px; }
+
 .farm-results { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
 .farm-row { display: grid; gap: 6px; }
 .farm-row-title { margin: 0; font-size: .9rem; color: var(--muted); }

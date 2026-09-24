@@ -79,6 +79,8 @@ BLOCKS = {
     "itemShort": (12106, 1400),  # descrizioni brevi degli strumenti
     "traps": (13506, 25),        # nomi delle trappole, per ID
     "dungeons": (16566, 256),    # nomi dei dungeon, per ID
+    "ranks": (374, 13),          # gradi della squadra (Normale ... Capitano), per GetRank
+    "types": (13772, 19),        # tipi dei Pokémon, per ID (0 = nessuno)
 }
 TOTAL_STRINGS = 18482
 
@@ -107,6 +109,11 @@ JOB_TEXTS = {
     "arrest": 15429,
     "defeat": 15430,
     "findTreasure": 15432,
+    "restrictionType": 15399,     # Con compagno tipo [type:0]
+    "restrictionSpecies": 15400,  # Con [kind:0]
+    "jobBoard": 14362,            # Bacheca delle missioni
+    "outlawBoard": 14363,         # Bacheca dei ricercati
+    "cafe": 16549,                # Caffè di Spinda
 }
 # Altre frasi usate dalla legenda delle mappe.
 EXTRA_TEXTS = {
@@ -216,8 +223,8 @@ def clean_description(text: str) -> str | None:
 
 
 def clean_job_text(text: str) -> str:
-    """Toglie colori e spazi finali, lasciando i segnaposto [name:0] e [item:0]."""
-    text = re.sub(r"\[(?!name:0\]|item:0\])[^\]]*\]", "", text)
+    """Toglie colori e spazi finali, lasciando i segnaposto [name:0], [item:0], [type:0] e [kind:0]."""
+    text = re.sub(r"\[(?!(?:name|item|type|kind):0\])[^\]]*\]", "", text)
     return re.sub(r"\s+", " ", text).strip()
 
 
@@ -233,6 +240,8 @@ def build_language(strings: list[str]) -> dict:
         "pokemon": block("pokemon", clean_name),
         "dungeons": block("dungeons", clean_name),
         "traps": block("traps", clean_name),
+        "ranks": [clean_name(name.replace("[M:S3]", "★")) for name in strings[374:374 + 13]],
+        "types": block("types", clean_name),
         "job": {key: clean_job_text(strings[index]) for key, index in JOB_TEXTS.items()},
         "extra": {key: clean_job_text(strings[index]) for key, index in EXTRA_TEXTS.items()},
     }
@@ -254,6 +263,9 @@ def read_monsters(monster_md: bytes) -> dict:
         "dex": [struct.unpack_from("<h", monster_md, o + 4)[0] for o in entries],
         "gender": [monster_md[o + 0x12] for o in entries],
         "bodySize": [monster_md[o + 0x13] for o in entries],
+        # Tipi (0x14, 0x15) e primi due strumenti esclusivi (0x34, 0x36): servono ai premi della bacheca.
+        "types": [[monster_md[o + 0x14], monster_md[o + 0x15]] for o in entries],
+        "exclusive": [list(struct.unpack_from("<2h", monster_md, o + 0x34)) for o in entries],
     }
 
 
@@ -443,8 +455,12 @@ def build_mission_text_tables(rescue: bytes, rodata: bytes, itcm: bytes) -> dict
         client_case, _, client, target_case, _, target, backup_case, _, backup = \
             struct.unpack_from("<9H", rescue, base + 0xE)
         mission_type, subtype = rescue[base + 0x20], rescue[base + 0x21]
+        item_1 = struct.unpack_from("<H", rescue, base + 4)[0]
+        client_1, target_1, backup_1 = (struct.unpack_from("<H", rescue, base + off)[0] for off in (0x10, 0x16, 0x1C))
+        # Le ultime quattro colonne servono solo alla bacheca (numero di voci delle tabelle da cui pescare).
         templates.append([text, mission_type, subtype, item_case, item, dungeon_case, dungeon,
-                          client_case, client, target_case, target, backup_case, backup])
+                          client_case, client, target_case, target, backup_case, backup,
+                          item_1, client_1, target_1, backup_1])
 
     # Senza modello il gioco legge text_string_offset all'indirizzo 0, dove l'ARM9 vede l'inizio dell'ITCM:
     # la prima istruzione (stmdb sp!, {...}) ha nella metà bassa l'elenco dei registri.
@@ -479,6 +495,125 @@ def read_floor_formats(text_rodata: bytes) -> dict:
         return re.sub(r"\[[^\]]*\]", "", raw).replace("%d", "{floor}")
 
     return {lang: [c_string(up), c_string(down)] for lang, (up, down) in FLOOR_FORMATS.items()}
+
+
+# ---------------------------------------------------------------------------
+# Missioni della bacheca (GenerateDailyMissions, GenerateMission, GenerateMissionRewards)
+# ---------------------------------------------------------------------------
+#
+# Il sito simula un salvataggio a fine gioco: tutti i dungeon aperti e completati, tutti i Pokémon
+# incontrati, storia finita. Qui si estraggono solo le tabelle; le regole sono in bacheca.js.
+
+RESCUE_CATEGORIES = 39
+RESCUE_ITEM_TABLE = 88        # voci a 0xF48 di rescue.bin (strumenti comuni e rari)
+RESCUE_MONSTER_TABLE = 1472   # voci a 0xFA0 (Pokémon per ricercati, guide...)
+LAST_POSSIBLE_MONSTER = 0x217 # GenerateAllPossibleMonstersList guarda gli ID da 1 a 0x217
+ITEM_LIST_ENTRIES = 0x17C     # GetItemIdFromList: 16 categorie + 364 strumenti
+ITEM_LIST_RANDOM = 0x270F     # RandIntSafe(9999): numeri da 0 a 9998
+ITEM_LIST_FALLBACK = 0x55     # strumento dato quando l'elenco non copre il numero estratto
+REWARD_LISTS = 15             # difficoltà 0-15: elenco ITEM_TABLES_PTRS_1[max(difficoltà - 1, 0)]
+
+
+def read_word_labels(source: bytes, label: str) -> list[str]:
+    """Etichette elencate come .word dopo `label` (tabelle di puntatori verso altri file .s)."""
+    match = re.search(rf"^{label}:\n(.*?)(?=^\s*\.global|\Z)", source.decode("utf-8"), re.M | re.S)
+    if not match:
+        raise ValueError(f"{label} non trovato")
+    return re.findall(r"\.word (\w+)", match.group(1))
+
+
+def item_list_weights(data: bytes, offset: int, item_category: list[int]) -> list[list[int]]:
+    """Porting di GetItemIdFromList: l'elenco compresso (valori da 0x7530 = salti) dà soglie cumulative
+    per categoria e per strumento; si estraggono due numeri da 0 a 9998. Restituisce [strumento, peso]
+    con i pesi interi (somma 9999 * 9999)."""
+    values, index = [], offset
+    while len(values) < ITEM_LIST_ENTRIES:
+        value = struct.unpack_from("<H", data, index)[0]
+        index += 2
+        values.extend([0] * (value - MAPPA_SKIP) if value >= MAPPA_SKIP else [value])
+    categories, items = values[:16], values[16:ITEM_LIST_ENTRIES]
+
+    def first_match(thresholds: list[tuple[int, int]]) -> dict:
+        counts, covered = {}, -1
+        for key, value in thresholds:
+            if value == 0 or value >= 0x8000:
+                continue
+            top = min(value, ITEM_LIST_RANDOM - 1)
+            if top > covered:
+                counts[key] = top - covered
+                covered = top
+        return counts
+
+    weights = {}
+    cat_counts = first_match(list(enumerate(categories)))
+    for category, count in cat_counts.items():
+        in_category = [(item, value) for item, value in enumerate(items)
+                       if item < len(item_category) and item_category[item] == category]
+        picked = first_match(in_category)
+        for item, item_count in picked.items():
+            weights[item] = weights.get(item, 0) + count * item_count
+        missing = ITEM_LIST_RANDOM - sum(picked.values())
+        weights[ITEM_LIST_FALLBACK] = weights.get(ITEM_LIST_FALLBACK, 0) + count * missing
+    uncovered = ITEM_LIST_RANDOM - sum(cat_counts.values())
+    weights[ITEM_LIST_FALLBACK] = weights.get(ITEM_LIST_FALLBACK, 0) + uncovered * ITEM_LIST_RANDOM
+    return [[item, weight] for item, weight in sorted(weights.items()) if weight]
+
+
+def build_board(rescue: bytes, main_rodata: bytes, dungeon_rodata: bytes, text_rodata: bytes,
+                monsters: dict, banned: list[int], item_category: list[int], dungeon_names: list) -> dict:
+    header = struct.unpack_from("<6I", rescue, 0)
+    categories = [list(struct.unpack_from("<4HBBHHH", rescue, header[5] + 16 * i)) for i in range(RESCUE_CATEGORIES)]
+    item_table = list(struct.unpack_from(f"<{RESCUE_ITEM_TABLE}h", rescue, header[2]))
+    monster_table = list(struct.unpack_from(f"<{RESCUE_MONSTER_TABLE}h", rescue, header[3]))
+
+    data, labels = assemble(main_rodata.decode("utf-8"))
+
+    def halfwords(label: str, count: int) -> list[int]:
+        return list(struct.unpack_from(f"<{count}h", data, labels[label]))
+
+    # Pesi dei tipi di ricompensa: quelli "CAFE" valgono per bacheca e bottiglia, "DEFAULT" (uguali) per il bar.
+    reward_weights = halfwords("CAFE_MISSION_REWARD_TYPE_WEIGHTS", 7)
+    if reward_weights != halfwords("DEFAULT_MISSION_REWARD_TYPE_WEIGHTS", 7):
+        raise ValueError("pesi delle ricompense diversi tra bar e bacheca: va gestito")
+    outlaw_weights = halfwords("OUTLAW_MISSION_REWARD_TYPE_WEIGHTS", 7)
+    restriction_weights = halfwords("_020A3CA0", 3)     # nessuna, tipo, specie (sub_02062900)
+    deliver_items = halfwords("ITEM_DELIVERY_TABLE", 22)
+
+    ddata, dlabels = assemble(dungeon_rodata.decode("utf-8"))
+    lists = [item_list_weights(ddata, dlabels[label], item_category)
+             for label in read_word_labels(main_rodata, "ITEM_TABLES_PTRS_1")[:REWARD_LISTS]]
+
+    # Dungeon: CanDungeonBeUsedForMission (a fine gioco tutti aperti e completati). Si tolgono il dungeon
+    # di prova e quelli senza nome, che nel gioco non si aprono.
+    restrictions = dlabels["DUNGEON_RESTRICTIONS"]
+    base = dlabels["DUNGEON_DATA_LIST"]
+    max_members = [ddata[restrictions + 0xC * d + 6] for d in range(FIRST_SPECIAL_DUNGEON)]
+    dungeons = [d for d in range(1, 0xAF)
+                if d not in (0x36, 0x68) and not 0x7B <= d <= 0xA3 and dungeon_names[d] and ddata[base + 4 * d]]
+
+    # IsAvailableItem: lo strumento compare in almeno un gruppo di dungeon (a fine gioco li si è visti tutti).
+    tdata, tlabels = assemble(text_rodata.decode("utf-8"))
+    table = tlabels["AVAILABLE_ITEMS_IN_GROUP_TABLE"]
+    groups = {ddata[base + 4 * d + 1] for d in range(1, FIRST_SPECIAL_DUNGEON) if ddata[base + 4 * d]}
+    available = sorted(item for item in range(1024)
+                       if any(g < 100 and tdata[table + 0x80 * g + item // 8] >> (item % 8) & 1 for g in groups))
+
+    # Pokémon che la bacheca può scegliere (CanMonsterBeUsedForMission): forma base, non vietati.
+    # Pokémon che CanMonsterBeUsedForMission accetta (forma base, non in MISSION_BANNED_MONSTERS): la bacheca
+    # pesca da quelli fino a 0x217 (GenerateAllPossibleMonstersList) e li usa per filtrare le tabelle.
+    banned_set = set(banned)
+    usable = [m for m in range(1, 600) if get_base_form(m) == m and m not in banned_set]
+
+    return {
+        "categories": categories, "itemTable": item_table, "monsterTable": monster_table,
+        "rewardWeights": reward_weights, "outlawRewardWeights": outlaw_weights,
+        "restrictionWeights": restriction_weights, "deliverItems": deliver_items,
+        "rewardLists": lists, "fallbackItem": ITEM_LIST_FALLBACK,
+        "dungeons": dungeons, "maxMembers": max_members, "availableItems": available,
+        "usableMonsters": usable, "lastPossibleMonster": LAST_POSSIBLE_MONSTER,
+        "types": [pair for pair in monsters["types"][:600]],
+        "exclusive": {str(m): pair for m, pair in enumerate(monsters["exclusive"][:600]) if any(pair)},
+    }
 
 
 # ---------------------------------------------------------------------------
@@ -1099,6 +1234,10 @@ def main() -> int:
     # Numero del Pokédex nazionale di ogni ID del gioco (per i ritratti di PMDCollab).
     shared["nationalDex"] = monsters["dex"][:600]
     shared["missionText"] = mission_text
+    shared["board"] = build_board(load_source("rescue", args.pmd_sky), main_rodata,
+                                  load_source("dungeonRodata", args.pmd_sky), load_source("textRodata", args.pmd_sky),
+                                  monsters, banned, shared["itemCategory"],
+                                  build_language(texts["en"])["dungeons"])
     shared["source"] = source
     write_js(args.out / "dati_gioco.js", "window.WMSkyGameData", shared,
              "Dati di PMD: Esploratori del Cielo che non dipendono dalla lingua.")

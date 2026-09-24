@@ -85,6 +85,24 @@ of the ones the game expects (a Treasure Memo in a dungeon where the game never 
 pair of Pokémon that normal missions don't have), the game reads the text from the wrong place in memory. The
 site shows what should come out, but marks it as not tested yet.
 
+## The job board
+
+The "Job board" card prepares a day of missions the way the game does every morning: the Job Bulletin Board,
+the Outlaw Notice Board, the Spinda's Café request and the message in a bottle. I rewrote the game's rules:
+which categories can come out, the Pokémon, dungeons and floors, items, rewards and restrictions. The game
+also looks at your save file, though, and the site can't know it, so it imagines a finished game with every
+dungeon open. The team rank is yours to pick, because it decides which missions can appear and whether they
+have restrictions. That's also why the missions that open a dungeon, like the musical instrument ones, never
+show up: in a finished game those dungeons are already open.
+
+One click on a mission loads it into the form, with "Undo" to go back. Some board missions use variants the
+form doesn't have: the password stays right, but if you then change the form it becomes a different mission,
+and the site tells you so.
+
+Team restrictions (a partner of a certain type or a specific Pokémon) can now also be picked in the form,
+among the advanced options. "Job Summary" has a button to remove them, and the board has a box that removes
+them from every mission.
+
 ## Unlocking a dungeon
 
 The "Unlock a dungeon" card sets up the trick found by Lai-brary: a Jirachi Challenge Letter with another
@@ -138,6 +156,7 @@ worked it out from the game code and haven't tried it yet.
 - Reward types follow the game code (`InitMissionReward`). For the egg and for the Pokémon that joins the
   team you can pick the species: by default it is the client, as in job board missions. For the egg the game
   accepts any species, while the one joining the team has to be a Pokémon that could be a client.
+- Team restrictions end up in the password and show in "Job Summary". Before, they were always empty.
 - Item icons follow the game data: two items that share an icon in the game share it here too, for example
   almost all seeds or the held ribbons.
 
@@ -153,18 +172,18 @@ python tools/estrai_dati.py --pmd-sky ../pmd-sky   # if you already have a copy 
 
 The script downloads the files from a fixed commit and checks that they haven't changed. From there it gets
 the texts (names, descriptions, "Job Summary" sentences, mission titles and descriptions with the tables to
-pick them), item and Pokémon data (Pokédex number for the
+pick them), the tables the game uses to fill the job board, item and Pokémon data (Pokédex number for the
 portraits, who can be a client), the floors and difficulty of every dungeon and the special rooms.
 
 The rest of the code is plain JavaScript with no libraries: `lm.js` encodes and decodes passwords,
-`lmgenerate.js` describes the mission types, `testi_missione.js` picks the title and description, `app.js` and `stanze.js` run the page and the maps. In
+`lmgenerate.js` describes the mission types, `testi_missione.js` picks the title and description, `bacheca.js` prepares the job board missions, `app.js` and `stanze.js` run the page and the maps. In
 `config.js` you can set the repository address to show the GitHub button at the top. The code and its
 comments are in Italian, which is where the project comes from.
 
 ## Tests
 
 ```
-node --test                  # encoding, rooms, Pokémon, floors, validity, rewards, texts, icons and translations (Node 18+)
+node --test                  # encoding, rooms, Pokémon, floors, validity, rewards, texts, job board, icons and translations (Node 18+)
 python tests/ui_smoke.py     # tries the page in a real browser, needs Playwright
 ```
 
@@ -177,6 +196,9 @@ The encoding test compares 60 passwords with those of the original generator and
 - The rooms without treasure other than 81 still have to be tried in the game.
 - The text of missions the game doesn't expect (see above) is worked out from the code and still has to be
   tried in the game.
+- The job board follows the game's code, but I haven't compared it with a real board yet. A curious detail to
+  check: when the reward is an egg, the game writes a number drawn from the item list as the species, so the
+  egg species the site shows might not be the one that actually hatches.
 - The game says which items share the same icon, but not what color they are. For some of them I picked the
   colors myself and they might not match.
 

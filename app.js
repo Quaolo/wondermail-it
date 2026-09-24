@@ -841,6 +841,7 @@ function importDecodedStruct(result) {
   if (rawFlavor) {
     rawFlavor.value = Number.isFinite(struct.flavorText) ? String(struct.flavorText) : '';
   }
+  setRestrictionFields(struct);
 
   WMSGen.update();
   syncDungeonFloorLimit(true);
@@ -854,9 +855,97 @@ function importDecodedStruct(result) {
   }
   updateOutputCards();
 
-  // Le restrizioni di squadra non sono gestite dal modulo: rigenerando andrebbero perse.
-  const hasRestriction = struct.restriction !== 0 || struct.restrictionType !== 0;
-  return missionMapped && !hasRestriction;
+  return missionMapped;
+}
+
+// ---------------------------------------------------------------------------
+// Restrizioni della squadra
+// ---------------------------------------------------------------------------
+
+// Nome del tipo elementare (1-17) nella lingua corrente, dai testi del gioco.
+function getTypeName(typeId) {
+  const text = getGameText();
+  const fallback = getGameText(FALLBACK_LANGUAGE);
+  return (text && text.types && text.types[typeId]) || (fallback && fallback.types && fallback.types[typeId]) || String(typeId);
+}
+
+// Valori del secondo menu: i tipi (1-17) oppure le specie che il gioco accetta.
+function populateRestrictionValues() {
+  const kind = document.getElementById('restrictionKindBox')?.value || 'none';
+  const select = document.getElementById('restrictionValueBox');
+  if (!select) return;
+  const previous = select.dataset.kind === kind ? String(select.value || '') : '';
+  select.dataset.kind = kind;
+  select.hidden = kind === 'none';
+  select.innerHTML = '';
+  let entries = [];
+  if (kind === 'type') {
+    entries = Array.from({ length: 17 }, (_, index) => [index + 1, getTypeName(index + 1)]);
+  } else if (kind === 'species') {
+    entries = ((window.WMSkyGameData || {}).missionClients || [])
+      .map((id) => [id, getLocalizedPokemonName(id)])
+      .sort((a, b) => a[1].localeCompare(b[1]));
+  }
+  entries.forEach(([value, text]) => {
+    const option = document.createElement('option');
+    option.value = String(value);
+    option.text = text;
+    select.add(option);
+  });
+  if (previous) setSelectByValue(select, previous);
+}
+
+function setRestrictionFields(struct) {
+  const kindSelect = document.getElementById('restrictionKindBox');
+  const valueSelect = document.getElementById('restrictionValueBox');
+  if (!kindSelect || !valueSelect) return;
+  let kind = 'none';
+  if (struct.restrictionType === 1 && struct.restriction > 0) kind = 'species';
+  else if (struct.restrictionType === 0 && struct.restriction > 0) kind = 'type';
+  kindSelect.value = kind;
+  populateRestrictionValues();
+  if (kind === 'species') ensureSelectOption(valueSelect, struct.restriction, getLocalizedPokemonName(struct.restriction));
+  if (kind === 'type') ensureSelectOption(valueSelect, struct.restriction, getTypeName(struct.restriction));
+  if (kind !== 'none') setSelectByValue(valueSelect, struct.restriction);
+}
+
+function hasRestriction(struct) {
+  return struct.restriction > 0 && (struct.restrictionType === 0 || struct.restrictionType === 1);
+}
+
+// Riga «Restrizioni» di Info missione, con le frasi del gioco e il pulsante per toglierla.
+function makeRestrictionValue(struct) {
+  const wrap = document.createElement('span');
+  wrap.className = 'job-restriction';
+  if (!hasRestriction(struct)) {
+    wrap.textContent = struct.restriction || struct.restrictionType ? t('jobRestrictionSet') : jobText('none');
+    return wrap;
+  }
+  const text = document.createElement('span');
+  text.textContent = struct.restrictionType === 0
+    ? jobText('restrictionType').replace('[type:0]', getTypeName(struct.restriction))
+    : jobText('restrictionSpecies').replace('[kind:0]', getLocalizedPokemonName(struct.restriction));
+  const remove = document.createElement('button');
+  remove.type = 'button';
+  remove.className = 'job-inline-btn';
+  remove.id = 'removeRestrictionBtn';
+  remove.textContent = t('restrictionRemove');
+  remove.addEventListener('click', removeRestriction);
+  wrap.append(text, remove);
+  return wrap;
+}
+
+// Toglie la restrizione dalla password mostrata, senza passare dal modulo: vale anche per le missioni
+// che il modulo non sa rappresentare per intero (per esempio alcune della bacheca).
+function removeRestriction() {
+  const result = getOutputMission();
+  if (!result) return;
+  const struct = Object.assign({}, result.struct, { restriction: 0, restrictionType: 0 });
+  const code = WMSParser.encode(struct, result.region);
+  const decoded = WMSParser.decodeWithRegion(code, result.region);
+  if (!decoded || !decoded.crcOk) return;
+  runFormAction({ text: () => t('originRestrictionRemoved'), panel: null }, () => importDecodedStruct(decoded));
+  setStatus('statusLine', 'restrictionRemoved', null, 'ok');
 }
 
 function getTreasureBoxVariantLabel(itemId) {
@@ -1282,6 +1371,8 @@ function relabelLocalizedControls() {
   renderFarmResults();
   populateUnlockDungeons();
   populateRewardPokemonList(true);
+  populateRestrictionValues();
+  renderBoard();
   refreshSearchBoxSelections();
 }
 
@@ -1547,7 +1638,7 @@ function resolveInitialLanguage() {
 // Leggi una password, Accesso rapido, Cerca un premio e Sblocca un dungeon sono modi diversi di cominciare:
 // ne serve uno alla volta. Compilando il modulo a mano il pannello aperto si chiude, così modulo e
 // risultato restano in vista.
-const START_PANEL_IDS = ['readerCard', 'presetsCard', 'farmCard', 'unlockCard'];
+const START_PANEL_IDS = ['readerCard', 'presetsCard', 'boardCard', 'farmCard', 'unlockCard'];
 
 // Diventa vero mentre un punto di partenza (preset, lettura, premio) riempie il modulo da solo.
 let fillingFormFromTool = false;
@@ -1581,6 +1672,7 @@ function openStartPanel(id) {
   if (panel) flashElement(panel, 'panel-in');
   if (id === 'unlockCard' && !document.getElementById('unlockOutput')?.value) generateUnlockPassword(false);
   if (id === 'readerCard') document.getElementById('importCode')?.focus({ preventScroll: true });
+  if (id === 'boardCard' && !boardDay) newBoardDay();
 }
 
 function closeStartPanels() {
@@ -1749,6 +1841,7 @@ onReady(() => {
   WMSGen.setup(document.getElementById('genForm'));
   WMSGen.showAllPokemon = !!document.getElementById('allPokemonForms')?.checked;
   populateEggPokemonList();
+  populateRestrictionValues();
   relabelItemSelect('targetItemBox');
   relabelItemSelect('rewardItemBox');
   setSelectByValue(document.getElementById('rewardItemBox'), DEFAULT_REWARD_ITEM);
@@ -1758,7 +1851,8 @@ onReady(() => {
   const watchedIds = [
     'missionTypeBox', 'missionSubTypeBox', 'dungeonBox', 'floor', 'clientBox', 'clientF',
     'targetBox', 'targetF', 'target2Box', 'target2F', 'targetItemBox', 'rewardTypeBox',
-    'rewardItemBox', 'regionBox', 'flavorText', 'specialFloor', 'eggPokemonBox', 'rewardPokemonBox'
+    'rewardItemBox', 'regionBox', 'flavorText', 'specialFloor', 'eggPokemonBox', 'rewardPokemonBox',
+    'restrictionKindBox', 'restrictionValueBox'
   ];
 
   watchedIds.forEach((id) => {
@@ -1769,6 +1863,7 @@ onReady(() => {
       if (id === 'floor') {
         syncDungeonFloorLimit(true);
       }
+      if (id === 'restrictionKindBox') populateRestrictionValues();
       if (isEggGlitchEnabled() && ['missionTypeBox', 'dungeonBox', 'floor', 'targetItemBox', 'rewardTypeBox', 'clientBox', 'clientF'].includes(id)) {
         applyEggGlitchPreset();
       }
@@ -2593,7 +2688,7 @@ function renderJobCard() {
     addJobRow(fields, jobText('difficulty'), t('jobDifficulty', { rank: difficulty.rank, points: difficulty.points }));
   }
   addJobRow(fields, jobText('reward'), getRewardValue(struct));
-  addJobRow(fields, jobText('restrictions'), struct.restriction || struct.restrictionType ? t('jobRestrictionSet') : jobText('none'));
+  addJobRow(fields, jobText('restrictions'), makeRestrictionValue(struct));
 
   if (egg) {
     note.textContent = t('jobNoteEgg');
@@ -3160,6 +3255,157 @@ function useFarmCombo(roomId, dungeonId, floorNumber = 1) {
 }
 
 // ---------------------------------------------------------------------------
+// Bacheca (bacheca.js): una giornata di missioni come la prepara il gioco
+// ---------------------------------------------------------------------------
+
+let boardDay = null;
+const BOARD_GROUPS = [
+  { id: 'job', title: () => jobText('jobBoard') },
+  { id: 'outlaw', title: () => jobText('outlawBoard') },
+  { id: 'cafe', title: () => jobText('cafe') },
+  { id: 'bottle', title: () => t('boardBottle') }
+];
+const BOARD_DEFAULT_RANK = 12;
+
+function populateBoardRanks() {
+  const select = document.getElementById('boardRank');
+  if (!select) return;
+  const text = getGameText() || {};
+  const previous = select.value || String(BOARD_DEFAULT_RANK);
+  select.innerHTML = '';
+  (text.ranks || []).forEach((name, index) => {
+    const option = document.createElement('option');
+    option.value = String(index);
+    option.text = name;
+    select.add(option);
+  });
+  setSelectByValue(select, previous);
+}
+
+function newBoardDay() {
+  if (!window.WMSkyBoard) return;
+  const rank = parseInt(document.getElementById('boardRank')?.value || String(BOARD_DEFAULT_RANK), 10);
+  boardDay = WMSkyBoard.generateDay({ rank });
+  renderBoard();
+}
+
+// Missione della bacheca con o senza restrizione, secondo la casella.
+function boardStruct(mission) {
+  const struct = Object.assign({}, mission);
+  delete struct.template;
+  if (document.getElementById('boardNoRestrictions')?.checked) {
+    struct.restriction = 0;
+    struct.restrictionType = 0;
+  }
+  return struct;
+}
+
+function describeBoardMission(struct) {
+  const lang = getJobTextLanguage();
+  const parts = [getDungeonName(struct.dungeon)];
+  if (struct.floor > 0) parts.push(WMSkyJobText.formatFloor(struct.floor, struct.dungeon, lang));
+  const rank = WMSkyBoard.missionRank(struct);
+  if (MISSION_DIFFICULTY_RANKS[rank]) parts.push(MISSION_DIFFICULTY_RANKS[rank]);
+  const labels = getLocaleLabelMap('rewardTypes', getCurrentLanguage());
+  let reward = labels[struct.rewardType] || '';
+  if (struct.rewardType >= 1 && struct.rewardType <= 3) reward += ` · ${getItemDisplayName(struct.reward)}`;
+  if (struct.rewardType === 5 || struct.rewardType === 6) reward += ` · ${getLocalizedPokemonName(struct.reward)}`;
+  if (reward) parts.push(reward);
+  return parts.join(' · ');
+}
+
+function renderBoard() {
+  const container = document.getElementById('boardGroups');
+  if (!container) return;
+  populateBoardRanks();
+  container.textContent = '';
+  if (!boardDay) return;
+  BOARD_GROUPS.forEach((group) => {
+    const missions = boardDay[group.id] || [];
+    const section = document.createElement('section');
+    section.className = 'board-group';
+    const title = document.createElement('h3');
+    title.className = 'board-group-title';
+    title.textContent = `${group.title()} (${missions.length})`;
+    section.appendChild(title);
+    if (!missions.length) {
+      const empty = document.createElement('p');
+      empty.className = 'board-empty';
+      empty.textContent = t('boardEmpty');
+      section.appendChild(empty);
+    }
+    const list = document.createElement('ul');
+    list.className = 'board-list';
+    missions.forEach((mission, index) => {
+      const struct = boardStruct(mission);
+      const item = document.createElement('li');
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'board-job';
+      button.dataset.board = group.id;
+      button.dataset.index = String(index);
+      // Sulla bacheca dei ricercati si vede il ricercato, altrove il committente.
+      const face = struct.missionType === 10 ? struct.target : struct.client;
+      const name = getLocalizedPokemonName(face);
+      const portrait = createFallbackImage(getPokemonImage(face, name), 'job-mini-portrait');
+      const copy = document.createElement('span');
+      copy.className = 'board-job-copy';
+      const heading = document.createElement('span');
+      heading.className = 'board-job-title';
+      const text = WMSkyJobText.describeMission(struct, getJobTextLanguage());
+      if (text) renderJobTextParts(heading, text.title);
+      const meta = document.createElement('span');
+      meta.className = 'board-job-meta';
+      meta.textContent = describeBoardMission(struct);
+      copy.append(heading, meta);
+      if (hasRestriction(struct)) {
+        const restriction = document.createElement('span');
+        restriction.className = 'board-job-restriction';
+        restriction.textContent = struct.restrictionType === 0
+          ? jobText('restrictionType').replace('[type:0]', getTypeName(struct.restriction))
+          : jobText('restrictionSpecies').replace('[kind:0]', getLocalizedPokemonName(struct.restriction));
+        copy.appendChild(restriction);
+      }
+      button.append(portrait, copy);
+      item.appendChild(button);
+      list.appendChild(item);
+    });
+    section.appendChild(list);
+    container.appendChild(section);
+  });
+}
+
+function useBoardMission(boardId, index) {
+  const mission = boardDay && boardDay[boardId] && boardDay[boardId][index];
+  if (!mission) return;
+  const region = getSelectedRegion();
+  const code = WMSParser.encode(boardStruct(mission), region);
+  const decoded = WMSParser.decodeWithRegion(code, region);
+  if (!decoded || !decoded.crcOk) return;
+  requestPasswordAnimation();
+  const group = BOARD_GROUPS.find((entry) => entry.id === boardId);
+  const fullyMapped = runFormAction({ text: () => t('originBoard', { board: group.title() }), panel: 'boardCard' },
+    () => importDecodedStruct(decoded));
+  closeStartPanels();
+  // Alcune missioni della bacheca hanno sottotipi che il modulo non offre: la password resta giusta,
+  // ma cambiando il modulo si otterrebbe un'altra missione.
+  setStatus('statusLine', fullyMapped ? 'boardUsed' : 'boardPartial', null, fullyMapped ? 'ok' : 'warning');
+  const job = document.getElementById('jobCard');
+  if (job) flashElement(job, 'card-flash');
+}
+
+function setupBoard() {
+  document.getElementById('boardNewDay')?.addEventListener('click', newBoardDay);
+  document.getElementById('boardRank')?.addEventListener('change', newBoardDay);
+  document.getElementById('boardNoRestrictions')?.addEventListener('change', renderBoard);
+  document.getElementById('boardGroups')?.addEventListener('click', (event) => {
+    const button = event.target.closest('.board-job');
+    if (button) useBoardMission(button.dataset.board, parseInt(button.dataset.index, 10));
+  });
+  populateBoardRanks();
+}
+
+// ---------------------------------------------------------------------------
 // Sblocca un dungeon (glitch della Lettera di sfida di Jirachi, documentato da Lai-brary)
 // ---------------------------------------------------------------------------
 
@@ -3528,6 +3774,7 @@ onReady(() => {
     makeSimilarMission('nextFloor');
   });
   setupJobTextPicker();
+  setupBoard();
   document.getElementById('similarNewSeed')?.addEventListener('click', () => {
     requestPasswordAnimation();
     makeSimilarMission('newSeed');

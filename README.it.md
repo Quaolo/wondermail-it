@@ -85,6 +85,24 @@ di quelle previste dal gioco (un Memo tesoro in un dungeon dove il gioco non ne 
 coppia di Pokémon che nelle missioni normali non c'è), il gioco va a leggere il testo in un punto sbagliato
 della memoria. Il sito mostra quello che dovrebbe uscire, ma lo segnala come non ancora provato.
 
+## La bacheca
+
+La scheda "Bacheca" prepara una giornata di missioni come fa il gioco ogni mattina: la bacheca delle
+missioni, quella dei ricercati, la richiesta del Caffè di Spinda e il messaggio in bottiglia. Ho riscritto le
+regole del gioco: quali categorie possono uscire, i Pokémon, i dungeon e i piani, gli strumenti, le ricompense
+e le restrizioni. Il gioco però guarda anche il salvataggio, e il sito non può conoscerlo, quindi immagina una
+partita finita, con tutti i dungeon aperti. Il grado della squadra invece lo scegli tu, perché decide quali
+missioni possono comparire e se hanno restrizioni. Per questo non escono le missioni che servono ad aprire un
+dungeon, come quelle degli strumenti musicali: in una partita finita quei dungeon sono già aperti.
+
+Un clic su una missione la porta nel modulo, con "Annulla" per tornare indietro. Alcune missioni della bacheca
+usano varianti che il modulo non ha: la password resta giusta, ma se poi cambi il modulo diventa un'altra
+missione, e il sito te lo dice.
+
+Le restrizioni (un compagno di un certo tipo o un Pokémon preciso) ora si possono anche scegliere nel modulo,
+tra le opzioni avanzate. In "Info missione" c'è un pulsante per toglierle, e nella bacheca una casella che le
+toglie a tutte le missioni.
+
 ## Sbloccare un dungeon
 
 La scheda "Sblocca un dungeon" prepara il trucco scoperto da Lai-brary: una Lettera di sfida di Jirachi con un
@@ -138,6 +156,7 @@ con la stanza 81; per le altre l'ho ricavato dal codice del gioco e non l'ho anc
   unisce alla squadra si può scegliere la specie: di base è il committente, come nelle missioni della bacheca.
   Per l'uovo il gioco accetta qualsiasi specie, mentre chi si unisce alla squadra deve essere un Pokémon che
   potrebbe fare da committente.
+- Le restrizioni della squadra finiscono nella password e si vedono in "Info missione". Prima erano sempre vuote.
 - Le icone degli strumenti seguono i dati del gioco: due strumenti che lì hanno la stessa icona ce l'hanno
   anche qui, per esempio quasi tutti i semi o i nastri da tenere.
 
@@ -153,17 +172,17 @@ python tools/estrai_dati.py --pmd-sky ../pmd-sky   # se hai già una copia di pr
 
 Lo script scarica i file da un commit preciso e controlla che non siano cambiati. Da lì ricava i testi
 (nomi, descrizioni, frasi di "Info missione", titoli e descrizioni delle missioni con le tabelle per
-sceglierli), i dati degli strumenti e dei Pokémon (numero del Pokédex per i
+sceglierli), le tabelle con cui il gioco riempie la bacheca, i dati degli strumenti e dei Pokémon (numero del Pokédex per i
 ritratti, chi può fare da committente), i piani e la difficoltà di ogni dungeon e le stanze speciali.
 
 Il resto del codice è JavaScript senza librerie: `lm.js` codifica e decodifica le password,
-`lmgenerate.js` descrive i tipi di missione, `testi_missione.js` sceglie titolo e descrizione, `app.js` e `stanze.js` gestiscono la pagina e le mappe.
+`lmgenerate.js` descrive i tipi di missione, `testi_missione.js` sceglie titolo e descrizione, `bacheca.js` prepara le missioni della bacheca, `app.js` e `stanze.js` gestiscono la pagina e le mappe.
 In `config.js` si può mettere l'indirizzo del repository per mostrare il pulsante GitHub in alto.
 
 ## Test
 
 ```
-node --test                  # codifica, stanze, Pokémon, piani, validità, premi, testi, icone e traduzioni (Node 18+)
+node --test                  # codifica, stanze, Pokémon, piani, validità, premi, testi, bacheca, icone e traduzioni (Node 18+)
 python tests/ui_smoke.py     # prova la pagina in un browser vero, serve Playwright
 ```
 
@@ -175,6 +194,10 @@ Il test della codifica confronta 60 password con quelle del generatore originale
   missione è già nell'elenco o se l'elenco è pieno: quelli dipendono dal salvataggio e il sito non li conosce.
 - Le stanze senza tesoro diverse dalla 81 vanno provate in gioco.
 - Il testo delle missioni che il gioco non prevede (vedi sopra) è dedotto dal codice e va provato in gioco.
+- La bacheca segue il codice del gioco, ma non l'ho ancora confrontata con una bacheca vera. Un dettaglio
+  curioso da controllare: quando la ricompensa è un uovo, il gioco scrive come specie un numero estratto
+  dall'elenco degli strumenti, quindi la specie dell'uovo che mostra il sito potrebbe non essere quella che
+  nasce davvero.
 - Il gioco dice quali strumenti condividono la stessa icona, ma non di che colore sono. Per alcuni i colori
   li ho scelti io e potrebbero non corrispondere.
 
