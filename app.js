@@ -2522,6 +2522,7 @@ function renderJobCard() {
   const result = getOutputMission();
   card.classList.toggle('job-card-invalid', !result);
   if (!result) {
+    renderJobLetter(null);
     objective.textContent = t('jobInvalid');
     portrait.hidden = true;
     rank.textContent = '';
@@ -2539,6 +2540,8 @@ function renderJobCard() {
   objective.textContent = info
     ? jobText(info.text).replace('[name:0]', subjectName).replace('[item:0]', getItemDisplayName(struct.targetItem))
     : t('jobUnknownType');
+
+  renderJobLetter(struct);
 
   const clientName = getLocalizedPokemonName(struct.client);
   const payload = getPokemonImage(struct.client, clientName);
@@ -2600,6 +2603,165 @@ function renderJobCard() {
   }
 
   animateJobChanges(card, fields, previousRows, previousObjective);
+}
+
+// ---------------------------------------------------------------------------
+// Titolo e descrizione della missione (testi_missione.js)
+// ---------------------------------------------------------------------------
+
+// Varianti già trovate per la missione mostrata: si azzerano quando cambia qualcosa di diverso dal seme.
+let jobTextState = null;
+const JOB_TEXT_BATCH = 5;
+
+function getJobTextLanguage() {
+  const lang = getCurrentLanguage();
+  const texts = window.WMSkyGameText || {};
+  return texts[lang] && texts[lang].missionTexts ? lang : FALLBACK_LANGUAGE;
+}
+
+// Scrive i pezzi di testo del gioco: nomi, strumenti e luoghi nella lingua corrente, con i colori del gioco.
+function renderJobTextParts(node, parts) {
+  node.textContent = '';
+  const lang = getJobTextLanguage();
+  const pieces = parts.map((part) => {
+    let text = part.text;
+    if (part.kind === 'pokemon') text = getLocalizedPokemonName(part.id);
+    else if (part.kind === 'item') text = getItemDisplayName(part.id);
+    else if (part.kind === 'dungeon') text = getDungeonName(part.id);
+    else if (part.kind === 'floor') text = WMSkyJobText.formatFloor(part.value, part.dungeon, lang);
+    else if (part.kind === 'team') text = t('jobTextTeam');
+    return { text: text || '', color: part.kind === 'team' ? 'team' : part.color };
+  });
+  // Le frasi del gioco finiscono spesso con uno spazio o un a capo.
+  if (pieces.length) {
+    pieces[0].text = pieces[0].text.replace(/^\s+/, '');
+    pieces[pieces.length - 1].text = pieces[pieces.length - 1].text.replace(/\s+$/, '');
+  }
+  pieces.forEach((piece) => {
+    if (!piece.text) return;
+    if (!piece.color) {
+      node.appendChild(document.createTextNode(piece.text));
+      return;
+    }
+    const span = document.createElement('span');
+    span.className = `tx-${piece.color}`;
+    span.textContent = piece.text;
+    node.appendChild(span);
+  });
+}
+
+// Tutto quello che conta per il testo tranne il seme: se cambia, le varianti trovate non valgono più.
+function getJobTextMissionKey(struct) {
+  return ['missionType', 'missionSpecial', 'dungeon', 'floor', 'client', 'target', 'target2', 'targetItem']
+    .map((key) => struct[key]).join(',');
+}
+
+function renderJobLetter(struct) {
+  const box = document.getElementById('jobLetter');
+  if (!box) return;
+  const text = struct && window.WMSkyJobText ? WMSkyJobText.describeMission(struct, getJobTextLanguage()) : null;
+  box.hidden = !text;
+  if (!text) {
+    jobTextState = null;
+    return;
+  }
+  renderJobTextParts(document.getElementById('jobLetterTitle'), text.title);
+  renderJobTextParts(document.getElementById('jobLetterText'), text.summary);
+  const guess = document.getElementById('jobLetterGuess');
+  guess.hidden = !text.guessed;
+  guess.textContent = text.guessed ? t('jobTextGuess') : '';
+
+  const total = WMSkyJobText.variantCount(struct);
+  const picker = document.getElementById('jobTextPicker');
+  const fixed = document.getElementById('jobTextFixed');
+  picker.hidden = total <= 1;
+  fixed.hidden = total > 1;
+  document.getElementById('jobTextPickerLabel').textContent = t('jobTextPick', { count: total });
+
+  const key = getJobTextMissionKey(struct);
+  if (!jobTextState || jobTextState.key !== key) {
+    jobTextState = { key, total, variants: [], next: struct.flavorText, done: total <= 1 };
+  }
+  if (picker.open) renderJobTextOptions(struct);
+}
+
+function loadMoreJobTexts(struct) {
+  if (!jobTextState || jobTextState.done) return;
+  const found = WMSkyJobText.findVariants(struct, {
+    from: jobTextState.next,
+    wanted: JOB_TEXT_BATCH,
+    skip: jobTextState.variants.map((variant) => variant.key)
+  });
+  jobTextState.variants.push(...found.variants);
+  jobTextState.next = found.next;
+  if (!found.variants.length || jobTextState.variants.length >= jobTextState.total) jobTextState.done = true;
+}
+
+function renderJobTextOptions(struct) {
+  const list = document.getElementById('jobTextOptions');
+  const more = document.getElementById('jobTextMore');
+  if (!list || !jobTextState) return;
+  if (!jobTextState.variants.length) loadMoreJobTexts(struct);
+  const current = WMSkyJobText.textKey(struct);
+  // Il testo della password mostrata sta sempre in elenco, anche se il seme è stato cambiato altrove.
+  if (!jobTextState.variants.some((variant) => variant.key === current)) {
+    jobTextState.variants.unshift({ seed: struct.flavorText, key: current });
+  }
+  const lang = getJobTextLanguage();
+  list.textContent = '';
+  jobTextState.variants.forEach((variant) => {
+    const text = WMSkyJobText.describeMission(struct, lang, variant.seed);
+    const item = document.createElement('li');
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'job-text-option';
+    button.dataset.seed = String(variant.seed);
+    button.setAttribute('aria-current', variant.key === current ? 'true' : 'false');
+    const title = document.createElement('span');
+    title.className = 'job-text-option-title';
+    renderJobTextParts(title, text.title);
+    const body = document.createElement('span');
+    body.className = 'job-text-option-text';
+    renderJobTextParts(body, text.summary);
+    const seed = document.createElement('span');
+    seed.className = 'job-text-option-seed';
+    seed.textContent = t('jobTextSeed', { seed: variant.seed });
+    button.append(title, body, seed);
+    item.appendChild(button);
+    list.appendChild(item);
+  });
+  if (more) more.hidden = jobTextState.done;
+}
+
+function chooseJobText(seed) {
+  runFormAction({ text: () => t('originJobText', { seed }), panel: null }, () => {
+    if (!freezeOutputMission()) return;
+    document.getElementById('flavorText').value = String(seed);
+    refreshMissionUi();
+    generateCode();
+  });
+}
+
+function setupJobTextPicker() {
+  const picker = document.getElementById('jobTextPicker');
+  const list = document.getElementById('jobTextOptions');
+  const more = document.getElementById('jobTextMore');
+  if (!picker || !list || !more) return;
+  picker.addEventListener('toggle', () => {
+    const result = getOutputMission();
+    if (picker.open && result) renderJobTextOptions(result.struct);
+  });
+  list.addEventListener('click', (event) => {
+    const button = event.target.closest('.job-text-option');
+    if (!button) return;
+    chooseJobText(Number(button.dataset.seed));
+  });
+  more.addEventListener('click', () => {
+    const result = getOutputMission();
+    if (!result) return;
+    loadMoreJobTexts(result.struct);
+    renderJobTextOptions(result.struct);
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -3365,6 +3527,7 @@ onReady(() => {
     requestPasswordAnimation();
     makeSimilarMission('nextFloor');
   });
+  setupJobTextPicker();
   document.getElementById('similarNewSeed')?.addEventListener('click', () => {
     requestPasswordAnimation();
     makeSimilarMission('newSeed');

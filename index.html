@@ -21,6 +21,7 @@
   <script src="lang/locales.js"></script>
   <script src="lang/it.js"></script>
   <script src="lang/en.js"></script>
+  <script src="testi_missione.js"></script>
   <script src="stanze.js" defer></script>
   <script src="app.js" defer></script>
 </head>
@@ -356,6 +357,18 @@
               <h2 id="jobObjective"></h2>
             </div>
             <span class="rank-badge" id="jobRank" hidden></span>
+          </div>
+          <div class="job-letter" id="jobLetter" hidden>
+            <p class="job-letter-title" id="jobLetterTitle"></p>
+            <p class="job-letter-text" id="jobLetterText"></p>
+            <p class="job-letter-note hint-warning" id="jobLetterGuess" hidden></p>
+            <details class="job-letter-pick" id="jobTextPicker">
+              <summary id="jobTextPickerLabel">Scegli il testo</summary>
+              <p class="hint" data-i18n="jobTextPickHint"></p>
+              <ul class="job-text-options" id="jobTextOptions"></ul>
+              <button type="button" id="jobTextMore" data-i18n="jobTextMore">Altri testi</button>
+            </details>
+            <p class="hint" id="jobTextFixed" data-i18n="jobTextFixed" hidden></p>
           </div>
           <dl class="job-fields" id="jobFields"></dl>
           <p class="job-note" id="jobNote"></p>

@@ -728,6 +728,52 @@ details > summary { cursor: pointer; font-weight: 700; }
 }
 .job-item-icon { width: 24px; height: 24px; image-rendering: pixelated; object-fit: contain; }
 .job-note { color: var(--dim); font-size: .84rem; }
+/* Titolo e descrizione come li mostra il gioco (scelti dal seme). */
+.job-letter {
+  display: grid;
+  gap: 6px;
+  margin-top: 14px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(5, 12, 36, .45);
+  border: 1px solid var(--line);
+}
+.job-letter-title { margin: 0; font-weight: 800; color: var(--text); overflow-wrap: anywhere; }
+.job-letter-text { margin: 0; color: var(--muted); white-space: pre-line; overflow-wrap: anywhere; line-height: 1.5; }
+.job-letter-note { margin: 0; font-size: .84rem; }
+.tx-N { color: #7fe39a; }
+.tx-I { color: #62e3d3; }
+.tx-P, .tx-X { color: #ffd45c; }
+.tx-V { color: #7fd0ff; }
+.tx-K { color: #ff9ecb; }
+.tx-team { font-style: italic; color: var(--text); }
+.job-letter-pick > summary { cursor: pointer; font-weight: 700; color: var(--muted); font-size: .92rem; }
+.job-letter-pick > summary:hover { color: var(--text); }
+.job-letter-pick[open] > summary { margin-bottom: 6px; }
+.job-letter-pick .hint { margin: 0 0 8px; }
+.job-text-options { display: grid; gap: 6px; margin: 0 0 8px; padding: 0; list-style: none; }
+.job-text-option {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(12, 24, 57, .7);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.job-text-option:hover { border-color: var(--line-strong); }
+.job-text-option[aria-current="true"] { border-color: var(--gold); box-shadow: inset 0 0 0 1px var(--gold); }
+.job-text-option-title { font-weight: 700; overflow-wrap: anywhere; }
+.job-text-option-text { color: var(--muted); font-size: .86rem; overflow-wrap: anywhere; }
+.job-text-option-seed { color: var(--dim); font-size: .78rem; font-family: var(--font-code); }
+/* Su schermi stretti gli a capo del gioco (pensati per lo schermo del DS) diventano spazi. */
+@media (max-width: 560px) {
+  .job-letter-text { white-space: normal; }
+}
 .job-card-invalid .job-head h2 { color: var(--rose); }
 .job-card-invalid .job-portrait-frame { opacity: .35; }
 

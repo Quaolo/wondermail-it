@@ -412,6 +412,40 @@ def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
         expected = page.evaluate("(() => { const r = WMSkyRooms.getRoom(145); return r.map.length * r.map[0].length; })()")
         check(cells == expected, f"mappa della stanza 145 disegnata dai dati del gioco ({cells} caselle)")
 
+        # Titolo e descrizione scelti dal seme, come nel gioco
+        check(page.is_visible("#jobLetter") and "Mewtwo" in page.text_content("#jobLetter"),
+              f"testo della sfida di Mewtwo: {page.text_content('#jobLetterTitle')!r}")
+        check(page.is_visible("#jobTextFixed") and not page.is_visible("#jobTextPicker"),
+              "sfida di Mewtwo: un solo testo possibile, niente scelta")
+        open_tool_card(page, "readerCard")
+        page.fill("#importCode", FARM_CODE)
+        page.click("#importCodeBtn")
+        page.wait_for_timeout(150)
+        check(page.text_content("#jobLetterTitle") == "Memo tesoro" and "spiaggia" in page.text_content("#jobLetterText"),
+              f"Memo tesoro della Grotta Marina: {page.text_content('#jobLetterText')!r}")
+        set_select(page, "missionTypeBox", 0)
+        set_input(page, "flavorText", 1234)
+        page.wait_for_timeout(300)
+        page.click("#jobTextPickerLabel")
+        page.wait_for_timeout(150)
+        options = page.locator(".job-text-option")
+        check(options.count() >= 5 and options.first.get_attribute("aria-current") == "true",
+              f"soccorso: {options.count()} testi tra cui scegliere, il primo è quello attuale")
+        pick = options.nth(3)
+        wanted_title = pick.locator(".job-text-option-title").text_content()
+        wanted_seed = pick.get_attribute("data-seed")
+        pick.click()
+        page.wait_for_timeout(250)
+        struct = decode_output(page, "eu")["struct"]
+        check(str(struct["flavorText"]) == wanted_seed and page.text_content("#jobLetterTitle") == wanted_title,
+              f"testo scelto dall'elenco: seme {struct['flavorText']}, titolo {page.text_content('#jobLetterTitle')!r}")
+        check("Testo scelto" in page.text_content("#originText") and page.is_visible("#originUndo"),
+              "la scelta del testo si può annullare")
+        check(page.locator('.job-text-option[aria-current="true"]').count() == 1, "il testo scelto è evidenziato")
+        page.click("#originUndo")
+        page.wait_for_timeout(200)
+        check(decode_output(page, "eu")["struct"]["flavorText"] == 1234, "Annulla rimette il seme di prima")
+
         # Lettura di una password giapponese
         open_tool_card(page, "readerCard")
         page.fill("#importCode", JP_CODES[0])
@@ -628,6 +662,8 @@ def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
         check("Wonder Mail S" in page.title(), f"titolo inglese: {page.title()}")
         check(page.evaluate("document.querySelector('[data-i18n=\"missionSection\"]').textContent") == "Mission", "testi statici in inglese")
         check(page.text_content("#jobTitle") == "Job Summary", "anteprima con le frasi ufficiali inglesi")
+        check(page.text_content("#jobLetterTitle").strip() != "" and page.evaluate("getJobTextLanguage()") == "en",
+              f"titolo della missione in inglese: {page.text_content('#jobLetterTitle')!r}")
         if screenshot_dir:
             page.evaluate("window.scrollTo(0, 0)")
             page.screenshot(path=str(screenshot_dir / "pagina_en.png"), full_page=False)

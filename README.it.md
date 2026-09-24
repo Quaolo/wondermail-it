@@ -68,6 +68,23 @@ Se ne vuoi di più, "Serie di missioni" te ne prepara fino a otto in un colpo, q
 gioco: su piani di fila (saltando quelli che il gioco rifiuta) o con semi diversi. Si copiano una per una
 oppure tutte insieme.
 
+## Titolo e descrizione della missione
+
+Nel gioco ogni missione ha un titolo e qualche riga di descrizione, e le frasi cambiano da una missione
+all'altra. Non sono scritte nella password: il gioco le sceglie tra quelle che ha già, partendo da un numero
+che nella password c'è (il seme del testo) insieme al dungeon e al piano. Il sito rifà la stessa scelta, quindi
+in "Info missione" vedi il testo che comparirà in gioco, in italiano o in inglese.
+
+Se il testo non ti piace, apri "Scegli il testo": trovi le frasi possibili per quella missione e con un clic
+usi il seme che dà quella che preferisci. Il resto della missione non cambia. Per alcune missioni il testo è
+sempre lo stesso (i Memo tesoro, per esempio, hanno una frase per ogni dungeon), e allora il sito te lo dice.
+
+Ho controllato il risultato con alcune missioni distribuite ufficialmente, di cui si conosce il testo: titoli
+e descrizioni coincidono. Un caso però l'ho solo dedotto dal codice. Quando la missione non somiglia a nessuna
+di quelle previste dal gioco (un Memo tesoro in un dungeon dove il gioco non ne mette, o un soccorso con una
+coppia di Pokémon che nelle missioni normali non c'è), il gioco va a leggere il testo in un punto sbagliato
+della memoria. Il sito mostra quello che dovrebbe uscire, ma lo segnala come non ancora provato.
+
 ## Sbloccare un dungeon
 
 La scheda "Sblocca un dungeon" prepara il trucco scoperto da Lai-brary: una Lettera di sfida di Jirachi con un
@@ -135,17 +152,18 @@ python tools/estrai_dati.py --pmd-sky ../pmd-sky   # se hai già una copia di pr
 ```
 
 Lo script scarica i file da un commit preciso e controlla che non siano cambiati. Da lì ricava i testi
-(nomi, descrizioni, frasi di "Info missione"), i dati degli strumenti e dei Pokémon (numero del Pokédex per i
+(nomi, descrizioni, frasi di "Info missione", titoli e descrizioni delle missioni con le tabelle per
+sceglierli), i dati degli strumenti e dei Pokémon (numero del Pokédex per i
 ritratti, chi può fare da committente), i piani e la difficoltà di ogni dungeon e le stanze speciali.
 
 Il resto del codice è JavaScript senza librerie: `lm.js` codifica e decodifica le password,
-`lmgenerate.js` descrive i tipi di missione, `app.js` e `stanze.js` gestiscono la pagina e le mappe.
+`lmgenerate.js` descrive i tipi di missione, `testi_missione.js` sceglie titolo e descrizione, `app.js` e `stanze.js` gestiscono la pagina e le mappe.
 In `config.js` si può mettere l'indirizzo del repository per mostrare il pulsante GitHub in alto.
 
 ## Test
 
 ```
-node --test                  # codifica, stanze, Pokémon, piani, validità, premi, icone e traduzioni (Node 18+)
+node --test                  # codifica, stanze, Pokémon, piani, validità, premi, testi, icone e traduzioni (Node 18+)
 python tests/ui_smoke.py     # prova la pagina in un browser vero, serve Playwright
 ```
 
@@ -156,6 +174,7 @@ Il test della codifica confronta 60 password con quelle del generatore originale
 - Una password valida può comunque essere rifiutata dal gioco se il dungeon non è ancora sbloccato, se la
   missione è già nell'elenco o se l'elenco è pieno: quelli dipendono dal salvataggio e il sito non li conosce.
 - Le stanze senza tesoro diverse dalla 81 vanno provate in gioco.
+- Il testo delle missioni che il gioco non prevede (vedi sopra) è dedotto dal codice e va provato in gioco.
 - Il gioco dice quali strumenti condividono la stessa icona, ma non di che colore sono. Per alcuni i colori
   li ho scelti io e potrebbero non corrispondere.
 
@@ -168,6 +187,8 @@ Il test della codifica confronta 60 password con quelle del generatore originale
 - [SkyTemple](https://github.com/SkyTemple/skytemple-files) per il formato dei testi e delle stanze
 - [pmdsky-debug](https://github.com/UsernameFodder/pmdsky-debug) per la documentazione delle funzioni del gioco
 - [Lai-brary](https://laioxy.github.io/wondermail/) per la tabella giapponese, il glitch dell'uovo e quello per sbloccare i dungeon
+- la [guida alle Wonder Mail S di Sonictrainer](https://gamefaqs.gamespot.com/ds/955859-pokemon-mystery-dungeon-explorers-of-sky/faqs/58573)
+  su GameFAQs, con i testi delle missioni ufficiali usati per controllare titoli e descrizioni
 - la [wiki Grovyle](https://wiki.grovyle.net/pokedun3/) per i Memo tesoro reali
 - [Pokémon Central Wiki](https://wiki.pokemoncentral.it/) per i nomi italiani delle forme alternative
 - [PMDCollab SpriteCollab](https://sprites.pmdcollab.org/) per i ritratti (di Spike Chunsoft e degli artisti

@@ -68,6 +68,23 @@ different seed. For the game it is a different mission, so you can keep both in 
 more, "Mission series" makes up to eight at once, as many as the game's job list holds: on consecutive floors
 (skipping the ones the game refuses) or with different seeds. You can copy them one by one or all together.
 
+## Mission title and description
+
+In the game every mission has a title and a few lines of description, and the sentences change from one
+mission to the next. They aren't stored in the password: the game picks them from the ones it already has,
+starting from a number that is in the password (the text seed) together with the dungeon and the floor. The
+site makes the same choice, so "Job Summary" shows the text you will see in the game, in English or Italian.
+
+If you don't like the text, open "Choose the text": you'll find the possible sentences for that mission, and
+one click uses the seed that gives the one you prefer. The rest of the mission stays the same. Some missions
+always have the same text (Treasure Memos, for example, have one sentence per dungeon), and the site tells you so.
+
+I checked the result against some officially distributed missions whose text is known: titles and
+descriptions match. One case, though, I only worked out from the code. When the mission doesn't look like any
+of the ones the game expects (a Treasure Memo in a dungeon where the game never puts one, or a rescue with a
+pair of Pokémon that normal missions don't have), the game reads the text from the wrong place in memory. The
+site shows what should come out, but marks it as not tested yet.
+
 ## Unlocking a dungeon
 
 The "Unlock a dungeon" card sets up the trick found by Lai-brary: a Jirachi Challenge Letter with another
@@ -135,18 +152,19 @@ python tools/estrai_dati.py --pmd-sky ../pmd-sky   # if you already have a copy 
 ```
 
 The script downloads the files from a fixed commit and checks that they haven't changed. From there it gets
-the texts (names, descriptions, "Job Summary" sentences), item and Pokémon data (Pokédex number for the
+the texts (names, descriptions, "Job Summary" sentences, mission titles and descriptions with the tables to
+pick them), item and Pokémon data (Pokédex number for the
 portraits, who can be a client), the floors and difficulty of every dungeon and the special rooms.
 
 The rest of the code is plain JavaScript with no libraries: `lm.js` encodes and decodes passwords,
-`lmgenerate.js` describes the mission types, `app.js` and `stanze.js` run the page and the maps. In
+`lmgenerate.js` describes the mission types, `testi_missione.js` picks the title and description, `app.js` and `stanze.js` run the page and the maps. In
 `config.js` you can set the repository address to show the GitHub button at the top. The code and its
 comments are in Italian, which is where the project comes from.
 
 ## Tests
 
 ```
-node --test                  # encoding, rooms, Pokémon, floors, validity, rewards, icons and translations (Node 18+)
+node --test                  # encoding, rooms, Pokémon, floors, validity, rewards, texts, icons and translations (Node 18+)
 python tests/ui_smoke.py     # tries the page in a real browser, needs Playwright
 ```
 
@@ -157,6 +175,8 @@ The encoding test compares 60 passwords with those of the original generator and
 - A valid password can still be refused by the game if the dungeon isn't unlocked yet, if the mission is
   already in your list or if the list is full: those depend on your save file and the site can't know them.
 - The rooms without treasure other than 81 still have to be tried in the game.
+- The text of missions the game doesn't expect (see above) is worked out from the code and still has to be
+  tried in the game.
 - The game says which items share the same icon, but not what color they are. For some of them I picked the
   colors myself and they might not match.
 
@@ -169,6 +189,8 @@ The encoding test compares 60 passwords with those of the original generator and
 - [SkyTemple](https://github.com/SkyTemple/skytemple-files) for the text and room formats
 - [pmdsky-debug](https://github.com/UsernameFodder/pmdsky-debug) for the documentation of the game functions
 - [Lai-brary](https://laioxy.github.io/wondermail/) for the Japanese table, the egg glitch and the dungeon unlock glitch
+- [Sonictrainer's Wonder Mail S FAQ](https://gamefaqs.gamespot.com/ds/955859-pokemon-mystery-dungeon-explorers-of-sky/faqs/58573)
+  on GameFAQs, with the texts of official missions used to check titles and descriptions
 - the [Grovyle wiki](https://wiki.grovyle.net/pokedun3/) for the real Treasure Memos
 - [Pokémon Central Wiki](https://wiki.pokemoncentral.it/) for the Italian names of alternate forms
 - [PMDCollab SpriteCollab](https://sprites.pmdcollab.org/) for the portraits (by Spike Chunsoft and community
