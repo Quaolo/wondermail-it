@@ -88,7 +88,7 @@ window.WMSkyRegisterLocale('it', {
     rewardItemLabel: 'Strumento ricompensa',
     rewardSearchPlaceholder: 'Cerca uno strumento...',
     regionLabelField: 'Versione del gioco',
-    region_eu_option: 'Europa (anche ITA)',
+    region_eu_option: 'Europa',
     region_na_option: 'Nord America',
     region_jp_option: 'Giappone',
     regionHint: 'Le password cambiano da una regione all\'altra (Nord America comprende l\'Australia). La cartuccia europea è una sola per tutte le lingue: italiano, inglese, francese, tedesco e spagnolo usano le stesse password.',
