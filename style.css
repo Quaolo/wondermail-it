@@ -947,6 +947,10 @@ textarea.password {
 .rescue-facts dt { color: var(--gold); font-weight: 700; }
 .rescue-facts dd { margin: 0; overflow-wrap: anywhere; }
 .rescue-untested { margin: 12px 0 0; }
+.rescue-reward { display: grid; gap: 6px; }
+.rescue-reward[hidden] { display: none; }
+.rescue-reward-line { margin: 0; font-weight: 700; color: var(--text); }
+.rescue-reward-items .hint { margin: 6px 0; }
 .series-controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 .series-controls select { width: auto; min-width: 64px; }
 .series-result { display: grid; gap: 10px; }

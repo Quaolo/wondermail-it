@@ -132,3 +132,32 @@ test('ogni SOS nuovo ha un codice diverso (il gioco rifiuta i codici già ricevu
   }
   assert.equal(seen.size, 200);
 });
+
+// Prova di Paolo del 29/09: SOS creato dal sito, soccorso fatto nel gioco, E-mail di OK scritta dal gioco.
+const REAL_SOS = '+@RFF# FWM@Y0 0JPKC013N&MS +79@++ +5N-P#5=63+T 5F93YM S0TQH#';
+const REAL_OK = 'J=7==38KQRJTQ90N-3H6H&F-6C=50615+X1P1+092QPPNC0#6RYCN8';
+
+test("un'E-mail di OK scritta dal gioco si legge ed è quella che il sito ricava dall'SOS", () => {
+  const sos = R.decode(REAL_SOS);
+  const ok = R.decode(REAL_OK);
+  assert.ok(sos.ok && ok.ok);
+  assert.equal(sos.mail.type, R.TYPES.sos);
+  assert.equal(ok.mail.type, R.TYPES.ok);
+  assert.equal(ok.mail.dungeon, 20);          // Deserto del Nord
+  assert.equal(ok.mail.floor, 2);
+  assert.equal(ok.mail.idLow, sos.mail.idLow);
+  assert.equal(ok.mail.idHigh, sos.mail.idHigh);
+  assert.equal(R.nameFromBytes(sos.mail.teamName), 'Harl');
+  assert.equal(R.nameFromBytes(ok.mail.teamName), 'Astra'); // la squadra di chi ha soccorso
+  assert.equal(R.gameVersion(ok.mail), 'sky');
+  // Con nome e codice di chi soccorre, il sito scrive la stessa identica password del gioco.
+  const mine = R.okFromSos(sos.mail, { teamName: ok.mail.teamName, otherLow: ok.mail.otherLow, otherHigh: ok.mail.otherHigh });
+  assert.equal(R.encode(mine), R.sanitize(REAL_OK));
+});
+
+test('difficoltà del soccorso della prova: Deserto del Nord P. -2 è B, come diceva il gioco', () => {
+  assert.equal(game.missionRanks[20][1], 4);        // B
+  assert.equal(game.missionRankPoints[4], 30);
+  // Il Semeturpe (94) ricevuto come premio è nell'elenco dei premi della difficoltà B.
+  assert.ok(game.board.rewardLists[3].some(([item]) => item === 94));
+});

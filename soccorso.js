@@ -259,9 +259,16 @@
      * Il gioco che l'ha mandato controlla solo il tipo e che il codice sia quello di un suo SOS
      * (sub_0205B918), più la validità degli strumenti se ce ne sono.
      */
-    okFromSos: function (sos) {
+    okFromSos: function (sos, rescuer) {
       var mail = Object.assign({}, sos, { type: TYPES.ok, seed: 0, item1: 0, item2: 0 });
       mail.teamName = sos.teamName.slice();
+      // In un'E-mail di OK vera (provata da Paolo il 29/09) nome e 64 bit dopo il nome sono quelli di chi ha
+      // soccorso: il gioco che riceve l'OK non li controlla.
+      if (rescuer) {
+        if (rescuer.teamName) mail.teamName = rescuer.teamName.slice();
+        if (rescuer.otherLow !== undefined) mail.otherLow = rescuer.otherLow >>> 0;
+        if (rescuer.otherHigh !== undefined) mail.otherHigh = rescuer.otherHigh >>> 0;
+      }
       return mail;
     },
 

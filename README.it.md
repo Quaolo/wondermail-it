@@ -175,6 +175,17 @@ Il Cielo accetta anche gli SOS di Esploratori del Tempo e dell'Oscurità, e nell
 dice da quale versione arriva. Nella scheda puoi scegliere la versione: il dungeon è lo stesso, ma secondo le
 guide gli strumenti che trovi sono quelli di Tempo e Oscurità. Anche questo è da provare.
 
+Il sito dice anche cosa si vince soccorrendo: il gioco non lo scrive nella password, ma lo ricava dal piano
+dell'SOS. Chi soccorre prende i punti esplorazione della difficoltà del piano e uno strumento estratto a caso
+dall'elenco dei premi di quella difficoltà, lo stesso delle missioni della bacheca; soldi niente. Nella scheda
+c'è l'elenco degli strumenti possibili con le probabilità. La prima prova l'ha confermato: un soccorso al
+Deserto del Nord, P. 2, di difficoltà B, ha dato un Semeturpe, che è in quell'elenco.
+
+Nella stessa prova il soccorso è andato fino in fondo e l'E-mail di OK scritta dal gioco il sito la legge senza
+problemi. Dentro ci sono il nome e il codice di chi ha soccorso: a parte quelli, è identica a quella che il sito
+ricava dall'SOS. Per questo le E-mail di OK del sito hanno come soccorritore una squadra con il nome di un
+Pokémon a caso.
+
 Il formato l'ho ricavato dal codice del gioco: usa la stessa cifratura delle Missioni Speciali C con un'altra
 disposizione dei caratteri e un controllo più semplice. Quando arriva un'E-mail di OK il gioco guarda solo che
 sia un'E-mail di OK e che il suo codice sia quello di un SOS partito da quella partita, quindi vale solo lì e
@@ -269,8 +280,9 @@ Il test della codifica confronta 60 password con quelle del generatore originale
   nasce davvero.
 - Le missioni che aprono un dungeon (Scaglie di Gabite, dungeon nuovo, strumenti musicali del Caffè di Spinda)
   create con una password vanno provate in gioco: non so se aprono il dungeon come quelle della bacheca.
-- Pronto intervento: il gioco accetta gli SOS creati dal sito (provato il 29/09), ma il soccorso completo e
-  l'E-mail di OK sono ancora da provare con una cartuccia.
+- Pronto intervento: gli SOS del sito funzionano in gioco fino in fondo e l'E-mail di OK del gioco coincide con
+  quella del sito (provato il 29/09). Manca l'ultimo passo: un'E-mail di OK del sito inserita nella partita che
+  ha mandato un SOS vero. Da provare anche gli SOS di Tempo e Oscurità.
 - Il gioco dice quali strumenti condividono la stessa icona, ma non di che colore sono. Per alcuni i colori
   li ho scelti io e potrebbero non corrispondere.
 

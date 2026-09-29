@@ -172,6 +172,16 @@ Sky also accepts SOS Mails from Explorers of Time and Darkness, and the game's l
 comes from. In the tab you can pick the version: the dungeon is the same, but according to the guides the items
 you find are the Time and Darkness ones. That's still to be tried too.
 
+The site also tells you what a rescue is worth: the game doesn't write it in the password, it works it out from
+the SOS floor. The rescuer gets the exploration points of the floor's difficulty and one item drawn at random
+from that difficulty's reward list, the same one the job board uses; no money. The tab lists the possible
+items with their odds. The first test agreed: a rescue at Northern Desert 2F, difficulty B, gave a Vile Seed,
+which is on that list.
+
+In the same test the rescue went all the way and the site reads the game's A-OK Mail with no trouble. It holds
+the rescuer's name and code: apart from those, it is identical to the one the site makes from the SOS Mail.
+That's why the site's A-OK Mails show a rescuer team named after a random Pokémon.
+
 I worked out the format from the game's code: it uses the same encryption as Wonder Mail S with a different
 character order and a simpler check. When an A-OK Mail arrives the game only checks that it is an A-OK Mail
 and that its code matches an SOS Mail sent from that game, so it only works there and only once. Japanese
@@ -267,8 +277,9 @@ The encoding test compares 60 passwords with those of the original generator and
   egg species the site shows might not be the one that actually hatches.
 - The jobs that open a dungeon (Gabite Scale, new dungeon, Spinda's Café musical instruments) made with a
   password still have to be tried in the game: I don't know if they open the dungeon like the board ones do.
-- Friend Rescue: the game accepts the SOS Mails made by the site (tried on 29/09), but the full rescue and the
-  A-OK Mail still have to be tried on a cartridge.
+- Friend Rescue: the site's SOS Mails work in the game all the way and the game's A-OK Mail matches the site's
+  (tried on 29/09). One step is left: a site A-OK Mail entered in the game that sent a real SOS Mail. SOS
+  Mails from Time and Darkness still have to be tried too.
 - The game says which items share the same icon, but not what color they are. For some of them I picked the
   colors myself and they might not match.
 

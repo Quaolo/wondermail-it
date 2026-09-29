@@ -3895,6 +3895,46 @@ function populateRescueFloors() {
   if (!setSelectByValue(select, previous)) select.selectedIndex = 0;
 }
 
+// Premio del soccorso (overlay 11, dopo il soccorso): punti della difficoltà del piano (sub_02062DC4, senza il
+// +1 dei tipi di missione) e uno strumento estratto con RollRandomItemReward dall'elenco di quella difficoltà,
+// lo stesso dei premi della bacheca. Niente Poké.
+function getRescueReward(dungeonId, floor) {
+  const data = window.WMSkyGameData || {};
+  const rankId = parseInt(((data.missionRanks || {})[dungeonId] || [])[floor - 1], 10);
+  if (!Number.isFinite(rankId) || !MISSION_DIFFICULTY_RANKS[rankId]) return null;
+  const board = data.board || {};
+  const list = (board.rewardLists || [])[Math.max(rankId - 1, 0)] || [];
+  const total = 9999 * 9999;
+  const items = list.map(([itemId, weight]) => [itemId, weight / total * 100]);
+  const covered = list.reduce((sum, [, weight]) => sum + weight, 0);
+  if (covered < total && board.fallbackItem) items.push([board.fallbackItem, (total - covered) / total * 100]);
+  items.sort((a, b) => b[1] - a[1]);
+  return { rank: MISSION_DIFFICULTY_RANKS[rankId], points: (data.missionRankPoints || [])[rankId], items };
+}
+
+function renderRescueReward(container, dungeonId, floor) {
+  if (!container) return;
+  container.textContent = '';
+  const reward = getRescueReward(dungeonId, floor);
+  container.hidden = !reward;
+  if (!reward) return;
+  const line = document.createElement('p');
+  line.className = 'rescue-reward-line';
+  line.textContent = t('rescueRewardLine', { rank: reward.rank, points: reward.points });
+  const more = document.createElement('details');
+  more.className = 'floor-more rescue-reward-items';
+  const summary = document.createElement('summary');
+  summary.textContent = t('rescueRewardItems', { count: reward.items.length });
+  const hint = document.createElement('p');
+  hint.className = 'hint';
+  hint.textContent = t('rescueRewardHint');
+  const list = document.createElement('ul');
+  list.className = 'floor-items';
+  reward.items.forEach(([itemId, chance]) => list.append(makeFloorItem(itemId, chance)));
+  more.append(summary, hint, list);
+  container.append(line, more);
+}
+
 function renderRescueNote(dungeonId) {
   const note = document.getElementById('rescueDungeonNote');
   if (!note) return;
@@ -3945,6 +3985,7 @@ function renderRescueMaker(newName) {
     return;
   }
   output.value = prettyMailString(code, 3, 6);
+  renderRescueReward(document.getElementById('rescueMakeReward'), dungeon, floor);
   setStatus('rescueMakeStatus', 'rescueMakeReady', () => ({
     dungeon: getDungeonName(dungeon), floor: rescueFloorLabel(dungeon, floor)
   }), 'ok');
@@ -3968,6 +4009,8 @@ function readRescueSos() {
   if (!input || !facts || !okBox || !window.WMSkyRescue) return;
   facts.hidden = true;
   okBox.hidden = true;
+  const rewardBox = document.getElementById('rescueSosReward');
+  if (rewardBox) rewardBox.hidden = true;
   const raw = input.value.trim();
   if (!raw) {
     setStatus('rescueSosStatus', 'importCodeEmpty', null, 'error');
@@ -3988,7 +4031,8 @@ function readRescueSos() {
   else if (mail.type === WMSkyRescue.TYPES.ok) kind = t('rescueKindOk');
   else if (mail.type === WMSkyRescue.TYPES.thanks) kind = t('rescueKindThanks');
   addRescueFact(facts, t('rescueFactKind'), kind);
-  addRescueFact(facts, t('rescueFactTeam'), WMSkyRescue.nameFromBytes(mail.teamName) || '-');
+  const teamLabel = mail.type === WMSkyRescue.TYPES.sos ? t('rescueFactTeam') : t('rescueFactRescuer');
+  addRescueFact(facts, teamLabel, WMSkyRescue.nameFromBytes(mail.teamName) || '-');
   addRescueFact(facts, t('rescueFactPlace'), `${getDungeonName(mail.dungeon)} · ${rescueFloorLabel(mail.dungeon, mail.floor)}`);
   const version = WMSkyRescue.gameVersion(mail);
   let versionText = t('rescueVersionSky');
@@ -4004,7 +4048,13 @@ function readRescueSos() {
     setStatus('rescueSosStatus', mail.type === WMSkyRescue.TYPES.ok ? 'rescueAlreadyOk' : 'rescueNotSos', null, 'warning');
     return;
   }
-  const okCode = WMSkyRescue.encode(WMSkyRescue.okFromSos(mail));
+  renderRescueReward(rewardBox, mail.dungeon, mail.floor);
+  // Come un'E-mail di OK vera: nome e codice di chi ha soccorso (qui un nome a caso).
+  const rescuerName = randomRescueTeamName();
+  const random32 = () => Math.floor(Math.random() * 0x100000000) >>> 0;
+  const okCode = WMSkyRescue.encode(WMSkyRescue.okFromSos(mail, {
+    teamName: WMSkyRescue.nameToBytes(rescuerName), otherLow: random32(), otherHigh: random32()
+  }));
   const check = WMSkyRescue.decode(okCode);
   if (!check.ok || check.mail.type !== WMSkyRescue.TYPES.ok || check.mail.idLow !== mail.idLow || check.mail.idHigh !== mail.idHigh) {
     setStatus('rescueSosStatus', 'errorSelfCheck', null, 'error');

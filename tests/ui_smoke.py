@@ -442,6 +442,20 @@ def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
         check(ok["ok"] and ok["mail"]["type"] == 4 and ok["mail"]["idLow"] == sos["mail"]["idLow"]
               and ok["mail"]["idHigh"] == sos["mail"]["idHigh"] and ok["mail"]["item1"] == 0,
               "l'E-mail di OK ha lo stesso codice dell'SOS e nessuno strumento")
+        reward = page.text_content("#rescueSosReward")
+        check("punti esplorazione" in reward and page.eval_on_selector_all("#rescueSosReward li", "els => els.length") > 10,
+              f"premio del soccorso con difficoltà, punti e strumenti possibili: {reward[:120]!r}")
+        page.fill("#rescueSosInput", "+@RFF# FWM@Y0 0JPKC013N&MS +79@++ +5N-P#5=63+T 5F93YM S0TQH#")
+        page.click("#rescueSosRead")
+        check("difficoltà B, 30 punti" in page.text_content("#rescueSosReward"),
+              "l'SOS della prova di Paolo (Deserto del Nord P. -2) vale B e 30 punti, come nel gioco")
+        page.fill("#rescueSosInput", "J=7==38KQRJTQ90N-3H6H&F-6C=50615+X1P1+092QPPNC0#6RYCN8")
+        page.click("#rescueSosRead")
+        check("Astra" in page.text_content("#rescueSosFacts") and "Soccorsa da" in page.text_content("#rescueSosFacts")
+              and page.is_hidden("#rescueOkBox") and page.is_hidden("#rescueSosReward"),
+              "l'E-mail di OK del gioco si legge: soccorsa dalla squadra Astra")
+        page.fill("#rescueSosInput", sos_code)
+        page.click("#rescueSosRead")
         facts = page.text_content("#rescueSosFacts")
         check("Paolo" in facts and "Pianure Saetta" in facts and "Esploratori del Cielo" in facts, f"dati dell'SOS: {facts!r}")
         broken = ("6" if sos_code[0] != "6" else "7") + sos_code[1:]

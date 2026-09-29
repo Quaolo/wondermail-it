@@ -379,6 +379,11 @@ window.WMSkyRegisterLocale('en', {
     floorTrapsTitle: 'Traps',
     floorSource: 'Floor data from the game (BALANCE/mappa_s.bin, from the pret/pmd-sky decompilation; format documented by SkyTemple). The percentages are the odds the game uses to pick each Pokémon, item and trap; shop, Monster House and hidden stairs are the odds of them appearing on the floor.',
 
+    rescueFactRescuer: 'Rescued by',
+    rescueRewardLine: 'Reward for the rescuer: difficulty {rank}, {points} exploration points and one item.',
+    rescueRewardItems: 'Possible items ({count})',
+    rescueRewardHint: 'The game draws the item at the end of the rescue with these odds, the same as the rewards of jobs of that difficulty. No Poké.',
+
     rescueVersionLabel: 'SOS Mail sent from',
     rescueVersionNote: 'Sky also accepts SOS Mails from Time and Darkness: the dungeon and the floor layouts are the same, but according to the guides the items are the Time and Darkness ones, so they differ from the Wiki. Still to be tried.',
 
@@ -389,7 +394,7 @@ window.WMSkyRegisterLocale('en', {
     rescueSosPlaceholder: 'Paste the 54 characters of the SOS Mail here...',
     rescueSosButton: 'Make the A-OK Mail',
     rescueOkLabel: 'A-OK Mail',
-    rescueOkHint: 'It only works in the game that sent this SOS Mail, and only once.',
+    rescueOkHint: 'It only works in the game that sent this SOS Mail, and only once. The rescuer shows up as a team named after a random Pokémon.',
     rescueMakeTitle: 'Want to go on a rescue?',
     rescueMakeHint: 'Pick a dungeon and a floor: the password is an SOS Mail to enter in the game with Receive SOS Mail. Then set off from Pelipper Island as you would for a real friend. The dungeon must already be unlocked in your game: the game accepts the SOS Mail even if it isn\'t, but then Pelipper won\'t take you there.',
     rescueTeamLabel: 'Team to rescue',
@@ -417,7 +422,7 @@ window.WMSkyRegisterLocale('en', {
     rescueAlreadyOk: 'This is already an A-OK Mail: enter it in the game that sent the SOS Mail.',
     rescueNotSos: 'This password isn\'t an SOS Mail: the A-OK Mail can only be made from an SOS Mail.',
     rescueOkReady: 'A-OK Mail ready for team {team} ({dungeon}, {floor}).',
-    rescueUntested: 'Format worked out from the game\'s code. The game accepts the site\'s SOS Mails; the full rescue and the A-OK Mail still have to be tried: if the game rejects a password, please report it.',
+    rescueUntested: 'Format worked out from the game\'s code and tested: the site\'s SOS Mails work all the way and the game\'s A-OK Mail matches the site\'s. Still to try: a site A-OK Mail in a real game, and SOS Mails from Time and Darkness.',
     importRescue: 'It\'s a Friend Rescue password: it opens in its own tab.',
 
     wikiFloorCountOne: '1 floor',

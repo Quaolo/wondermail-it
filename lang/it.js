@@ -379,6 +379,11 @@ window.WMSkyRegisterLocale('it', {
     floorTrapsTitle: 'Trappole',
     floorSource: 'Dati dei piani del gioco (BALANCE/mappa_s.bin, dalla decompilazione pret/pmd-sky; formato documentato da SkyTemple). Le percentuali sono quelle con cui il gioco sceglie ogni Pokémon, strumento e trappola; negozio, covo e scale nascoste sono la probabilità che compaiano sul piano.',
 
+    rescueFactRescuer: 'Soccorsa da',
+    rescueRewardLine: 'Premio per chi soccorre: difficoltà {rank}, {points} punti esplorazione e uno strumento.',
+    rescueRewardItems: 'Strumenti possibili ({count})',
+    rescueRewardHint: 'Il gioco estrae lo strumento alla fine del soccorso con queste probabilità, le stesse dei premi delle missioni di quella difficoltà. Niente Poké.',
+
     rescueVersionLabel: 'SOS mandato da',
     rescueVersionNote: 'Il Cielo accetta anche gli SOS di Tempo e Oscurità: il dungeon e la forma dei piani sono gli stessi, ma secondo le guide gli strumenti sono quelli di Tempo e Oscurità, quindi diversi da quelli della Wiki. Da provare.',
 
@@ -389,7 +394,7 @@ window.WMSkyRegisterLocale('it', {
     rescueSosPlaceholder: 'Incolla qui i 54 caratteri dell\'SOS...',
     rescueSosButton: 'Crea l\'E-mail di OK',
     rescueOkLabel: 'E-mail di OK',
-    rescueOkHint: 'Vale solo nella partita che ha mandato questo SOS, e una volta sola.',
+    rescueOkHint: 'Vale solo nella partita che ha mandato questo SOS, e una volta sola. Come soccorritore compare una squadra con il nome di un Pokémon a caso.',
     rescueMakeTitle: 'Vuoi partire in soccorso?',
     rescueMakeHint: 'Scegli dungeon e piano: la password è un SOS da inserire nel gioco con Ricevi SOS. Poi parti dall\'Isola Pelipper come per un amico vero. Il dungeon deve essere già sbloccato nella tua partita: il gioco accetta l\'SOS anche se non lo è, ma poi Pelipper non ti ci porta.',
     rescueTeamLabel: 'Squadra da soccorrere',
@@ -417,7 +422,7 @@ window.WMSkyRegisterLocale('it', {
     rescueAlreadyOk: 'Questa è già un\'E-mail di OK: va inserita nella partita che ha mandato l\'SOS.',
     rescueNotSos: 'Questa password non è un SOS: l\'E-mail di OK si ricava solo da un SOS.',
     rescueOkReady: 'E-mail di OK pronta per la squadra {team} ({dungeon}, {floor}).',
-    rescueUntested: 'Formato ricavato dal codice del gioco. Il gioco accetta gli SOS del sito; il soccorso completo e l\'E-mail di OK sono ancora da provare: se il gioco rifiuta una password, segnalalo.',
+    rescueUntested: 'Formato ricavato dal codice del gioco e provato: gli SOS del sito funzionano fino in fondo e l\'E-mail di OK del gioco coincide con quella del sito. Da provare ancora un\'E-mail di OK del sito in una partita vera e gli SOS di Tempo e Oscurità.',
     importRescue: 'È una password di Pronto Intervento: si apre nella sua scheda.',
 
     wikiFloorCountOne: '1 piano',
