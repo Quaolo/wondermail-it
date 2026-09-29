@@ -241,7 +241,7 @@ In `config.js` si può mettere l'indirizzo del repository per mostrare il pulsan
 ## Test
 
 ```
-node --test                  # codifica, stanze, Pokémon, piani, validità, premi, testi, bacheca, dati dei piani, icone e traduzioni (Node 18+)
+node --test                  # codifica, stanze, Pokémon, piani, validità, premi, testi, bacheca, dati dei piani, soccorsi, icone e traduzioni (Node 18+)
 python tests/ui_smoke.py     # prova la pagina in un browser vero, serve Playwright
 ```
 

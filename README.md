@@ -239,7 +239,7 @@ comments are in Italian, which is where the project comes from.
 ## Tests
 
 ```
-node --test                  # encoding, rooms, Pokémon, floors, validity, rewards, texts, job board, floor data, icons and translations (Node 18+)
+node --test                  # encoding, rooms, Pokémon, floors, validity, rewards, texts, job board, floor data, rescues, icons and translations (Node 18+)
 python tests/ui_smoke.py     # tries the page in a real browser, needs Playwright
 ```
 
