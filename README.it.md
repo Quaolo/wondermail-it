@@ -165,6 +165,10 @@ inserire con "Ricevi SOS", così puoi partire in soccorso dove vuoi tu. Il sito 
 concede il gioco in quel dungeon e scarta i dungeon dove i soccorsi non ci sono. Anche queste password, se le
 incolli in "Leggi una password", finiscono nella loro scheda.
 
+Una cosa scoperta provando: il dungeon dell'SOS deve essere già sbloccato nella tua partita. Il gioco accetta
+l'SOS anche se non lo è, e nell'elenco il dungeon compare come "???", ma quando scegli la missione da
+Pelipper ti dice che non ti può mandare in un dungeon che non conosci.
+
 Il formato l'ho ricavato dal codice del gioco: usa la stessa cifratura delle Missioni Speciali C con un'altra
 disposizione dei caratteri e un controllo più semplice. Quando arriva un'E-mail di OK il gioco guarda solo che
 sia un'E-mail di OK e che il suo codice sia quello di un SOS partito da quella partita, quindi vale solo lì e
@@ -259,8 +263,8 @@ Il test della codifica confronta 60 password con quelle del generatore originale
   nasce davvero.
 - Le missioni che aprono un dungeon (Scaglie di Gabite, dungeon nuovo, strumenti musicali del Caffè di Spinda)
   create con una password vanno provate in gioco: non so se aprono il dungeon come quelle della bacheca.
-- Le password di Pronto intervento non le ho ancora provate con una cartuccia: il formato torna con il codice
-  del gioco, ma serve un SOS vero per esserne sicuri.
+- Pronto intervento: il gioco accetta gli SOS creati dal sito (provato il 29/09), ma il soccorso completo e
+  l'E-mail di OK sono ancora da provare con una cartuccia.
 - Il gioco dice quali strumenti condividono la stessa icona, ma non di che colore sono. Per alcuni i colori
   li ho scelti io e potrebbero non corrispondere.
 

@@ -388,7 +388,7 @@ window.WMSkyRegisterLocale('it', {
     rescueOkLabel: 'E-mail di OK',
     rescueOkHint: 'Vale solo nella partita che ha mandato questo SOS, e una volta sola.',
     rescueMakeTitle: 'Vuoi partire in soccorso?',
-    rescueMakeHint: 'Scegli dungeon e piano: la password è un SOS da inserire nel gioco con Ricevi SOS. Poi parti dall\'Isola Pelipper come per un amico vero.',
+    rescueMakeHint: 'Scegli dungeon e piano: la password è un SOS da inserire nel gioco con Ricevi SOS. Poi parti dall\'Isola Pelipper come per un amico vero. Il dungeon deve essere già sbloccato nella tua partita: il gioco accetta l\'SOS anche se non lo è, ma poi Pelipper non ti ci porta.',
     rescueTeamLabel: 'Squadra da soccorrere',
     rescueSosLabel: 'SOS',
     rescueMakeNew: 'Un altro SOS',
@@ -414,7 +414,7 @@ window.WMSkyRegisterLocale('it', {
     rescueAlreadyOk: 'Questa è già un\'E-mail di OK: va inserita nella partita che ha mandato l\'SOS.',
     rescueNotSos: 'Questa password non è un SOS: l\'E-mail di OK si ricava solo da un SOS.',
     rescueOkReady: 'E-mail di OK pronta per la squadra {team} ({dungeon}, {floor}).',
-    rescueUntested: 'Formato ricavato dal codice del gioco e non ancora provato con una cartuccia: se il gioco rifiuta una password, segnalalo.',
+    rescueUntested: 'Formato ricavato dal codice del gioco. Il gioco accetta gli SOS del sito; il soccorso completo e l\'E-mail di OK sono ancora da provare: se il gioco rifiuta una password, segnalalo.',
     importRescue: 'È una password di Pronto Intervento: si apre nella sua scheda.',
 
     wikiFloorCountOne: '1 piano',

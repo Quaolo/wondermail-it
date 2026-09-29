@@ -388,7 +388,7 @@ window.WMSkyRegisterLocale('en', {
     rescueOkLabel: 'A-OK Mail',
     rescueOkHint: 'It only works in the game that sent this SOS Mail, and only once.',
     rescueMakeTitle: 'Want to go on a rescue?',
-    rescueMakeHint: 'Pick a dungeon and a floor: the password is an SOS Mail to enter in the game with Receive SOS Mail. Then set off from Pelipper Island as you would for a real friend.',
+    rescueMakeHint: 'Pick a dungeon and a floor: the password is an SOS Mail to enter in the game with Receive SOS Mail. Then set off from Pelipper Island as you would for a real friend. The dungeon must already be unlocked in your game: the game accepts the SOS Mail even if it isn\'t, but then Pelipper won\'t take you there.',
     rescueTeamLabel: 'Team to rescue',
     rescueSosLabel: 'SOS Mail',
     rescueMakeNew: 'Another SOS',
@@ -414,7 +414,7 @@ window.WMSkyRegisterLocale('en', {
     rescueAlreadyOk: 'This is already an A-OK Mail: enter it in the game that sent the SOS Mail.',
     rescueNotSos: 'This password isn\'t an SOS Mail: the A-OK Mail can only be made from an SOS Mail.',
     rescueOkReady: 'A-OK Mail ready for team {team} ({dungeon}, {floor}).',
-    rescueUntested: 'Format worked out from the game\'s code and not tested on a cartridge yet: if the game rejects a password, please report it.',
+    rescueUntested: 'Format worked out from the game\'s code. The game accepts the site\'s SOS Mails; the full rescue and the A-OK Mail still have to be tried: if the game rejects a password, please report it.',
     importRescue: 'It\'s a Friend Rescue password: it opens in its own tab.',
 
     wikiFloorCountOne: '1 floor',

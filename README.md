@@ -162,6 +162,10 @@ Mail, so you can rescue yourself. Or pick a dungeon and a floor and it gives you
 game allows in that dungeon and leaves out the dungeons where rescues aren't possible. These passwords, too,
 land in their own tab if you paste them into "Read a password".
 
+Something found while testing: the SOS Mail's dungeon must already be unlocked in your game. The game accepts
+the SOS Mail even if it isn't, and the dungeon shows up as "???" in the list, but when you pick the job at
+Pelipper's it tells you it can't send you to a dungeon you don't know.
+
 I worked out the format from the game's code: it uses the same encryption as Wonder Mail S with a different
 character order and a simpler check. When an A-OK Mail arrives the game only checks that it is an A-OK Mail
 and that its code matches an SOS Mail sent from that game, so it only works there and only once. Japanese
@@ -257,8 +261,8 @@ The encoding test compares 60 passwords with those of the original generator and
   egg species the site shows might not be the one that actually hatches.
 - The jobs that open a dungeon (Gabite Scale, new dungeon, Spinda's Café musical instruments) made with a
   password still have to be tried in the game: I don't know if they open the dungeon like the board ones do.
-- I haven't tried the Friend Rescue passwords on a cartridge yet: the format matches the game's code, but a
-  real SOS Mail is needed to be sure.
+- Friend Rescue: the game accepts the SOS Mails made by the site (tried on 29/09), but the full rescue and the
+  A-OK Mail still have to be tried on a cartridge.
 - The game says which items share the same icon, but not what color they are. For some of them I picked the
   colors myself and they might not match.
 
