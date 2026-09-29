@@ -24,6 +24,7 @@
   <script src="lang/en.js"></script>
   <script src="testi_missione.js"></script>
   <script src="bacheca.js"></script>
+  <script src="soccorso.js"></script>
   <script src="stanze.js" defer></script>
   <script src="app.js" defer></script>
   <script src="wiki.js" defer></script>
@@ -85,6 +86,7 @@
         <button type="button" class="start-tab" role="tab" id="tab-boardCard" data-panel="boardCard" aria-controls="boardCard" aria-selected="false"><span data-i18n="boardTitle">Bacheca</span></button>
         <button type="button" class="start-tab" role="tab" id="tab-farmCard" data-panel="farmCard" aria-controls="farmCard" aria-selected="false"><span data-i18n="farmTitle">Cerca un premio</span></button>
         <button type="button" class="start-tab" role="tab" id="tab-unlockCard" data-panel="unlockCard" aria-controls="unlockCard" aria-selected="false"><span data-i18n="unlockTitle">Sblocca un dungeon</span></button>
+        <button type="button" class="start-tab" role="tab" id="tab-rescueCard" data-panel="rescueCard" aria-controls="rescueCard" aria-selected="false"><span data-i18n="rescueTitle">Pronto intervento</span></button>
         </div>
       </div>
       <section class="start-panel" id="readerCard" role="tabpanel" aria-labelledby="tab-readerCard" hidden>
@@ -168,6 +170,58 @@
               </ul>
               <p><a href="https://laioxy.github.io/wondermail/anydungeon/" target="_blank" rel="noopener" data-i18n="unlockHelpLink">Pagina dello scopritore del glitch (Lai-brary)</a></p>
             </div>
+      </section>
+      <section class="start-panel" id="rescueCard" role="tabpanel" aria-labelledby="tab-rescueCard" hidden>
+            <p class="hint" data-i18n="rescueHint"></p>
+            <div class="rescue-grid">
+              <div class="rescue-block">
+                <h3 class="rescue-title" data-i18n="rescueSosTitle">La tua squadra è stata sconfitta?</h3>
+                <p class="hint" data-i18n="rescueSosHint"></p>
+                <div class="reader-row">
+                  <label class="sr-only" for="rescueSosInput" data-i18n="rescueSosTitle">La tua squadra è stata sconfitta?</label>
+                  <textarea id="rescueSosInput" rows="3" spellcheck="false" autocapitalize="characters" placeholder="Incolla qui i 54 caratteri dell'SOS..." data-i18n-placeholder="rescueSosPlaceholder"></textarea>
+                  <button type="button" id="rescueSosRead" class="primary" data-i18n="rescueSosButton">Crea l'E-mail di OK</button>
+                </div>
+                <p class="status" id="rescueSosStatus" role="status" aria-live="polite"></p>
+                <dl class="rescue-facts" id="rescueSosFacts" hidden></dl>
+                <div class="rescue-output" id="rescueOkBox" hidden>
+                  <label for="rescueOkOutput" data-i18n="rescueOkLabel">E-mail di OK</label>
+                  <textarea id="rescueOkOutput" class="password" rows="3" readonly></textarea>
+                  <div class="result-actions">
+                    <button type="button" id="rescueOkCopy" class="primary" data-i18n="copy">Copia</button>
+                  </div>
+                  <p class="hint" data-i18n="rescueOkHint"></p>
+                </div>
+              </div>
+              <div class="rescue-block">
+                <h3 class="rescue-title" data-i18n="rescueMakeTitle">Vuoi soccorrere qualcuno?</h3>
+                <p class="hint" data-i18n="rescueMakeHint"></p>
+                <div class="field">
+                  <label for="rescueDungeonBox" data-i18n="dungeonLabel">Dungeon</label>
+                  <select id="rescueDungeonBox"></select>
+                </div>
+                <div class="rescue-pair">
+                  <div class="field">
+                    <label for="rescueFloorBox" data-i18n="floorLabel">Piano</label>
+                    <select id="rescueFloorBox"></select>
+                  </div>
+                  <div class="field">
+                    <label for="rescueTeamName" data-i18n="rescueTeamLabel">Squadra da soccorrere</label>
+                    <input id="rescueTeamName" type="text" maxlength="10" spellcheck="false" autocomplete="off">
+                  </div>
+                </div>
+                <p class="hint" id="rescueDungeonNote"></p>
+                <label class="sr-only" for="rescueMakeOutput" data-i18n="rescueSosLabel">SOS</label>
+                <textarea id="rescueMakeOutput" class="password" rows="3" readonly></textarea>
+                <div class="result-actions">
+                  <button type="button" id="rescueMakeCopy" class="primary" data-i18n="copy">Copia</button>
+                  <button type="button" id="rescueMakeNew" data-i18n="rescueMakeNew">Un altro SOS</button>
+                  <button type="button" id="rescueMakeWiki" class="ghost" data-i18n="wikiButton">Wiki</button>
+                </div>
+                <p class="status" id="rescueMakeStatus" role="status"></p>
+              </div>
+            </div>
+            <p class="hint rescue-untested" data-i18n="rescueUntested"></p>
       </section>
     </section>
 

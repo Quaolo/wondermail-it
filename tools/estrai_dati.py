@@ -403,6 +403,8 @@ def build_mission_floors(rodata: bytes, points_source: bytes) -> dict:
     max_items = [data[restrictions + 0xC * dungeon + 5] for dungeon in range(FIRST_SPECIAL_DUNGEON)]
     # Dungeon che salgono (bit 0 dei flag, DungeonGoesUp): i piani si scrivono "5F" invece di "B5F".
     ascends = [data[restrictions + 0xC * dungeon] & 1 for dungeon in range(FIRST_SPECIAL_DUNGEON)]
+    # Tentativi per soccorrere una squadra (GetMaxRescueAttempts): 0xFF = niente SOS in quel dungeon.
+    rescue_attempts = [data[restrictions + 0xC * dungeon + 4] for dungeon in range(FIRST_SPECIAL_DUNGEON)]
 
     # Piano massimo accettato in una missione, per ogni ID di dungeon.
     floors = [floor_count(dungeon) - (1 if dungeon == 0xAE else 0)
@@ -426,7 +428,7 @@ def build_mission_floors(rodata: bytes, points_source: bytes) -> dict:
     points = read_label_words(*assemble_rank_points(points_source), "MISSION_RANK_POINTS")
     return {"missionFloors": floors, "missionRanks": ranks, "missionRankPoints": points,
             "forbiddenFloors": forbidden_floors, "dungeonMaxItems": max_items,
-            "dungeonAscends": ascends}
+            "dungeonAscends": ascends, "rescueAttempts": rescue_attempts}
 
 
 # ---------------------------------------------------------------------------

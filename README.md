@@ -34,8 +34,8 @@ European passwords work for every language of the European cartridge.
 
 ## What it does
 
-The page has three parts. At the top there is "Start from", with four ways to begin: "Read a password",
-"Quick access", "Find a reward" and "Unlock a dungeon". Only one is open at a time. In "Read a password" you
+The page has three parts. At the top there is "Start from", with six ways to begin: "Read a password",
+"Quick access", "Job board", "Find a reward", "Unlock a dungeon" and "Friend Rescue". Only one is open at a time. In "Read a password" you
 paste a password and the site works out its region (Europe, America or Japan), checks that it is valid and
 loads the mission into the form; "Quick access" has shortcuts for the most wanted missions.
 
@@ -152,6 +152,21 @@ Rank. The warnings are in the card: the most important one is that unlocking a s
 break the rest of your game, and once you save there is no going back. If you paste one of these passwords in
 "Read a password", the site recognizes it and opens it in its card.
 
+## Friend Rescue
+
+When your team faints, the game lets you send an SOS Mail as a 54-character password and wait for a friend to
+come and save you: they answer with an A-OK Mail and you get back up on the floor where you fell, without
+losing money or items. The "Friend Rescue" tab does both sides. Paste your SOS Mail and it gives you the A-OK
+Mail, so you can rescue yourself. Or pick a dungeon and a floor and it gives you an SOS Mail to enter with
+"Receive SOS Mail", so you can go on a rescue wherever you like. The site also shows how many attempts the
+game allows in that dungeon and leaves out the dungeons where rescues aren't possible. These passwords, too,
+land in their own tab if you paste them into "Read a password".
+
+I worked out the format from the game's code: it uses the same encryption as Wonder Mail S with a different
+character order and a simpler check. When an A-OK Mail arrives the game only checks that it is an A-OK Mail
+and that its code matches an SOS Mail sent from that game, so it only works there and only once. Japanese
+passwords use other characters and don't work here.
+
 ## Missions that never end
 
 The game does not check which room a Treasure Memo points to. If the mission treasure is not in the room, the
@@ -242,6 +257,8 @@ The encoding test compares 60 passwords with those of the original generator and
   egg species the site shows might not be the one that actually hatches.
 - The jobs that open a dungeon (Gabite Scale, new dungeon, Spinda's Café musical instruments) made with a
   password still have to be tried in the game: I don't know if they open the dungeon like the board ones do.
+- I haven't tried the Friend Rescue passwords on a cartridge yet: the format matches the game's code, but a
+  real SOS Mail is needed to be sure.
 - The game says which items share the same icon, but not what color they are. For some of them I picked the
   colors myself and they might not match.
 

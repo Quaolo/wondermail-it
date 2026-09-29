@@ -33,8 +33,8 @@ Le password europee vanno bene per tutte le lingue della cartuccia europea, ital
 
 ## Cosa fa
 
-La pagina è divisa in tre parti. In alto c'è "Parti da", con quattro modi di cominciare: "Leggi una
-password", "Accesso rapido", "Cerca un premio" e "Sblocca un dungeon". Se ne apre uno alla volta. In "Leggi
+La pagina è divisa in tre parti. In alto c'è "Parti da", con sei modi di cominciare: "Leggi una
+password", "Accesso rapido", "Bacheca", "Cerca un premio", "Sblocca un dungeon" e "Pronto intervento". Se ne apre uno alla volta. In "Leggi
 una password" incolli una password e il sito capisce di che regione è (Europa, America o Giappone), controlla
 che sia valida e carica la missione nel modulo; in "Accesso rapido" trovi le scorciatoie per le missioni più
 cercate.
@@ -155,6 +155,21 @@ al grado Segreto. Nella scheda ci sono le avvertenze: la più importante è che 
 prima del tempo può rovinare il resto della partita, e dopo aver salvato non si torna indietro. Se incolli una
 di queste password in "Leggi una password", il sito la riconosce e la apre nella sua scheda.
 
+## Pronto intervento
+
+Quando la squadra viene sconfitta, il gioco permette di mandare un SOS con una password di 54 caratteri e di
+aspettare che un amico venga a salvarti: lui ti risponde con un'E-mail di OK e tu riparti dal piano dove sei
+caduto, senza perdere soldi e strumenti. La scheda "Pronto intervento" fa le due parti. Se incolli il tuo SOS
+ti dà l'E-mail di OK, quindi ti puoi salvare da solo. Oppure scegli un dungeon e un piano e ti dà un SOS da
+inserire con "Ricevi SOS", così puoi partire in soccorso dove vuoi tu. Il sito mostra anche quanti tentativi
+concede il gioco in quel dungeon e scarta i dungeon dove i soccorsi non ci sono. Anche queste password, se le
+incolli in "Leggi una password", finiscono nella loro scheda.
+
+Il formato l'ho ricavato dal codice del gioco: usa la stessa cifratura delle Missioni Speciali C con un'altra
+disposizione dei caratteri e un controllo più semplice. Quando arriva un'E-mail di OK il gioco guarda solo che
+sia un'E-mail di OK e che il suo codice sia quello di un SOS partito da quella partita, quindi vale solo lì e
+una volta sola. Le password della versione giapponese usano altri caratteri e qui non funzionano.
+
 ## Missioni che non finiscono mai
 
 Il gioco non controlla quale stanza è scritta in un Memo tesoro. Se nella stanza non c'è il tesoro della
@@ -244,6 +259,8 @@ Il test della codifica confronta 60 password con quelle del generatore originale
   nasce davvero.
 - Le missioni che aprono un dungeon (Scaglie di Gabite, dungeon nuovo, strumenti musicali del Caffè di Spinda)
   create con una password vanno provate in gioco: non so se aprono il dungeon come quelle della bacheca.
+- Le password di Pronto intervento non le ho ancora provate con una cartuccia: il formato torna con il codice
+  del gioco, ma serve un SOS vero per esserne sicuri.
 - Il gioco dice quali strumenti condividono la stessa icona, ma non di che colore sono. Per alcuni i colori
   li ho scelti io e potrebbero non corrispondere.
 

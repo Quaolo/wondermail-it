@@ -1551,6 +1551,7 @@ function relabelLocalizedControls() {
   populateRestrictionValues();
   renderBoard();
   renderBoardDungeons();
+  relabelRescueCard();
   refreshSearchBoxSelections();
 }
 
@@ -1819,7 +1820,7 @@ function resolveInitialLanguage() {
 // Leggi una password, Accesso rapido, Cerca un premio e Sblocca un dungeon sono modi diversi di cominciare:
 // ne serve uno alla volta. Compilando il modulo a mano il pannello aperto si chiude, così modulo e
 // risultato restano in vista.
-const START_PANEL_IDS = ['readerCard', 'presetsCard', 'boardCard', 'farmCard', 'unlockCard'];
+const START_PANEL_IDS = ['readerCard', 'presetsCard', 'boardCard', 'farmCard', 'unlockCard', 'rescueCard'];
 
 // Diventa vero mentre un punto di partenza (preset, lettura, premio) riempie il modulo da solo.
 let fillingFormFromTool = false;
@@ -1854,6 +1855,7 @@ function openStartPanel(id) {
   if (id === 'unlockCard' && !document.getElementById('unlockOutput')?.value) generateUnlockPassword(false);
   if (id === 'readerCard') document.getElementById('importCode')?.focus({ preventScroll: true });
   if (id === 'boardCard' && !boardDay) newBoardDay();
+  if (id === 'rescueCard' && !rescueMake) renderRescueMaker(true);
 }
 
 function closeStartPanels() {
@@ -2313,6 +2315,13 @@ function importCode() {
   const raw = input.value.trim();
   if (!raw) {
     setStatus('importStatus', 'importCodeEmpty', null, 'error');
+    return;
+  }
+
+  // Una password di 54 caratteri è un SOS o un'E-mail di OK: va nella scheda Pronto intervento.
+  if (window.WMSkyRescue && WMSkyRescue.looksLikeRescue(raw)) {
+    const opened = showRescueFromPassword(raw);
+    setStatus('importStatus', opened ? 'importRescue' : 'importCodeInvalid', null, opened ? 'ok' : 'error');
     return;
   }
 
@@ -3814,6 +3823,241 @@ async function copyUnlockPassword() {
     setStatus('unlockStatus', 'copyFailed', null, 'error');
   }
 }
+
+// ---------------------------------------------------------------------------
+// Pronto intervento: SOS e E-mail di OK (soccorso.js)
+// ---------------------------------------------------------------------------
+
+// Lingua scritta nell'SOS (GetLanguageType della versione europea): la stessa dell'interfaccia.
+const RESCUE_LANGUAGE = { it: 4, en: 1 };
+let rescueMake = null;
+
+function getRescueAttempts(dungeonId) {
+  const attempts = window.WMSkyGameData && window.WMSkyGameData.rescueAttempts;
+  return attempts ? attempts[dungeonId] : undefined;
+}
+
+// Dungeon in cui si può chiedere soccorso (DUNGEON_RESTRICTIONS: 0xFF = niente SOS); nella password il
+// dungeon ha 7 bit.
+function getRescueDungeonIds() {
+  const ids = [];
+  for (let id = 1; id < 128; id++) {
+    const attempts = getRescueAttempts(id);
+    if (attempts === undefined || attempts === 0xFF) continue;
+    if (!getFloorData(id, 1)) continue;
+    ids.push(id);
+  }
+  return ids;
+}
+
+// Piani di un SOS: quelli con i dati del gioco, senza stanze fisse (i piani dei capi).
+function getRescueFloors(dungeonId) {
+  const floors = [];
+  const row = window.WMSkyFloors && window.WMSkyFloors.byDungeon[dungeonId];
+  (row || []).forEach((entry, index) => {
+    const data = getFloorData(dungeonId, index + 1);
+    if (data && !data.layout.fixedRoom) floors.push(index + 1);
+  });
+  return floors;
+}
+
+function rescueFloorLabel(dungeonId, floor) {
+  return WMSkyJobText.formatFloor(floor, dungeonId, getJobTextLanguage());
+}
+
+function populateRescueDungeons() {
+  const select = document.getElementById('rescueDungeonBox');
+  if (!select) return;
+  const previous = select.value;
+  select.innerHTML = '';
+  getRescueDungeonIds().forEach((id) => {
+    const option = document.createElement('option');
+    option.value = String(id);
+    option.text = getDungeonName(id);
+    select.add(option);
+  });
+  if (!setSelectByValue(select, previous)) setSelectByValue(select, 6);
+  populateRescueFloors();
+}
+
+function populateRescueFloors() {
+  const dungeonId = parseInt(document.getElementById('rescueDungeonBox')?.value, 10);
+  const select = document.getElementById('rescueFloorBox');
+  if (!select || !Number.isFinite(dungeonId)) return;
+  const previous = parseInt(select.value, 10);
+  select.innerHTML = '';
+  getRescueFloors(dungeonId).forEach((floor) => {
+    const option = document.createElement('option');
+    option.value = String(floor);
+    option.text = rescueFloorLabel(dungeonId, floor);
+    select.add(option);
+  });
+  if (!setSelectByValue(select, previous)) select.selectedIndex = 0;
+}
+
+function renderRescueNote(dungeonId) {
+  const note = document.getElementById('rescueDungeonNote');
+  if (!note) return;
+  const attempts = getRescueAttempts(dungeonId);
+  const parts = [t('rescueAttempts', { count: attempts })];
+  if (getSelectedRegion() === 'jp') parts.push(t('rescueNoJapan'));
+  note.textContent = parts.join(' ');
+}
+
+// Crea (o ricrea) l'SOS del modulo. Con fresh = true cambiano anche codice e seme del piano.
+function renderRescueMaker(fresh) {
+  const dungeonBox = document.getElementById('rescueDungeonBox');
+  const output = document.getElementById('rescueMakeOutput');
+  const nameInput = document.getElementById('rescueTeamName');
+  if (!dungeonBox || !output || !window.WMSkyRescue) return;
+  if (!dungeonBox.options.length) populateRescueDungeons();
+  if (nameInput && !nameInput.value) nameInput.value = t('rescueDefaultTeam');
+  const dungeon = parseInt(dungeonBox.value, 10);
+  const floor = parseInt(document.getElementById('rescueFloorBox').value, 10);
+  renderRescueNote(dungeon);
+  const teamName = WMSkyRescue.nameToBytes(nameInput ? nameInput.value.trim() : '');
+  if (!teamName || !nameInput.value.trim()) {
+    output.value = '';
+    setStatus('rescueMakeStatus', 'rescueBadName', null, 'error');
+    return;
+  }
+  if (fresh || !rescueMake) {
+    const sos = WMSkyRescue.makeSos({ dungeon, floor, language: 1, teamName });
+    rescueMake = { idLow: sos.idLow, idHigh: sos.idHigh, seed: sos.seed, flag: sos.flag };
+  }
+  const mail = Object.assign(WMSkyRescue.makeSos({
+    dungeon, floor, teamName, seed: rescueMake.seed, idLow: rescueMake.idLow, idHigh: rescueMake.idHigh,
+    language: RESCUE_LANGUAGE[getCurrentLanguage()] || 1
+  }), { flag: rescueMake.flag });
+  const code = WMSkyRescue.encode(mail);
+  const check = WMSkyRescue.decode(code);
+  if (!check.ok || check.mail.dungeon !== dungeon || check.mail.floor !== floor) {
+    output.value = '';
+    setStatus('rescueMakeStatus', 'errorSelfCheck', null, 'error');
+    return;
+  }
+  output.value = prettyMailString(code, 3, 6);
+  setStatus('rescueMakeStatus', 'rescueMakeReady', () => ({
+    dungeon: getDungeonName(dungeon), floor: rescueFloorLabel(dungeon, floor)
+  }), 'ok');
+}
+
+function addRescueFact(list, label, value) {
+  const term = document.createElement('dt');
+  term.textContent = label;
+  const detail = document.createElement('dd');
+  detail.textContent = value;
+  list.append(term, detail);
+}
+
+// Legge l'SOS incollato e prepara l'E-mail di OK.
+function readRescueSos() {
+  const input = document.getElementById('rescueSosInput');
+  const facts = document.getElementById('rescueSosFacts');
+  const okBox = document.getElementById('rescueOkBox');
+  if (!input || !facts || !okBox || !window.WMSkyRescue) return;
+  facts.hidden = true;
+  okBox.hidden = true;
+  const raw = input.value.trim();
+  if (!raw) {
+    setStatus('rescueSosStatus', 'importCodeEmpty', null, 'error');
+    return;
+  }
+  const result = WMSkyRescue.decode(raw);
+  if (!result.ok) {
+    const length = WMSkyRescue.sanitize(raw).length;
+    const badLength = length !== WMSkyRescue.CODE_LENGTH;
+    setStatus('rescueSosStatus', badLength ? 'rescueBadLength' : 'rescueBadChecksum',
+      () => ({ count: length }), 'error');
+    return;
+  }
+  const mail = result.mail;
+  facts.textContent = '';
+  let kind = t('rescueKindOther', { type: mail.type });
+  if (mail.type === WMSkyRescue.TYPES.sos) kind = t('rescueKindSos');
+  else if (mail.type === WMSkyRescue.TYPES.ok) kind = t('rescueKindOk');
+  else if (mail.type === WMSkyRescue.TYPES.thanks) kind = t('rescueKindThanks');
+  addRescueFact(facts, t('rescueFactKind'), kind);
+  addRescueFact(facts, t('rescueFactTeam'), WMSkyRescue.nameFromBytes(mail.teamName) || '-');
+  addRescueFact(facts, t('rescueFactPlace'), `${getDungeonName(mail.dungeon)} · ${rescueFloorLabel(mail.dungeon, mail.floor)}`);
+  const version = WMSkyRescue.gameVersion(mail);
+  let versionText = t('rescueVersionSky');
+  if (version === 'time') versionText = t('rescueVersionTime');
+  else if (version === 'darkness') versionText = t('rescueVersionDarkness');
+  addRescueFact(facts, t('rescueFactVersion'), versionText);
+  const attempts = getRescueAttempts(mail.dungeon);
+  if (mail.type === WMSkyRescue.TYPES.sos && attempts !== undefined && attempts !== 0xFF) {
+    addRescueFact(facts, t('rescueFactAttempts'), String(attempts));
+  }
+  facts.hidden = false;
+  if (mail.type !== WMSkyRescue.TYPES.sos) {
+    setStatus('rescueSosStatus', mail.type === WMSkyRescue.TYPES.ok ? 'rescueAlreadyOk' : 'rescueNotSos', null, 'warning');
+    return;
+  }
+  const okCode = WMSkyRescue.encode(WMSkyRescue.okFromSos(mail));
+  const check = WMSkyRescue.decode(okCode);
+  if (!check.ok || check.mail.type !== WMSkyRescue.TYPES.ok || check.mail.idLow !== mail.idLow || check.mail.idHigh !== mail.idHigh) {
+    setStatus('rescueSosStatus', 'errorSelfCheck', null, 'error');
+    return;
+  }
+  document.getElementById('rescueOkOutput').value = prettyMailString(okCode, 3, 6);
+  okBox.hidden = false;
+  flashElement(okBox, 'card-flash');
+  setStatus('rescueSosStatus', 'rescueOkReady', () => ({
+    team: WMSkyRescue.nameFromBytes(mail.teamName), dungeon: getDungeonName(mail.dungeon),
+    floor: rescueFloorLabel(mail.dungeon, mail.floor)
+  }), 'ok');
+}
+
+// Da «Leggi una password»: l'SOS va nella sua scheda.
+function showRescueFromPassword(raw) {
+  const input = document.getElementById('rescueSosInput');
+  if (!input || !window.WMSkyRescue || !WMSkyRescue.decode(raw).ok) return false;
+  input.value = raw;
+  openStartPanel('rescueCard');
+  readRescueSos();
+  flashElement(document.getElementById('rescueCard'), 'card-flash');
+  return true;
+}
+
+async function copyRescueText(outputId, statusId) {
+  const text = document.getElementById(outputId)?.value.trim();
+  if (!text) return;
+  try {
+    await navigator.clipboard.writeText(text);
+    setStatus(statusId, 'codeCopied', null, 'ok');
+  } catch (e) {
+    setStatus(statusId, 'copyFailed', null, 'error');
+  }
+}
+
+function setupRescueCard() {
+  document.getElementById('rescueSosRead')?.addEventListener('click', readRescueSos);
+  document.getElementById('rescueOkCopy')?.addEventListener('click', () => copyRescueText('rescueOkOutput', 'rescueSosStatus'));
+  document.getElementById('rescueMakeCopy')?.addEventListener('click', () => copyRescueText('rescueMakeOutput', 'rescueMakeStatus'));
+  document.getElementById('rescueMakeNew')?.addEventListener('click', () => renderRescueMaker(true));
+  document.getElementById('rescueDungeonBox')?.addEventListener('change', () => {
+    populateRescueFloors();
+    renderRescueMaker(false);
+  });
+  document.getElementById('rescueFloorBox')?.addEventListener('change', () => renderRescueMaker(false));
+  document.getElementById('rescueTeamName')?.addEventListener('input', () => renderRescueMaker(false));
+  document.getElementById('rescueMakeWiki')?.addEventListener('click', () => {
+    const dungeon = parseInt(document.getElementById('rescueDungeonBox').value, 10);
+    const floor = parseInt(document.getElementById('rescueFloorBox').value, 10);
+    if (typeof openWiki === 'function' && Number.isFinite(dungeon)) openWiki('dungeons', dungeon, floor);
+  });
+}
+
+// Al cambio di lingua: nomi dei dungeon, piani e testi della scheda.
+function relabelRescueCard() {
+  if (!document.getElementById('rescueDungeonBox')?.options.length) return;
+  populateRescueDungeons();
+  renderRescueMaker(false);
+  if (!document.getElementById('rescueSosFacts')?.hidden) readRescueSos();
+}
+
+onReady(setupRescueCard);
 
 // ---------------------------------------------------------------------------
 // Missione simile

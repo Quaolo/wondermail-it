@@ -399,6 +399,47 @@ def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
         check("Cratere Oscuro" in page.text_content("#importStatus") and panel_open(page, "unlockCard"),
               "una password di sblocco letta apre la sua scheda")
 
+        # Pronto intervento: un SOS scelto nel sito, poi la sua E-mail di OK
+        page.evaluate("closeStartPanels()")
+        open_tool_card(page, "rescueCard")
+        set_select(page, "rescueDungeonBox", 17)
+        page.fill("#rescueTeamName", "Paolo")
+        page.wait_for_timeout(100)
+        sos_code = page.input_value("#rescueMakeOutput")
+        sos = page.evaluate("(c) => WMSkyRescue.decode(c)", sos_code)
+        check(sos["ok"] and sos["mail"]["type"] == 1 and sos["mail"]["dungeon"] == 17 and sos["mail"]["sky"] == 1
+              and page.evaluate("(m) => WMSkyRescue.nameFromBytes(m.teamName)", sos["mail"]) == "Paolo",
+              f"SOS per le Pianure Saetta con la squadra Paolo: {sos.get('mail')}")
+        floors = page.eval_on_selector_all("#rescueFloorBox option", "els => els.map(e => +e.value)")
+        check(floors == list(range(1, 11)), f"piani delle Pianure Saetta: {floors}")
+        fixed = page.evaluate("""getRescueDungeonIds().flatMap((d) => getRescueFloors(d)
+            .filter((f) => getFloorData(d, f).layout.fixedRoom).map((f) => d + '/' + f))""")
+        check(not fixed, f"niente SOS sui piani con una stanza fissa (i capi): {fixed[:5]}")
+        ids = page.evaluate("getRescueDungeonIds()")
+        check(6 in ids and 1 not in ids and all(i < 128 for i in ids), f"dungeon con i soccorsi: {len(ids)}")
+        page.click("#rescueMakeNew")
+        check(page.input_value("#rescueMakeOutput") != sos_code, "«Un altro SOS» cambia la password")
+        page.fill("#rescueSosInput", sos_code)
+        page.click("#rescueSosRead")
+        ok = page.evaluate("(c) => WMSkyRescue.decode(c)", page.input_value("#rescueOkOutput"))
+        check(ok["ok"] and ok["mail"]["type"] == 4 and ok["mail"]["idLow"] == sos["mail"]["idLow"]
+              and ok["mail"]["idHigh"] == sos["mail"]["idHigh"] and ok["mail"]["item1"] == 0,
+              "l'E-mail di OK ha lo stesso codice dell'SOS e nessuno strumento")
+        facts = page.text_content("#rescueSosFacts")
+        check("Paolo" in facts and "Pianure Saetta" in facts and "Esploratori del Cielo" in facts, f"dati dell'SOS: {facts!r}")
+        broken = ("6" if sos_code[0] != "6" else "7") + sos_code[1:]
+        page.fill("#rescueSosInput", broken)
+        page.click("#rescueSosRead")
+        check(page.is_hidden("#rescueOkBox") and "controllo" in page.text_content("#rescueSosStatus"),
+              "un SOS con un carattere sbagliato viene rifiutato")
+        page.evaluate("closeStartPanels()")
+        open_tool_card(page, "readerCard")
+        page.fill("#importCode", sos_code)
+        page.click("#importCodeBtn")
+        check(panel_open(page, "rescueCard") and page.is_visible("#rescueOkBox"),
+              "un SOS letto in «Leggi una password» apre Pronto intervento con l'E-mail di OK")
+        page.evaluate("closeStartPanels()")
+
         # Preset di Mewtwo: la password si aggiorna da sola
         open_tool_card(page, "presetsCard")
         page.click('.preset-btn[data-preset="mewtwo"]')
