@@ -164,7 +164,13 @@ land in their own tab if you paste them into "Read a password".
 
 Something found while testing: the SOS Mail's dungeon must already be unlocked in your game. The game accepts
 the SOS Mail even if it isn't, and the dungeon shows up as "???" in the list, but when you pick the job at
-Pelipper's it tells you it can't send you to a dungeon you don't know.
+Pelipper's it tells you it can't send you to a dungeon you don't know. Another one: every SOS Mail has a unique
+code and the game won't accept the same code twice, so the site makes a new one at every change, and it
+suggests a random Pokémon as the team name (you can type your own).
+
+Sky also accepts SOS Mails from Explorers of Time and Darkness, and the game's list shows which version a job
+comes from. In the tab you can pick the version: the dungeon is the same, but according to the guides the items
+you find are the Time and Darkness ones. That's still to be tried too.
 
 I worked out the format from the game's code: it uses the same encryption as Wonder Mail S with a different
 character order and a simpler check. When an A-OK Mail arrives the game only checks that it is an A-OK Mail

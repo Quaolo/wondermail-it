@@ -196,9 +196,19 @@
               <div class="rescue-block">
                 <h3 class="rescue-title" data-i18n="rescueMakeTitle">Vuoi soccorrere qualcuno?</h3>
                 <p class="hint" data-i18n="rescueMakeHint"></p>
-                <div class="field">
-                  <label for="rescueDungeonBox" data-i18n="dungeonLabel">Dungeon</label>
-                  <select id="rescueDungeonBox"></select>
+                <div class="rescue-pair">
+                  <div class="field">
+                    <label for="rescueDungeonBox" data-i18n="dungeonLabel">Dungeon</label>
+                    <select id="rescueDungeonBox"></select>
+                  </div>
+                  <div class="field">
+                    <label for="rescueVersionBox" data-i18n="rescueVersionLabel">SOS mandato da</label>
+                    <select id="rescueVersionBox">
+                      <option value="sky" data-i18n="rescueVersionSky">Esploratori del Cielo</option>
+                      <option value="time" data-i18n="rescueVersionTime">Esploratori del Tempo</option>
+                      <option value="darkness" data-i18n="rescueVersionDarkness">Esploratori dell'Oscurità</option>
+                    </select>
+                  </div>
                 </div>
                 <div class="rescue-pair">
                   <div class="field">
@@ -211,6 +221,7 @@
                   </div>
                 </div>
                 <p class="hint" id="rescueDungeonNote"></p>
+                <p class="hint rescue-version-note" id="rescueVersionNote" data-i18n="rescueVersionNote" hidden></p>
                 <label class="sr-only" for="rescueMakeOutput" data-i18n="rescueSosLabel">SOS</label>
                 <textarea id="rescueMakeOutput" class="password" rows="3" readonly></textarea>
                 <div class="result-actions">

@@ -112,3 +112,23 @@ test('tentativi di soccorso per dungeon dal gioco (0xFF = niente SOS)', () => {
     if (value !== 255) assert.ok(dungeon < 128, `dungeon ${dungeon}`);
   });
 });
+
+test('SOS di Tempo e Oscurità: solo il bit della versione, senza quello del Cielo', () => {
+  for (const version of ['sky', 'time', 'darkness']) {
+    const sos = R.makeSos({ dungeon: 6, floor: 2, language: 4, teamName: R.nameToBytes('Test'), version });
+    const back = R.decode(R.encode(sos));
+    assert.ok(back.ok);
+    assert.equal(R.gameVersion(back.mail), version);
+    // L'E-mail di OK conserva la versione dell'SOS, come fa il gioco quando risponde a Tempo/Oscurità.
+    assert.equal(R.gameVersion(R.decode(R.encode(R.okFromSos(back.mail))).mail), version);
+  }
+});
+
+test('ogni SOS nuovo ha un codice diverso (il gioco rifiuta i codici già ricevuti)', () => {
+  const seen = new Set();
+  for (let i = 0; i < 200; i++) {
+    const sos = R.makeSos({ dungeon: 6, floor: 2, language: 4, teamName: R.nameToBytes('Test') });
+    seen.add(`${sos.idHigh}:${sos.idLow}`);
+  }
+  assert.equal(seen.size, 200);
+});

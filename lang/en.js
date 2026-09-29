@@ -379,6 +379,9 @@ window.WMSkyRegisterLocale('en', {
     floorTrapsTitle: 'Traps',
     floorSource: 'Floor data from the game (BALANCE/mappa_s.bin, from the pret/pmd-sky decompilation; format documented by SkyTemple). The percentages are the odds the game uses to pick each Pokémon, item and trap; shop, Monster House and hidden stairs are the odds of them appearing on the floor.',
 
+    rescueVersionLabel: 'SOS Mail sent from',
+    rescueVersionNote: 'Sky also accepts SOS Mails from Time and Darkness: the dungeon and the floor layouts are the same, but according to the guides the items are the Time and Darkness ones, so they differ from the Wiki. Still to be tried.',
+
     rescueTitle: 'Friend Rescue',
     rescueHint: 'The game\'s Friend Rescue passwords (54 characters): turn an SOS Mail into the A-OK Mail that rescues you, or make an SOS Mail to go on a rescue in the dungeon you choose.',
     rescueSosTitle: 'Did your team faint?',

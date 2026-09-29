@@ -3904,14 +3904,24 @@ function renderRescueNote(dungeonId) {
   note.textContent = parts.join(' ');
 }
 
-// Crea (o ricrea) l'SOS del modulo. Con fresh = true cambiano anche codice e seme del piano.
-function renderRescueMaker(fresh) {
+// Nome della squadra a caso: un Pokémon con un nome che il gioco sa scrivere in 10 caratteri.
+function randomRescueTeamName() {
+  for (let i = 0; i < 50; i++) {
+    const name = getLocalizedPokemonName(1 + Math.floor(Math.random() * WMSGenData.lastRegularPokemon));
+    if (/^[\p{L}]/u.test(name) && WMSkyRescue.nameToBytes(name)) return name;
+  }
+  return t('rescueDefaultTeam');
+}
+
+// Crea l'SOS della scheda. Ogni SOS ha un codice nuovo: il gioco rifiuta un SOS con lo stesso codice di uno
+// già ricevuto («Hai già ricevuto questo messaggio»), anche se dungeon, piano o squadra sono diversi.
+function renderRescueMaker(newName) {
   const dungeonBox = document.getElementById('rescueDungeonBox');
   const output = document.getElementById('rescueMakeOutput');
   const nameInput = document.getElementById('rescueTeamName');
   if (!dungeonBox || !output || !window.WMSkyRescue) return;
   if (!dungeonBox.options.length) populateRescueDungeons();
-  if (nameInput && !nameInput.value) nameInput.value = t('rescueDefaultTeam');
+  if (nameInput && (!nameInput.value || (newName && !nameInput.dataset.custom))) nameInput.value = randomRescueTeamName();
   const dungeon = parseInt(dungeonBox.value, 10);
   const floor = parseInt(document.getElementById('rescueFloorBox').value, 10);
   renderRescueNote(dungeon);
@@ -3921,17 +3931,15 @@ function renderRescueMaker(fresh) {
     setStatus('rescueMakeStatus', 'rescueBadName', null, 'error');
     return;
   }
-  if (fresh || !rescueMake) {
-    const sos = WMSkyRescue.makeSos({ dungeon, floor, language: 1, teamName });
-    rescueMake = { idLow: sos.idLow, idHigh: sos.idHigh, seed: sos.seed, flag: sos.flag };
-  }
-  const mail = Object.assign(WMSkyRescue.makeSos({
-    dungeon, floor, teamName, seed: rescueMake.seed, idLow: rescueMake.idLow, idHigh: rescueMake.idHigh,
-    language: RESCUE_LANGUAGE[getCurrentLanguage()] || 1
-  }), { flag: rescueMake.flag });
+  const version = document.getElementById('rescueVersionBox')?.value || 'sky';
+  const mail = WMSkyRescue.makeSos({
+    dungeon, floor, teamName, version, language: RESCUE_LANGUAGE[getCurrentLanguage()] || 1
+  });
+  rescueMake = mail;
   const code = WMSkyRescue.encode(mail);
   const check = WMSkyRescue.decode(code);
-  if (!check.ok || check.mail.dungeon !== dungeon || check.mail.floor !== floor) {
+  if (!check.ok || check.mail.dungeon !== dungeon || check.mail.floor !== floor
+    || WMSkyRescue.gameVersion(check.mail) !== version) {
     output.value = '';
     setStatus('rescueMakeStatus', 'errorSelfCheck', null, 'error');
     return;
@@ -3940,6 +3948,8 @@ function renderRescueMaker(fresh) {
   setStatus('rescueMakeStatus', 'rescueMakeReady', () => ({
     dungeon: getDungeonName(dungeon), floor: rescueFloorLabel(dungeon, floor)
   }), 'ok');
+  const versionNote = document.getElementById('rescueVersionNote');
+  if (versionNote) versionNote.hidden = version === 'sky';
 }
 
 function addRescueFact(list, label, value) {
@@ -4041,7 +4051,13 @@ function setupRescueCard() {
     renderRescueMaker(false);
   });
   document.getElementById('rescueFloorBox')?.addEventListener('change', () => renderRescueMaker(false));
-  document.getElementById('rescueTeamName')?.addEventListener('input', () => renderRescueMaker(false));
+  document.getElementById('rescueVersionBox')?.addEventListener('change', () => renderRescueMaker(false));
+  document.getElementById('rescueTeamName')?.addEventListener('input', (event) => {
+    // Un nome scritto a mano resta anche con «Un altro SOS»; svuotando il campo si torna ai nomi a caso.
+    if (event.target.value.trim()) event.target.dataset.custom = '1';
+    else delete event.target.dataset.custom;
+    renderRescueMaker(false);
+  });
   document.getElementById('rescueMakeWiki')?.addEventListener('click', () => {
     const dungeon = parseInt(document.getElementById('rescueDungeonBox').value, 10);
     const floor = parseInt(document.getElementById('rescueFloorBox').value, 10);

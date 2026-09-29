@@ -167,7 +167,13 @@ incolli in "Leggi una password", finiscono nella loro scheda.
 
 Una cosa scoperta provando: il dungeon dell'SOS deve essere già sbloccato nella tua partita. Il gioco accetta
 l'SOS anche se non lo è, e nell'elenco il dungeon compare come "???", ma quando scegli la missione da
-Pelipper ti dice che non ti può mandare in un dungeon che non conosci.
+Pelipper ti dice che non ti può mandare in un dungeon che non conosci. Un'altra: ogni SOS ha un codice unico e
+il gioco non accetta due volte lo stesso codice, per questo il sito ne crea uno nuovo a ogni cambio, e propone
+come nome della squadra un Pokémon a caso (puoi scriverne uno tuo).
+
+Il Cielo accetta anche gli SOS di Esploratori del Tempo e dell'Oscurità, e nell'elenco del gioco la missione
+dice da quale versione arriva. Nella scheda puoi scegliere la versione: il dungeon è lo stesso, ma secondo le
+guide gli strumenti che trovi sono quelli di Tempo e Oscurità. Anche questo è da provare.
 
 Il formato l'ho ricavato dal codice del gioco: usa la stessa cifratura delle Missioni Speciali C con un'altra
 disposizione dei caratteri e un controllo più semplice. Quando arriva un'E-mail di OK il gioco guarda solo che

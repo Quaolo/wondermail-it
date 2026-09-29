@@ -379,6 +379,9 @@ window.WMSkyRegisterLocale('it', {
     floorTrapsTitle: 'Trappole',
     floorSource: 'Dati dei piani del gioco (BALANCE/mappa_s.bin, dalla decompilazione pret/pmd-sky; formato documentato da SkyTemple). Le percentuali sono quelle con cui il gioco sceglie ogni Pokémon, strumento e trappola; negozio, covo e scale nascoste sono la probabilità che compaiano sul piano.',
 
+    rescueVersionLabel: 'SOS mandato da',
+    rescueVersionNote: 'Il Cielo accetta anche gli SOS di Tempo e Oscurità: il dungeon e la forma dei piani sono gli stessi, ma secondo le guide gli strumenti sono quelli di Tempo e Oscurità, quindi diversi da quelli della Wiki. Da provare.',
+
     rescueTitle: 'Pronto intervento',
     rescueHint: 'Le password di Pronto Intervento del gioco (54 caratteri): da un SOS ricavi l\'E-mail di OK per salvarti da solo, oppure crei un SOS per partire in soccorso in un dungeon a scelta.',
     rescueSosTitle: 'La tua squadra è stata sconfitta?',

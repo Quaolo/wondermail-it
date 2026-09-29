@@ -268,7 +268,8 @@
     /**
      * Un SOS nuovo, come quello che scrive il gioco quando la squadra viene sconfitta (sub_0205BAB0):
      * codice a 64 bit (nel gioco metà viene dall'indirizzo della console e metà è casuale), lingua, nome,
-     * seme del piano a 24 bit e il segno del Cielo. random() restituisce un numero tra 0 e 1.
+     * seme del piano a 24 bit e la versione (options.version: 'sky', 'time' o 'darkness'; il Cielo accetta anche
+     * gli SOS di Tempo e Oscurità). random() restituisce un numero tra 0 e 1.
      */
     makeSos: function (options) {
       var random = options.random || Math.random;
@@ -286,8 +287,10 @@
         item2: 0,
         otherLow: 0,
         otherHigh: 0,
-        flag: random() < 0.5 ? 1 : 0,
-        sky: 1
+        // Cielo: bit 1 acceso, bit 0 a caso (sub_0205BD78). Tempo e Oscurità: solo il bit 0 (0 Tempo,
+        // 1 Oscurità), come legge sub_0205BD40.
+        flag: options.version === 'darkness' ? 1 : (options.version === 'time' ? 0 : (random() < 0.5 ? 1 : 0)),
+        sky: options.version === 'time' || options.version === 'darkness' ? 0 : 1
       };
     }
   };
