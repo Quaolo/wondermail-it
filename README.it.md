@@ -80,10 +80,13 @@ usi il seme che dà quella che preferisci. Il resto della missione non cambia. P
 sempre lo stesso (i Memo tesoro, per esempio, hanno una frase per ogni dungeon), e allora il sito te lo dice.
 
 Ho controllato il risultato con alcune missioni distribuite ufficialmente, di cui si conosce il testo: titoli
-e descrizioni coincidono. Un caso però l'ho solo dedotto dal codice. Quando la missione non somiglia a nessuna
-di quelle previste dal gioco (un Memo tesoro in un dungeon dove il gioco non ne mette, o un soccorso con una
-coppia di Pokémon che nelle missioni normali non c'è), il gioco va a leggere il testo in un punto sbagliato
-della memoria. Il sito mostra quello che dovrebbe uscire, ma lo segnala come non ancora provato.
+e descrizioni coincidono. C'è un caso da evitare. Quando la missione non somiglia a nessuna di quelle previste
+dal gioco (un Memo tesoro in un dungeon dove il gioco non ne mette, un covo di ricercati o una Lettera di sfida
+con Pokémon diversi da quelli del gioco, un soccorso con una coppia che nelle missioni normali non c'è), il
+gioco va a cercare il testo in un punto sbagliato della memoria. Pensavo che mostrasse un testo strano, invece
+si blocca appena confermi la password e bisogna spegnere la console: l'ho provato con un covo di Magnemite con
+Meowth e Rattata. Per questo il sito non dà la password di queste missioni e lo spiega, e se ne leggi una la
+segnala. In "Cerca un premio" compaiono solo i dungeon dove un Memo tesoro ha il suo testo.
 
 ## La bacheca
 
@@ -105,8 +108,9 @@ Un clic su una missione la porta nel modulo, con "Annulla" per tornare indietro.
 varianti che la bacheca usa: il cucciolo, l'amico, l'amore o il rivale da soccorrere, l'amore da raggiungere,
 il tesoro prezioso, lo strumento che fa evolvere il committente, la sua Gomma preferita, i ricercati in fuga e
 gli elenchi di ricercati di Magnemite e Magnezone. Per le varianti che nel gioco hanno coppie fisse (Beedrill
-che cerca Weedle, per esempio) c'è un menu con le coppie del gioco. Il gioco accetta anche le altre, ma solo
-queste hanno un titolo. Ci sono anche le missioni che nel gioco aprono un dungeon (Scaglie di Gabite, dungeon
+che cerca Weedle, per esempio) c'è un menu con le coppie del gioco, e lo stesso vale per i covi dei ricercati e per le
+Lettere di sfida normali, che hanno terne fisse (ricercato e complice, o i tre sfidanti). Con una coppia
+diversa, quando il gioco non trova il testo della missione si blocca, quindi il sito non dà la password. Ci sono anche le missioni che nel gioco aprono un dungeon (Scaglie di Gabite, dungeon
 nuovo, strumenti musicali), ma con una password non le ho ancora provate: il sito lo scrive sotto il tipo di
 missione.
 
@@ -273,7 +277,6 @@ Il test della codifica confronta 60 password con quelle del generatore originale
 - Una password valida può comunque essere rifiutata dal gioco se il dungeon non è ancora sbloccato, se la
   missione è già nell'elenco o se l'elenco è pieno: quelli dipendono dal salvataggio e il sito non li conosce.
 - Le stanze senza tesoro diverse dalla 81 vanno provate in gioco.
-- Il testo delle missioni che il gioco non prevede (vedi sopra) è dedotto dal codice e va provato in gioco.
 - La bacheca segue il codice del gioco, ma non l'ho ancora confrontata con una bacheca vera. Un dettaglio
   curioso da controllare: quando la ricompensa è un uovo, il gioco scrive come specie un numero estratto
   dall'elenco degli strumenti, quindi la specie dell'uovo che mostra il sito potrebbe non essere quella che

@@ -42,7 +42,7 @@ window.WMSkyRegisterLocale('en', {
     pairHintSevenTreasures: 'Spinda\'s Café only offers these requests in these seven dungeons, until you complete them: only they have a title. Not tested with a password yet.',
     pairLabel: 'Pair from the game',
     pairOther: 'Another pair (set in the fields)',
-    pairHint: 'The game accepts any pair, but only these have a mission title.',
+    pairHint: 'The job text only exists for these pairs: with a different pair the game can\'t find it and freezes, so the site won\'t give the password.',
     pairHintItem: 'The pairs the game uses: pick one or change client and item in the fields.',
     pairHintGabite: 'Togetic\'s job that opens Labyrinth Cave in the game. Not tested with a password yet.',
     missionSubtypeLabel: 'Mission variant',
@@ -159,7 +159,7 @@ window.WMSkyRegisterLocale('en', {
     jobTextPickHint: 'The game picks the title and description from the seed, dungeon and floor. Tap a text to use its seed: the rest of the mission stays the same.',
     jobTextMore: 'More texts',
     jobTextFixed: 'The game always uses the same text for this mission: the seed doesn\'t change it.',
-    jobTextGuess: 'The game has no text meant for this combination (for example a Treasure Memo in a dungeon the game never uses for Memos). This is the text that should appear according to the game\'s code, but it hasn\'t been tested yet.',
+    jobTextGuess: 'Warning: the game has no text for this combination (for example a Treasure Memo in a dungeon the game never uses for Memos, or a hideout with a pair other than the game\'s). With a password like this the game freezes as soon as you confirm it: this has been tested.',
     jobTextTeam: '(team name)',
     jobTextSeed: 'seed {seed}',
     originJobText: 'Text chosen (seed {seed})',
@@ -378,6 +378,8 @@ window.WMSkyRegisterLocale('en', {
     floorBuriedHint: 'You only find them by digging through walls, for example with the {skill} IQ skill or a move that breaks walls.',
     floorTrapsTitle: 'Traps',
     floorSource: 'Floor data from the game (BALANCE/mappa_s.bin, from the pret/pmd-sky decompilation; format documented by SkyTemple). The percentages are the odds the game uses to pick each Pokémon, item and trap; shop, Monster House and hidden stairs are the odds of them appearing on the floor.',
+
+    errorNoTemplate: 'The game has no text for this job: with this combination it freezes as soon as you confirm the password (tested). Pick one of the game\'s pairs from the menu or change the Pokémon.',
 
     rescueFactRescuer: 'Rescued by',
     rescueRewardLine: 'Reward for the rescuer: difficulty {rank}, {points} exploration points and one item.',

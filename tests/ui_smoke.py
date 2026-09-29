@@ -219,12 +219,12 @@ def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
         set_select(page, "missionTypeBox", 12)
         set_select(page, "missionSubTypeBox", 0)
         set_select(page, "clientBox", 6)
-        set_select(page, "targetBox", 9)
-        set_select(page, "target2Box", 3)
+        set_select(page, "targetBox", 3)
+        set_select(page, "target2Box", 9)
         generate(page)
         struct = decode_output(page, "eu")["struct"]
-        check((struct["client"], struct["target"], struct["target2"]) == (6, 9, 3),
-              f"Charizard/Blastoise/Venusaur nel codice: {(struct['client'], struct['target'], struct['target2'])}")
+        check((struct["client"], struct["target"], struct["target2"]) == (6, 3, 9),
+              f"Charizard/Venusaur/Blastoise nel codice: {(struct['client'], struct['target'], struct['target2'])}")
         rooms = rooms_generated(page)
         check(rooms <= set(range(150, 155)), f"stanze delle Lettere di sfida dal gioco (150-154): {sorted(rooms)}")
         check(page.is_visible("#roomCard") and page.locator("#roomMap .mark-boss .cell-portrait").count() == 1,
@@ -236,6 +236,20 @@ def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
         rooms = rooms_generated(page)
         check(rooms <= set(range(160, 165)), f"stanze dei covi dal gioco (160-164): {sorted(rooms)}")
         check(page.locator("#roomPicker .room-option").count() == 6, "scelta tra «A caso» e 5 covi")
+        # Covo con una coppia che non è del gioco: il gioco si blocca (prova di Paolo), quindi niente password
+        check(page.is_visible("#pairField") and page.eval_on_selector_all("#pairBox option", "els => els.length") > 10,
+              "i covi hanno il menu con le terne del gioco")
+        check(" + " in page.eval_on_selector("#pairBox", "s => s.options[s.selectedIndex].text"),
+              "scegliendo il covo il modulo parte da una terna del gioco (ricercato + complice)")
+        set_select(page, "targetBox", 52)
+        set_select(page, "target2Box", 19)
+        generate(page)
+        check("si blocca" in page.input_value("#outputbox") and page.input_value("#compactOutput") == "",
+              "covo di Magnemite con Meowth e Rattata: nessuna password, il gioco si bloccherebbe")
+        page.select_option("#pairBox", index=1)
+        page.wait_for_timeout(100)
+        generate(page)
+        check(decode_output(page, "eu")["crcOk"], "con una terna del gioco la password c'è")
 
         # Valori fuori dai limiti: errore invece di un codice sbagliato
         set_select(page, "missionTypeBox", 0)

@@ -42,7 +42,7 @@ window.WMSkyRegisterLocale('it', {
     pairHintSevenTreasures: 'Il Caffè di Spinda propone queste richieste solo in questi sette dungeon, finché non li hai completati: il titolo esiste solo per loro. Con una password non sono state provate.',
     pairLabel: 'Coppia del gioco',
     pairOther: 'Un\'altra coppia (scelta nei campi)',
-    pairHint: 'Il gioco accetta qualsiasi coppia, ma il titolo della missione esiste solo per queste.',
+    pairHint: 'Il testo della missione esiste solo per queste coppie: con una coppia diversa il gioco non lo trova e si blocca, quindi il sito non dà la password.',
     pairHintItem: 'Le coppie che usa il gioco: scegline una o cambia committente e strumento nei campi.',
     pairHintGabite: 'La missione di Togetic che nel gioco apre la Grotta Labirinto. Con una password non è stata ancora provata.',
     missionSubtypeLabel: 'Variante della missione',
@@ -159,7 +159,7 @@ window.WMSkyRegisterLocale('it', {
     jobTextPickHint: 'Il gioco sceglie titolo e descrizione con seme, dungeon e piano. Tocca un testo per usare il suo seme: il resto della missione non cambia.',
     jobTextMore: 'Altri testi',
     jobTextFixed: 'Per questa missione il gioco usa sempre lo stesso testo: il seme non lo cambia.',
-    jobTextGuess: 'Il gioco non ha un testo pensato per questa combinazione (per esempio un Memo tesoro in un dungeon che il gioco non usa per i Memo). Questo è il testo che dovrebbe comparire secondo il codice del gioco, ma non è ancora stato provato.',
+    jobTextGuess: 'Attenzione: il gioco non ha un testo per questa combinazione (per esempio un Memo tesoro in un dungeon che il gioco non usa per i Memo, o un covo con una coppia diversa da quelle del gioco). Con una password così il gioco si blocca appena la confermi: è stato provato.',
     jobTextTeam: '(nome della squadra)',
     jobTextSeed: 'seme {seed}',
     originJobText: 'Testo scelto (seme {seed})',
@@ -378,6 +378,8 @@ window.WMSkyRegisterLocale('it', {
     floorBuriedHint: 'Si trovano solo scavando nei muri, per esempio con l\'abilità QI {skill} o una mossa che rompe le pareti.',
     floorTrapsTitle: 'Trappole',
     floorSource: 'Dati dei piani del gioco (BALANCE/mappa_s.bin, dalla decompilazione pret/pmd-sky; formato documentato da SkyTemple). Le percentuali sono quelle con cui il gioco sceglie ogni Pokémon, strumento e trappola; negozio, covo e scale nascoste sono la probabilità che compaiano sul piano.',
+
+    errorNoTemplate: 'Il gioco non ha un testo per questa missione: con questa combinazione si blocca appena confermi la password (provato). Scegli una coppia del gioco dal menu o cambia i Pokémon.',
 
     rescueFactRescuer: 'Soccorsa da',
     rescueRewardLine: 'Premio per chi soccorre: difficoltà {rank}, {points} punti esplorazione e uno strumento.',

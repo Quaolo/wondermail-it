@@ -75,7 +75,7 @@ var WMSGenData = {
     { name: 'arrestMagnemite', mainType: 10, forceClient: 81, subTypes: [
       { name: 'Normal', specialType: 0, advancedOnly: true },
       { name: 'Escort', specialType: 4 },
-      { name: 'Special floor', specialType: 6, useTarget2: true, specialFloorFromList: 'thievesden' },
+      { name: 'Special floor', specialType: 6, useTarget2: true, specialFloorFromList: 'thievesden', gamePairs: true },
       { name: 'Monster House', specialType: 7, advancedOnly: true },
       { name: 'Normal B', specialType: 1, advancedOnly: true },
       { name: 'Normal C', specialType: 2 },
@@ -86,7 +86,7 @@ var WMSGenData = {
     { name: 'arrestMagnezone', mainType: 10, forceClient: 504, subTypes: [
       { name: 'Normal', specialType: 0 },
       { name: 'Escort', specialType: 4 },
-      { name: 'Special floor', specialType: 6, useTarget2: true, specialFloorFromList: 'thievesden' },
+      { name: 'Special floor', specialType: 6, useTarget2: true, specialFloorFromList: 'thievesden', gamePairs: true },
       { name: 'Monster House', specialType: 7 },
       { name: 'Normal B', specialType: 1 },
       { name: 'Normal C', specialType: 2, advancedOnly: true },
@@ -95,7 +95,7 @@ var WMSGenData = {
     ] },
 
     { name: 'challengeLetter', mainType: 11, subTypes: [
-      { name: 'Normal', specialType: 0, useTarget2: true, specialFloorFromList: 'challengerequest' },
+      { name: 'Normal', specialType: 0, useTarget2: true, specialFloorFromList: 'challengerequest', gamePairs: true },
       { name: 'Mewtwo', specialType: 1, forceClient: 150, forceTarget: 150, specialFloor: 145 },
       { name: 'Entei', specialType: 2, forceClient: 271, forceTarget: 271, specialFloor: 146 },
       { name: 'Raikou', specialType: 3, forceClient: 270, forceTarget: 270, specialFloor: 147 },
@@ -431,6 +431,13 @@ var WMSGen = {
     // Consegna: in qualche dungeon non si possono portare strumenti, quindi non si consegna niente.
     if (typeData.mainType === 7 && getDungeonMaxItems(dungeon) === 0) {
       errors.push(tr('errorNoItemsInDungeon'));
+    }
+
+    // Nessun modello di rescue.bin per questa missione: il gioco non trova il testo e si blocca appena si
+    // conferma la password (provato da Paolo il 29/09 con un covo di Magnemite e una coppia non del gioco).
+    if (!errors.length && typeof window !== 'undefined' && window.WMSkyJobText) {
+      var text = window.WMSkyJobText.describeMission(this.buildStruct(), 'en');
+      if (text && text.guessed) errors.push(tr('errorNoTemplate'));
     }
 
     return errors;

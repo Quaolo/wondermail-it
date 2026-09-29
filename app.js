@@ -779,7 +779,8 @@ const gamePairCache = new Map();
 
 function getGamePairs(typeData) {
   if (!typeData || !typeData.gamePairs) return [];
-  const key = `${typeData.mainType}.${typeData.specialType}`;
+  // Lo stesso tipo e sottotipo può avere agenti diversi (covi di Magnemite e di Magnezone).
+  const key = `${typeData.mainType}.${typeData.specialType}.${typeData.forceClient || ''}`;
   if (gamePairCache.has(key)) return gamePairCache.get(key);
   const templates = (window.WMSkyGameData && window.WMSkyGameData.missionText
     && window.WMSkyGameData.missionText.templates) || [];
@@ -789,14 +790,18 @@ function getGamePairs(typeData) {
     // Colonne: testo, tipo, sottotipo, caso e valore di strumento, dungeon, committente e bersaglio (0 = fisso;
     // per il dungeon anche 1). Le richieste degli strumenti musicali hanno fisso solo il dungeon.
     if (row[1] !== typeData.mainType || row[2] !== typeData.specialType) return;
+    // Modelli di un altro committente fisso (per i covi: Magnemite o Magnezone).
+    if (hasOwn(typeData, 'forceClient') && (row[7] === 0 || row[7] === 1) && row[8] % 600 !== typeData.forceClient) return;
     const pair = {
       client: row[7] === 0 ? row[8] : null,
       target: row[9] === 0 ? row[10] : null,
+      // Complice fisso: i covi dei ricercati hanno terne precise (committente, ricercato, complice).
+      target2: row[11] === 0 ? row[12] : null,
       item: row[3] === 1 ? row[4] : null,
       dungeon: row[5] === 1 ? row[6] : null
     };
-    if (pair.client === null && pair.dungeon === null) return;
-    const id = `${pair.client}-${pair.target}-${pair.item}-${pair.dungeon}`;
+    if (pair.client === null && pair.dungeon === null && pair.target2 === null) return;
+    const id = `${pair.client}-${pair.target}-${pair.target2}-${pair.item}-${pair.dungeon}`;
     if (seen.has(id)) return;
     seen.add(id);
     pairs.push(pair);
@@ -816,10 +821,12 @@ function formMonId(selectId, femaleId) {
 function findCurrentGamePair(typeData, pairs) {
   const client = typeData.forceClient || formMonId('clientBox', 'clientF');
   const target = formMonId('targetBox', 'targetF');
+  const target2 = formMonId('target2Box', 'target2F');
   const item = parseInt(document.getElementById('targetItemBox')?.value, 10);
   const dungeon = parseInt(document.getElementById('dungeonBox')?.value, 10);
   return pairs.findIndex((pair) => (pair.client === null || pair.client % 600 === client % 600)
     && (pair.target === null || pair.target % 600 === target % 600)
+    && (pair.target2 === null || pair.target2 % 600 === target2 % 600)
     && (pair.item === null || pair.item === item)
     && (pair.dungeon === null || typeData.mainType !== 14 || pair.dungeon === dungeon));
 }
@@ -828,6 +835,7 @@ function applyGamePair(typeData, pair) {
   if (!pair) return;
   if (pair.client !== null && !hasOwn(typeData, 'forceClient')) applyPokemonToField('clientBox', 'clientF', pair.client);
   if (pair.target !== null) applyPokemonToField('targetBox', 'targetF', pair.target);
+  if (pair.target2 !== null) applyPokemonToField('target2Box', 'target2F', pair.target2);
   if (pair.item !== null) applyItemToField('targetItemBox', pair.item);
   if (pair.dungeon !== null) {
     const dungeonSelect = document.getElementById('dungeonBox');
@@ -858,8 +866,14 @@ function ensureGamePair(random = false) {
 }
 
 function gamePairLabel(pair) {
+  if (pair.client === null && pair.target2 !== null) {
+    return `${getLocalizedPokemonName(pair.target)} + ${getLocalizedPokemonName(pair.target2)}`;
+  }
   if (pair.client === null) return getLocalizedDungeonName(pair.dungeon, String(pair.dungeon));
   const second = pair.target !== null ? getLocalizedPokemonName(pair.target) : getItemDisplayName(pair.item);
+  if (pair.target2 !== null) {
+    return `${getLocalizedPokemonName(pair.client)} → ${second} + ${getLocalizedPokemonName(pair.target2)}`;
+  }
   return `${getLocalizedPokemonName(pair.client)} → ${second}`;
 }
 
@@ -884,7 +898,7 @@ function updateGamePairPicker() {
   field.classList.toggle('hidden', !pairs.length);
   if (!pairs.length) return;
 
-  const key = `${typeData.mainType}.${typeData.specialType}.${getCurrentLanguage()}`;
+  const key = `${typeData.mainType}.${typeData.specialType}.${typeData.forceClient || ''}.${getCurrentLanguage()}`;
   if (select.dataset.key !== key) {
     select.dataset.key = key;
     select.innerHTML = '';
@@ -3333,6 +3347,18 @@ function populateFarmRewards() {
 // Nella stanza segreta si mostrano i dungeon migliori, non tutti.
 const FARM_SECRET_CHIPS = 8;
 
+const memoTextCache = new Map();
+function memoHasText(dungeonId) {
+  if (!window.WMSkyJobText || !Number.isFinite(dungeonId)) return true;
+  if (!memoTextCache.has(dungeonId)) {
+    const memo = { missionType: 12, missionSpecial: 0, dungeon: dungeonId, floor: 1, flavorText: 1, client: 1,
+      target: 1, target2: 0, targetItem: DEFAULT_TREASURE_ITEM };
+    const text = WMSkyJobText.describeMission(memo, 'en');
+    memoTextCache.set(dungeonId, !(text && text.guessed));
+  }
+  return memoTextCache.get(dungeonId);
+}
+
 function renderFarmResults() {
   const list = document.getElementById('farmResults');
   const select = document.getElementById('farmRewardBox');
@@ -3341,8 +3367,10 @@ function renderFarmResults() {
   list.innerHTML = '';
   if (!Number.isFinite(itemId)) return;
 
+  // Solo i dungeon dove un Memo tesoro ha il suo testo: senza, il gioco si blocca (vedi errorNoTemplate).
   const dungeonSelect = document.getElementById('dungeonBox');
-  const available = new Set(dungeonSelect ? Array.from(dungeonSelect.options, (option) => option.value) : []);
+  const available = new Set(dungeonSelect ? Array.from(dungeonSelect.options, (option) => option.value)
+    .filter((value) => memoHasText(parseInt(value, 10))) : []);
   const sources = WMSkyRooms.findRewardSources(itemId);
   const onFloor = sources.filter((source) => source.floorItems);
   const withBoxes = sources.filter((source) => !source.floorItems && !source.secret

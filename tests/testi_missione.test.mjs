@@ -135,3 +135,26 @@ test('i piani si scrivono come nel gioco', () => {
   assert.equal(J.formatFloor(5, 1, 'en'), 'B5F');
   assert.equal(J.formatFloor(5, 4, 'en'), '5F');
 });
+
+test('una missione senza modello blocca il gioco: il covo di Magnemite della prova di Paolo', () => {
+  // Provato il 29/09: confermata la password il gioco si blocca. Il sito ora non dà queste password.
+  const crash = P.decode('-20+JFJKC&9JWX4X58N07=+%-J4=HW&JR@');
+  assert.ok(crash && crash.crcOk);
+  assert.equal(crash.struct.missionType, 10);
+  assert.equal(crash.struct.missionSpecial, 6);
+  assert.ok(J.describeMission(crash.struct, 'it').guessed);
+  // Le terne del gioco per i covi hanno invece il loro testo.
+  const templates = window.WMSkyGameData.missionText.templates.filter((row) => row[1] === 10 && row[2] === 6);
+  assert.ok(templates.length >= 20);
+  for (const row of templates) {
+    const mission = { missionType: 10, missionSpecial: 6, dungeon: 20, floor: 6, flavorText: 1, client: row[8],
+      target: row[10], target2: row[12], targetItem: 109, specialFloor: 162 };
+    assert.equal(J.describeMission(mission, 'it').guessed, false, `${row[8]} ${row[10]} ${row[12]}`);
+  }
+});
+
+test('le password vere usate dai giocatori hanno un modello (non vengono bloccate)', () => {
+  const farm = P.decode('=27YY RQ+4%WP CCCTTPTP21 P#%33FM =+66N');
+  assert.ok(farm && farm.crcOk);
+  assert.equal(J.describeMission(farm.struct, 'it').guessed, false);
+});

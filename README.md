@@ -80,10 +80,13 @@ one click uses the seed that gives the one you prefer. The rest of the mission s
 always have the same text (Treasure Memos, for example, have one sentence per dungeon), and the site tells you so.
 
 I checked the result against some officially distributed missions whose text is known: titles and
-descriptions match. One case, though, I only worked out from the code. When the mission doesn't look like any
-of the ones the game expects (a Treasure Memo in a dungeon where the game never puts one, or a rescue with a
-pair of Pokémon that normal missions don't have), the game reads the text from the wrong place in memory. The
-site shows what should come out, but marks it as not tested yet.
+descriptions match. There's one case to avoid. When the mission doesn't look like any of the ones the game
+expects (a Treasure Memo in a dungeon where the game never puts one, an outlaw hideout or a Challenge Letter
+with Pokémon other than the game's, a rescue with a pair normal missions don't have), the game looks for the
+text in the wrong place in memory. I thought it would show some odd text, but it freezes as soon as you
+confirm the password and you have to switch the console off: I tried it with a Magnemite hideout with Meowth
+and Rattata. That's why the site won't give the password for these missions and explains why, and if you
+read one it warns you. "Find a reward" only lists the dungeons where a Treasure Memo has its text.
 
 ## The job board
 
@@ -104,8 +107,9 @@ One click on a mission loads it into the form, with "Undo" to go back. The form 
 uses: the child, friend, loved one or rival to rescue, the loved one to escort the client to, the precious
 treasure, the item that makes the client evolve, their favorite Gummi, fleeing outlaws and the different outlaw
 lists of Magnemite and Magnezone. For the variants that use fixed pairs in the game (Beedrill looking for
-Weedle, for example) there's a menu with the game's pairs. The game accepts other pairs too, but only these
-have a title. The jobs that open a dungeon in the game (Gabite Scale, new dungeon, musical instruments) are
+Weedle, for example) there's a menu with the game's pairs, and the same goes for outlaw hideouts and normal
+Challenge Letters, which have fixed trios (outlaw and accomplice, or the three challengers). With a different
+pair, when the game can't find the mission text it freezes, so the site won't give the password. The jobs that open a dungeon in the game (Gabite Scale, new dungeon, musical instruments) are
 there too, but I haven't tried them with a password yet: the site says so under the mission type.
 
 In jobs that don't show a target item, and in those that pay in Poké, the password still holds a value you
@@ -270,8 +274,6 @@ The encoding test compares 60 passwords with those of the original generator and
 - A valid password can still be refused by the game if the dungeon isn't unlocked yet, if the mission is
   already in your list or if the list is full: those depend on your save file and the site can't know them.
 - The rooms without treasure other than 81 still have to be tried in the game.
-- The text of missions the game doesn't expect (see above) is worked out from the code and still has to be
-  tried in the game.
 - The job board follows the game's code, but I haven't compared it with a real board yet. A curious detail to
   check: when the reward is an egg, the game writes a number drawn from the item list as the species, so the
   egg species the site shows might not be the one that actually hatches.
