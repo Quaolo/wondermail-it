@@ -724,6 +724,61 @@ def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
         check("Sfere" in headers and "MT (mosse)" in headers and "Nessuno" in first, f"strumenti divisi per categoria: {headers}")
         page.keyboard.press("Escape")
 
+        # L'elenco aperto sta sopra le finestre che vengono dopo (prima finiva sotto la scheda del piano)
+        page.click("#rewardItemSearch")
+        page.keyboard.type("Mela")
+        page.wait_for_timeout(150)
+        on_top = page.evaluate("""(() => {
+            const list = document.querySelector('#rewardItemField .search-suggestions');
+            list.scrollIntoView({ block: 'end' });
+            const box = list.getBoundingClientRect();
+            const hit = document.elementFromPoint(box.left + box.width / 2, box.bottom - 10);
+            return !!hit && list.contains(hit);
+        })()""")
+        check(on_top, "l'elenco degli strumenti non finisce sotto la finestra successiva")
+        page.keyboard.press("Escape")
+        page.click("#jobTitle")
+
+        # Wiki: si apre sopra al generatore, cerca in tutte e due le lingue, porta una voce nel modulo
+        page.click("#wikiOpen")
+        page.wait_for_timeout(150)
+        check(page.evaluate("!document.getElementById('wiki').hidden"), "la Wiki si apre")
+        page.fill("#wikiSearch", "oran")
+        page.wait_for_timeout(200)
+        names = page.eval_on_selector_all("#wikiList .wiki-entry-name", "els => els.map(e => e.textContent)")
+        check("Baccarancia" in names, f"nella Wiki 'oran' trova la Baccarancia: {names[:5]}")
+        page.locator("#wikiList .wiki-entry", has_text="Baccarancia").first.click()
+        detail = page.text_content("#wikiDetail")
+        check("Grotta Marina" in detail and "piani" in detail, f"la Baccarancia dice dove si trova: {detail[:160]!r}")
+        page.locator("#wikiDetail .wiki-link", has_text="Grotta Marina").first.click()
+        page.wait_for_timeout(150)
+        detail = page.text_content("#wikiDetail")
+        check(page.evaluate("wikiState.tab") == "dungeons" and "Shellder" in detail,
+              f"dal nome del dungeon si arriva ai suoi piani: {detail[:160]!r}")
+        page.click("#wikiBack")
+        check(page.evaluate("wikiState.tab") == "items", "Indietro torna alla voce di prima")
+        page.locator("#wikiDetail .wiki-action", has_text="Usa come ricompensa").click()
+        page.wait_for_timeout(300)
+        check(page.evaluate("document.getElementById('wiki').hidden"), "dopo «Usa come ricompensa» si torna al generatore")
+        struct = decode_output(page, "eu")["struct"]
+        check(struct["reward"] == 70 and 1 <= struct["rewardType"] <= 4, f"Baccarancia come ricompensa: {struct['reward']}, tipo {struct['rewardType']}")
+        check("Wiki" in page.text_content("#originText"), f"l'origine dice Wiki: {page.text_content('#originText')!r}")
+        page.click("#originUndo")
+        page.wait_for_timeout(200)
+        page.click("#wikiOpen")
+        page.wait_for_timeout(100)
+        check(page.evaluate("wikiState.selected.items") == 70, "riaprendo la Wiki si ritrova la voce di prima")
+        page.keyboard.press("Escape")
+        check(page.evaluate("document.getElementById('wiki').hidden"), "Esc chiude la Wiki")
+        page.click("#wikiOpen")
+        page.click("#wikiTab-pokemon")
+        page.fill("#wikiSearch", "Pikachu")
+        page.keyboard.press("Enter")
+        page.wait_for_timeout(150)
+        detail = page.text_content("#wikiDetail")
+        check("Pianure Saetta" in detail and "Liv." in detail, f"Pikachu dice in quali dungeon compare: {detail[:160]!r}")
+        page.click("#wikiClose")
+
         # Ricerca con il nome inglese
         results = page.evaluate("getSearchSuggestions(document.getElementById('rewardItemBox'), 'oran').map(s => s.text)")
         check("Baccarancia" in results, f"cercando 'oran' si trova Baccarancia: {results[:5]}")

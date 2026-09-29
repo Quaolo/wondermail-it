@@ -305,14 +305,24 @@ function renderSearchSuggestions(controller, suggestions) {
   }
 
   let lastGroup;
+  let section = null;
   suggestions.forEach((suggestion, index) => {
-    if (suggestion.group !== undefined && suggestion.group >= 0 && suggestion.group !== lastGroup) {
+    const grouped = suggestion.group !== undefined && suggestion.group >= 0;
+    if (grouped && suggestion.group !== lastGroup) {
+      // Titolo e voci nello stesso blocco, così il titolo fisso lascia il posto al successivo.
+      section = document.createElement('div');
+      section.className = 'search-section';
+      section.setAttribute('role', 'presentation');
       const header = document.createElement('div');
       header.className = 'search-group';
       header.setAttribute('role', 'presentation');
       header.textContent = getItemGroupLabel(suggestion.group);
-      controller.suggestions.appendChild(header);
+      section.appendChild(header);
+      controller.suggestions.appendChild(section);
       lastGroup = suggestion.group;
+    } else if (!grouped) {
+      section = null;
+      lastGroup = undefined;
     }
     const button = document.createElement('button');
     button.type = 'button';
@@ -346,7 +356,7 @@ function renderSearchSuggestions(controller, suggestions) {
       event.preventDefault();
       applySearchSuggestion(controller, suggestion);
     });
-    controller.suggestions.appendChild(button);
+    (section || controller.suggestions).appendChild(button);
   });
 
   controller.suggestions.classList.remove('hidden');
@@ -1563,6 +1573,7 @@ function applyLanguage(nextLanguage, options = {}) {
   updateOutputCards();
   Object.keys(statusMessages).forEach(renderStatus);
   renderOriginBar();
+  if (typeof renderWiki === 'function') renderWiki();
 }
 
 // Icona indicativa a partire dal nome inglese ufficiale (le parole chiave sono in inglese).

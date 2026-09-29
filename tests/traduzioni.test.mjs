@@ -21,6 +21,7 @@ function usedKeys() {
   };
   add(/\bt\('(\w+)'/g, read('app.js'));
   add(/\bt\('(\w+)'/g, read('stanze.js'));
+  add(/\bt\('(\w+)'/g, read('wiki.js'));
   // setStatus('id', 'chiave', ...) e setStatus('id', condizione ? 'chiave1' : 'chiave2', ...)
   for (const match of read('app.js').matchAll(/setStatus\('\w+',\s*([^,)]+)/g)) {
     for (const key of match[1].matchAll(/'(\w+)'/g)) keys.add(key[1]);

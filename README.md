@@ -129,6 +129,20 @@ glance which floor is easier, or where the hidden stairs lead to the Secret Room
 For missions with a special room (Treasure Memo, challenges, hideouts) the room takes the floor's place, so
 its layout, items and traps are the room's own: the card says so.
 
+## The Wiki
+
+The Wiki button at the top opens a window over the generator with every item, Pokémon and dungeon in the game.
+You can search in English or Italian, and filter items by category. Each entry tells you where to find it,
+floor by floor: for an item, the dungeons where it lies on the ground, sits in Kecleon Shops or Monster Houses,
+or is buried in the walls; for a Pokémon, the dungeons where it appears, with floors, level and odds; for a
+dungeon, what's on each floor. Names are links, so from a berry you can jump to a dungeon and from there to the
+Pokémon that live in it.
+
+The Wiki doesn't touch your mission: close it (Esc works too) and everything is as you left it, and when you
+open it again you're back on the entry you were reading. If you do want to use what you found, there are
+buttons to put it in the form as the reward, the item, the client, the target or the dungeon, with Undo like
+the other starting points. The floor card has a button that opens the same floor in the Wiki.
+
 ## Unlocking a dungeon
 
 The "Unlock a dungeon" card sets up the trick found by Lai-brary: a Jirachi Challenge Letter with another

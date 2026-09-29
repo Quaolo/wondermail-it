@@ -132,6 +132,20 @@ ripetere: si vede subito quale piano è più comodo, o dove le scale nascoste po
 Per le missioni con una stanza speciale (Memo tesoro, sfide, covi) la stanza prende il posto del piano, quindi
 forma, strumenti e trappole sono quelli della stanza: la scheda lo dice.
 
+## La Wiki
+
+Il pulsante Wiki in alto apre una finestra sopra al generatore con tutti gli strumenti, i Pokémon e i dungeon
+del gioco. Si cerca in italiano o in inglese, e gli strumenti si possono filtrare per categoria. Ogni voce dice
+dove si trova piano per piano: per uno strumento i dungeon dove sta a terra, nei negozi di Kecleon, nei covi o
+sepolto nei muri; per un Pokémon i dungeon dove compare, con piani, livello e probabilità; per un dungeon
+cosa c'è su ogni piano. I nomi sono collegamenti, quindi da una bacca si passa al dungeon e da lì ai Pokémon
+che ci vivono.
+
+La Wiki non tocca la missione: la chiudi (anche con Esc) e ritrovi tutto com'era, e riaprendola torni alla
+voce che stavi guardando. Se invece vuoi usare quello che hai trovato, ci sono i pulsanti per metterlo nel
+modulo come ricompensa, strumento, committente, obiettivo o dungeon, con Annulla come per gli altri punti di
+partenza. Dalla scheda del piano un pulsante apre lo stesso piano nella Wiki.
+
 ## Sbloccare un dungeon
 
 La scheda "Sblocca un dungeon" prepara il trucco scoperto da Lai-brary: una Lettera di sfida di Jirachi con un
