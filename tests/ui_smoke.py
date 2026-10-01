@@ -887,6 +887,10 @@ def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
         page.wait_for_timeout(300)
         check(page.locator("#wikiDetail .wiki-section:has(summary) .wiki-link").count() >= 10,
               "la scheda di Pikachu elenca le mosse che impara")
+        start_hp = page.text_content("#wikiDetail .wiki-floor-stats .floor-stat strong")
+        page.evaluate("const s = document.querySelector('#wikiDetail .wiki-level input'); s.value = '100'; s.dispatchEvent(new Event('input', {bubbles: true}))")
+        check(int(page.text_content("#wikiDetail .wiki-floor-stats .floor-stat strong")) > int(start_hp)
+              and page.text_content("#wikiDetail .wiki-level-value") == "100", "il livello della scheda Pokémon cambia le statistiche")
         page.click("#wikiClose")
         previous_type = page.evaluate("document.getElementById('missionTypeBox').value")
         set_select(page, "missionTypeBox", 1)

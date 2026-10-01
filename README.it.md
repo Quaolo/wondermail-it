@@ -156,8 +156,8 @@ Ogni voce della Wiki ha un suo indirizzo, per esempio `#wiki/pokemon/25` o `#wik
 5): la barra degli indirizzi segue quello che stai leggendo e il pulsante Copia link accanto al titolo lo copia,
 quindi puoi mandare qualcuno dritto a una voce. Aprendo un indirizzo così, la Wiki si apre su quella voce.
 
-La scheda di un Pokémon mostra anche i tipi, le abilità con il loro effetto, le statistiche di partenza (i valori
-di livello 1 della tabella del gioco, che crescono con i livelli) e tutta la famiglia evolutiva, con quello che
+La scheda di un Pokémon mostra anche i tipi, le abilità con il loro effetto, le statistiche (i valori di livello 1 della
+tabella del gioco più la crescita di ogni livello, con un cursore dal livello 1 al 100) e tutta la famiglia evolutiva, con quello che
 serve a ogni evoluzione: livello, QI, uno strumento o una condizione in più come un fiocco, una mossa o l'Attacco
 rispetto alla Difesa. I Pokémon si cercano anche per tipo o per abilità. La scheda Abilità spiega ogni abilità ed elenca i Pokémon che la hanno. La scheda Mosse mostra tipo, categoria, potenza, PP,
 precisione, raggio ed effetto di ogni mossa e quali Pokémon la imparano (salendo di livello, con MT/MN o come mossa

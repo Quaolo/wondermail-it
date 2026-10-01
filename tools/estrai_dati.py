@@ -73,6 +73,8 @@ SOURCES = {
     "iqRestrictions": ("src/monster_parameters.c", "8285a2de9ca9a2732d3bc1234f5d0b5d3cdab41c"),
     # Mosse: dati di ogni mossa (potenza, tipo, PP...) e mosse apprese da ogni Pokémon (SIR0 della versione europea).
     "waza": ("files/BALANCE/waza_p.bin", "f85089b1c47c9392c93f76f5d1baf9b28677454c"),
+    # Crescita delle statistiche per livello: un file compresso (PX) per Pokémon, nell'ordine di monster.md.
+    "mLevel": ("files/BALANCE/m_level.bin", "5de62b6d31cd3dafe462a8284ebf165b22322da2"),
 }
 LANGUAGES = ("it", "en")
 
@@ -1477,6 +1479,93 @@ def build_moves(waza: bytes) -> dict:
 
 
 # ---------------------------------------------------------------------------
+# Crescita per livello (m_level.bin)
+# ---------------------------------------------------------------------------
+
+LEVEL_COUNT = 100
+LEVEL_ROW = 12
+
+
+def px_nibbles(index: int, low: int) -> list[int]:
+    """Schemi a 4 mezzi byte della compressione PX: l'indice (0-8) del flag di controllo dice come
+    costruirli dal mezzo byte basso. Ricavati dai dati: con questi schemi tutti i 571 file danno 100 righe
+    con esperienza crescente, padding a zero e aumenti piccoli (vedi tests/crescita.test.mjs)."""
+    if index == 0:
+        return [low] * 4
+    if index == 1:
+        return [low, (low + 1) & 15, (low + 1) & 15, (low + 1) & 15]
+    if index <= 4:
+        nibbles = [low] * 4
+        nibbles[index - 1] = (low - 1) & 15
+        return nibbles
+    if index == 5:
+        return [low, (low - 1) & 15, (low - 1) & 15, (low - 1) & 15]
+    nibbles = [low] * 4
+    nibbles[index - 5] = (low + 1) & 15
+    return nibbles
+
+
+def px_decompress(container: bytes) -> bytes:
+    """Contenitore PKDPX: "PKDPX", lunghezza del contenitore (u16), 9 flag di controllo, lunghezza decompressa (u32),
+    poi gruppi da 8 comandi (bit alto per primo): 1 = byte letterale; 0 = byte con mezzo byte alto uguale a un flag
+    (4 mezzi byte da costruire) oppure copia di (alto + 3) byte da 12 bit di distanza."""
+    start = container.index(b"PKDPX")
+    length = struct.unpack_from("<H", container, start + 5)[0]
+    flags = list(container[start + 7:start + 16])
+    size = struct.unpack_from("<I", container, start + 16)[0]
+    data = container[start + 20:start + length]
+    out = bytearray()
+    pos = 0
+    while len(out) < size:
+        command = data[pos]
+        pos += 1
+        for bit in range(8):
+            if len(out) >= size:
+                break
+            if command & (0x80 >> bit):
+                out.append(data[pos])
+                pos += 1
+                continue
+            value = data[pos]
+            pos += 1
+            high, low = value >> 4, value & 15
+            if high in flags:
+                nibbles = px_nibbles(flags.index(high), low)
+                out.append(nibbles[0] << 4 | nibbles[1])
+                out.append(nibbles[2] << 4 | nibbles[3])
+            else:
+                distance = 0x1000 - ((low << 8) | data[pos])
+                pos += 1
+                for _ in range(high + 3):
+                    out.append(out[-distance])
+    return bytes(out[:size])
+
+
+def build_growth(m_level: bytes, monster_count: int) -> dict:
+    """Aumenti di PS, Att, Att sp., Dif, Dif sp. a ogni livello (a livello L: statistiche a livello 1 + somma delle
+    righe dei livelli 2..L). tables: una stringa per tabella (5 statistiche x 100 livelli, una lettera 'a'..'z' per
+    aumento 0-25), senza doppioni. monsters: tabella di ogni ID Pokémon (-1 se il file non c'è)."""
+    count = struct.unpack_from("<I", m_level, 4)[0]
+    tables: list[str] = []
+    monsters = []
+    for index in range(min(count, monster_count)):
+        offset, size = struct.unpack_from("<2I", m_level, 8 + 8 * index)
+        data = px_decompress(m_level[offset:offset + size])
+        if len(data) != LEVEL_COUNT * LEVEL_ROW:
+            raise ValueError(f"m_level.bin: il file {index} ha {len(data)} byte")
+        rows = [data[k * LEVEL_ROW:(k + 1) * LEVEL_ROW] for k in range(LEVEL_COUNT)]
+        experience = [struct.unpack_from("<I", row, 0)[0] for row in rows]
+        gains = [[struct.unpack_from("<H", row, 4)[0], row[6], row[7], row[8], row[9]] for row in rows]
+        if experience != sorted(experience) or any(row[10] or row[11] for row in rows) or any(v > 25 for g in gains for v in g):
+            raise ValueError(f"m_level.bin: il file {index} non si decomprime come previsto")
+        text = "".join(chr(ord("a") + gains[level][stat]) for stat in range(5) for level in range(LEVEL_COUNT))
+        if text not in tables:
+            tables.append(text)
+        monsters.append(tables.index(text))
+    return {"tables": tables, "monsters": monsters}
+
+
+# ---------------------------------------------------------------------------
 # Abilità QI
 # ---------------------------------------------------------------------------
 
@@ -1588,6 +1677,7 @@ def main() -> int:
     shared["nationalDex"] = monsters["dex"][:600]
     shared["monsterInfo"] = build_monster_info(monsters)
     shared["moves"] = build_moves(load_source("waza", args.pmd_sky))
+    shared["growth"] = build_growth(load_source("mLevel", args.pmd_sky), MONSTER_INFO_COUNT)
     shared["iq"] = build_iq(load_source("iqSkills", args.pmd_sky), load_source("iqRestrictions", args.pmd_sky), monsters)
     shared["missionText"] = mission_text
     shared["board"] = build_board(load_source("rescue", args.pmd_sky), main_rodata,

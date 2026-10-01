@@ -1755,3 +1755,7 @@ button, .chip, .preset-btn { transition: transform .08s ease; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+.wiki-level { display: flex; align-items: center; gap: 0.6rem; margin: 0.2rem 0 0.6rem; }
+.wiki-level input[type="range"] { flex: 1 1 auto; min-width: 0; }
+.wiki-level-value { min-width: 2.2ch; text-align: right; font-weight: 700; }

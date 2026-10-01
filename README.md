@@ -153,8 +153,8 @@ Every Wiki entry has its own address, such as `#wiki/pokemon/25` or `#wiki/dunge
 the address bar follows what you're reading, and the Copy link button next to the title copies it, so you can send
 someone straight to an entry. Opening such an address opens the Wiki on that entry.
 
-A Pokémon's entry also shows its types, its abilities with their effect, its starting stats (the level-1 values from
-the game's table, which grow with levels) and its whole evolution family, with what each evolution needs: level,
+A Pokémon's entry also shows its types, its abilities with their effect, its stats (the level-1 values from the game's
+table plus the growth of each level, with a slider from level 1 to 100) and its whole evolution family, with what each evolution needs: level,
 IQ, an item, or an extra condition such as a ribbon, a move or Attack against Defense. You can also search Pokémon
 by type or by ability. The Abilities tab explains each ability and lists the Pokémon that have it. The Moves tab shows type, category, power, PP,
 accuracy, range and effect of every move and which Pokémon learn it (by level, with TM/HM or as an egg move); each

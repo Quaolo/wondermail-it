@@ -827,11 +827,47 @@ function renderPokemonStats(root, monId) {
   if (!stats || !stats.some((value) => value > 0)) return;
   const section = wikiSection(t('wikiStatsTitle'));
   const list = wikiEl('ul', 'floor-stats wiki-floor-stats');
-  [t('wikiStatHp'), t('wikiStatAtk'), t('wikiStatSpAtk'), t('wikiStatDef'), t('wikiStatSpDef')].forEach((label, position) => {
-    list.append(makeFloorStat(label, String(stats[position])));
+  const labels = [t('wikiStatHp'), t('wikiStatAtk'), t('wikiStatSpAtk'), t('wikiStatDef'), t('wikiStatSpDef')];
+  const values = labels.map((label, position) => {
+    const item = makeFloorStat(label, String(stats[position]));
+    list.append(item);
+    return item.querySelector('strong');
   });
+  const growth = wikiGrowthTable(monId);
+  if (growth) {
+    const control = wikiEl('label', 'wiki-level');
+    const output = wikiEl('output', 'wiki-level-value', '1');
+    const slider = document.createElement('input');
+    slider.type = 'range';
+    slider.min = '1';
+    slider.max = String(WIKI_MAX_LEVEL);
+    slider.value = '1';
+    slider.addEventListener('input', () => {
+      const level = parseInt(slider.value, 10);
+      output.textContent = String(level);
+      values.forEach((strong, position) => { strong.textContent = String(wikiStatAtLevel(monId, growth, position, level)); });
+    });
+    control.append(wikiEl('span', '', t('wikiStatsLevel')), slider, output);
+    section.append(control);
+  }
   section.append(list, wikiEl('p', 'hint', t('wikiStatsHint')));
   root.append(section);
+}
+
+const WIKI_MAX_LEVEL = 100;
+
+// Tabella di crescita del Pokémon (500 lettere: 5 statistiche x 100 livelli) o null se il gioco non ce l'ha.
+function wikiGrowthTable(monId) {
+  const growth = window.WMSkyGameData?.growth;
+  const table = growth && growth.tables[growth.monsters[monId]];
+  return table || null;
+}
+
+// Statistica a un livello: valore a livello 1 più gli aumenti dei livelli 2..L.
+function wikiStatAtLevel(monId, table, position, level) {
+  let value = wikiMonInfo().stats[monId][position];
+  for (let step = 1; step < level; step++) value += table.charCodeAt(position * WIKI_MAX_LEVEL + step) - 97;
+  return value;
 }
 
 // Cosa serve per un'evoluzione: requisito principale e, se c'è, quello in più.
