@@ -863,7 +863,34 @@ def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
         page.wait_for_timeout(150)
         detail = page.text_content("#wikiDetail")
         check("Pianure Saetta" in detail and "Liv." in detail, f"Pikachu dice in quali dungeon compare: {detail[:160]!r}")
+        check(page.evaluate("location.hash") == "#wiki/pokemon/25", "l'indirizzo segue la voce aperta nella Wiki")
         page.click("#wikiClose")
+        check(page.evaluate("location.hash") == "", "chiudendo la Wiki l'indirizzo torna pulito")
+        page.evaluate("location.hash = '#wiki/dungeons/12/5'")
+        page.wait_for_timeout(300)
+        check(page.evaluate("!document.getElementById('wiki').hidden") and page.evaluate("wikiState.tab") == "dungeons"
+              and page.evaluate("wikiState.floor") == 5, "un indirizzo #wiki/dungeons/12/5 apre quel piano nella Wiki")
+        page.click("#wikiClose")
+        page.evaluate("location.hash = '#wiki/pokemon/99999'")
+        page.wait_for_timeout(200)
+        check(page.evaluate("document.getElementById('wiki').hidden"), "un indirizzo con una voce che non esiste non apre la Wiki")
+        page.evaluate("history.replaceState(null, '', location.pathname + location.search)")
+        # Scheda Abilità e «Missione qui»
+        page.evaluate("location.hash = '#wiki/abilities/32'")
+        page.wait_for_timeout(300)
+        check(page.text_content(".wiki-detail-title") == "Statico" and "Pikachu" in page.text_content("#wikiDetail"),
+              "la scheda Abilità di Statico elenca Pikachu")
+        page.click("#wikiClose")
+        previous_type = page.evaluate("document.getElementById('missionTypeBox').value")
+        set_select(page, "missionTypeBox", 1)
+        page.evaluate("location.hash = '#wiki/pokemon/25'")
+        page.wait_for_timeout(300)
+        page.locator("#wikiDetail .wiki-row-action:not([disabled])").first.click()
+        page.wait_for_timeout(300)
+        check(page.evaluate("document.getElementById('wiki').hidden") and page.evaluate("document.getElementById('targetBox').value") == "25",
+              "«Missione qui» porta Pikachu come obiettivo nel dungeon scelto")
+        set_select(page, "missionTypeBox", previous_type)
+        page.evaluate("history.replaceState(null, '', location.pathname + location.search)")
 
         # Ricerca con il nome inglese
         results = page.evaluate("getSearchSuggestions(document.getElementById('rewardItemBox'), 'oran').map(s => s.text)")

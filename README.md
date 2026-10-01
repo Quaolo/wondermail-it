@@ -135,12 +135,32 @@ its layout, items and traps are the room's own: the card says so.
 
 ## The Wiki
 
-The Wiki button at the top opens a window over the generator with every item, Pokémon and dungeon in the game.
+The Wiki button at the top opens a window over the generator with every item, Pokémon, dungeon, ability, IQ skill and trap in the game.
 You can search in English or Italian, and filter items by category. Each entry tells you where to find it,
 floor by floor: for an item, the dungeons where it lies on the ground, sits in Kecleon Shops or Monster Houses,
 or is buried in the walls; for a Pokémon, the dungeons where it appears, with floors, level and odds; for a
 dungeon, what's on each floor. Names are links, so from a berry you can jump to a dungeon and from there to the
 Pokémon that live in it.
+
+The IQ tab lists every IQ skill with its effect (you can search by effect, such as "traps"), the IQ it needs, the
+skills it can't be turned on with, and the IQ groups that can have it. A Pokémon's entry shows its IQ group and the
+skills it can get.
+
+The Traps tab explains each trap and lists the dungeons and floors where the game places it, with the highest odds.
+The floor view links every trap to its entry.
+
+Every Wiki entry has its own address, such as `#wiki/pokemon/25` or `#wiki/dungeons/12/5` (dungeon 12, floor 5):
+the address bar follows what you're reading, and the Copy link button next to the title copies it, so you can send
+someone straight to an entry. Opening such an address opens the Wiki on that entry.
+
+A Pokémon's entry also shows its types, its abilities with their effect, its starting stats (the level-1 values from
+the game's table, which grow with levels) and its whole evolution family, with what each evolution needs: level,
+IQ, an item, or an extra condition such as a ribbon, a move or Attack against Defense. You can also search Pokémon
+by type or by ability. The Abilities tab explains each ability and lists the Pokémon that have it.
+
+In the "Where to find it" lists of a Pokémon or an item, the Mission here button sets up the mission for you: that
+dungeon, the first floor where a mission is allowed, and the Pokémon or item as the target. It works when the chosen
+job type has a free target; otherwise the button is greyed out and says why. Undo is there as usual.
 
 The Wiki doesn't touch your mission: close it (Esc works too) and everything is as you left it, and when you
 open it again you're back on the entry you were reading. If you do want to use what you found, there are

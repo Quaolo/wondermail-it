@@ -67,6 +67,10 @@ SOURCES = {
     "textRodata": ("asm/main_rodata_020925A0.s", "0a5b1d035edd4ea4e62b5085994e066059f4ee05"),
     # Prima istruzione dell'ITCM: è quello che il gioco legge quando non trova un modello (vedi sotto).
     "itcm": ("asm/itcm.s", "8483fc985b6591eb2e47b3b2e003960a17337e07"),
+    # Abilità QI: QI necessario (IQ_SKILLS), abilità di ogni gruppo QI (IQ_GROUP_SKILLS) e abilità che
+    # non si possono avere insieme (IQ_SKILL_RESTRICTIONS).
+    "iqSkills": ("src/iq_skills.c", "48cf269397d68786388d0b5ac97141e8f7d97c42"),
+    "iqRestrictions": ("src/monster_parameters.c", "8285a2de9ca9a2732d3bc1234f5d0b5d3cdab41c"),
 }
 LANGUAGES = ("it", "en")
 
@@ -78,10 +82,15 @@ BLOCKS = {
     "itemLong": (10706, 1400),   # descrizioni lunghe degli strumenti
     "itemShort": (12106, 1400),  # descrizioni brevi degli strumenti
     "traps": (13506, 25),        # nomi delle trappole, per ID
+    "trapDescriptions": (13531, 25),  # descrizioni delle trappole, per ID (la 0 è un duplicato, non si usa)
     "dungeons": (16566, 256),    # nomi dei dungeon, per ID
     "ranks": (374, 13),          # gradi della squadra (Normale ... Capitano), per GetRank
     "types": (13772, 19),        # tipi dei Pokémon, per ID (0 = nessuno)
     "weather": (2636, 8),        # meteo, per ID (Sereno ... Neve)
+    "iqNames": (9958, 69),       # nomi delle abilità QI, per ID (0 = vuoto)
+    "iqDescriptions": (10027, 69),  # descrizioni delle abilità QI, per ID (0 = "?")
+    "abilityNames": (13791, 124),   # nomi delle abilità dei Pokémon, per ID (0 = "Unknown")
+    "abilityDescriptions": (13915, 124),  # descrizioni delle abilità, per ID (la 0 è una riga di trattini)
 }
 FLOOR_PLACES = {
     "kecleonShop": 16303,        # negozio di Kecleon
@@ -125,6 +134,11 @@ JOB_TEXTS = {
 # Altre frasi usate dalla legenda delle mappe.
 EXTRA_TEXTS = {
     "absoluteMover": 9971,  # abilità QI che rompe i muri (Super Podista)
+    # Mosse che servono per alcune evoluzioni (AdditionalRequirement di monster.md).
+    "moveAncientPower": 8268,
+    "moveRollout": 8280,
+    "moveDoubleHit": 8662,
+    "moveMimic": 8502,
 }
 
 # Strumenti validi nel gioco ma esclusi dalle liste anche nella versione originale dell'app.
@@ -247,11 +261,16 @@ def build_language(strings: list[str]) -> dict:
         "pokemon": block("pokemon", clean_name),
         "dungeons": block("dungeons", clean_name),
         "traps": block("traps", clean_name),
+        "trapDescriptions": block("trapDescriptions", clean_description),
         # Meteo dei piani (nomi brevi della schermata del dungeon) e posti speciali di un piano.
         "weather": block("weather", clean_name),
         "floorPlaces": {key: clean_name(strings[index]).strip(" !") for key, index in FLOOR_PLACES.items()},
         "ranks": [clean_name(name.replace("[M:S3]", "★")) for name in strings[374:374 + 13]],
         "types": block("types", clean_name),
+        "iqNames": block("iqNames", clean_name),
+        "iqDescriptions": block("iqDescriptions", clean_description),
+        "abilityNames": block("abilityNames", clean_name),
+        "abilityDescriptions": block("abilityDescriptions", clean_description),
         "job": {key: clean_job_text(strings[index]) for key, index in JOB_TEXTS.items()},
         "extra": {key: clean_job_text(strings[index]) for key, index in EXTRA_TEXTS.items()},
     }
@@ -273,6 +292,14 @@ def read_monsters(monster_md: bytes) -> dict:
         "dex": [struct.unpack_from("<h", monster_md, o + 4)[0] for o in entries],
         "gender": [monster_md[o + 0x12] for o in entries],
         "bodySize": [monster_md[o + 0x13] for o in entries],
+        # Gruppo QI (0x17): decide quali abilità QI può avere il Pokémon (IQ_GROUP_SKILLS).
+        "iqGroup": [monster_md[o + 0x17] for o in entries],
+        # Abilità (0x18, 0x19), statistiche a livello 1 (PV 0x20; Att, Att sp. 0x24-0x25; Dif, Dif sp. 0x26-0x27)
+        # ed evoluzione (0x08: pre-evoluzione, metodo, due parametri).
+        "abilities": [[monster_md[o + 0x18], monster_md[o + 0x19]] for o in entries],
+        "stats": [[struct.unpack_from("<H", monster_md, o + 0x20)[0], monster_md[o + 0x24], monster_md[o + 0x25],
+                   monster_md[o + 0x26], monster_md[o + 0x27]] for o in entries],
+        "evolution": [list(struct.unpack_from("<hHHH", monster_md, o + 8)) for o in entries],
         # Tipi (0x14, 0x15) e primi due strumenti esclusivi (0x34, 0x36): servono ai premi della bacheca.
         "types": [[monster_md[o + 0x14], monster_md[o + 0x15]] for o in entries],
         "exclusive": [list(struct.unpack_from("<2h", monster_md, o + 0x34)) for o in entries],
@@ -1320,6 +1347,91 @@ def format_rooms(payload: dict) -> str:
     return "\n".join(lines)
 
 
+# ---------------------------------------------------------------------------
+# Tipi, abilità, statistiche ed evoluzioni dei Pokémon
+# ---------------------------------------------------------------------------
+
+# Metodi di evoluzione (evolution_method) e requisiti in più (evolution_param_2), come li documenta SkyTemple
+# (skytemple-files, EvolutionMethod e AdditionalRequirement); i valori sono stati controllati sui dati:
+# Eevee, Hitmonlee/Hitmonchan, Politoed, Espeon, Lickilicky, Mantine.
+#   metodo 1 = livello (param 1), 2 = QI (param 1), 3 = strumento (param 1), 4 = aver reclutato la specie param 1,
+#   5 = nessun requisito principale; requisiti in più: 1 Cavo Link, 2 Att > Dif, 3 Att < Dif, 4 Att = Dif,
+#   5 Fiocco Sole, 6 Fiocco Luna, 7 Sciarpa Bellezza, 8/9 valore interno, 10 maschio, 11 femmina,
+#   12 Forzantica, 13 Rotolamento, 14 Doppiosmash, 15 Mimica.
+MONSTER_INFO_COUNT = 600
+
+
+def build_monster_info(monsters: dict) -> dict:
+    """Dati per ID Pokémon (0-599): tipi, abilità, statistiche a livello 1 ed evoluzioni (solo chi evolve,
+    con una pre-evoluzione che esiste tra gli ID base)."""
+    count = MONSTER_INFO_COUNT
+    evolutions = {}
+    for monster_id in range(1, count):
+        pre, method, param1, param2 = monsters["evolution"][monster_id]
+        if method and 0 < pre < count:
+            evolutions[monster_id] = [pre, method, param1, param2]
+    return {
+        "types": monsters["types"][:count],
+        "abilities": monsters["abilities"][:count],
+        "stats": monsters["stats"][:count],
+        "evolutions": evolutions,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Abilità QI
+# ---------------------------------------------------------------------------
+
+IQ_SKILL_COUNT = 69
+IQ_GROUP_COUNT = 16
+IQ_GROUP_SIZE = 25
+# CanLearnIqSkill / GetLearnableIqSkills (main_02058CD8.c): l'abilità 0x18 (Fuga) non dipende dal QI ma da
+# GetResolvedPerformanceProgressFlag(3), cioè da un evento della storia.
+IQ_STORY_SKILLS = [0x18]
+
+
+def build_iq(skills_c: bytes, restrictions_c: bytes, monsters: dict) -> dict:
+    """src/iq_skills.c e src/monster_parameters.c di pmd-sky.
+    thresholds: QI necessario per ID (-1 = sempre disponibile, 9999 = non si può ottenere).
+    groups: per ognuno dei 16 gruppi QI gli ID delle abilità possibili (senza i riempitivi).
+    restrictions: abilità con lo stesso numero non si possono attivare insieme.
+    monsterGroup: gruppo QI di ogni ID Pokémon del gioco."""
+    source = skills_c.decode("utf-8")
+    table = source[source.index("IQ_SKILLS[69]"):source.index("IQ_GROUP_SKILLS")]
+    entries = re.findall(r"(-?\d+),\s*// (IQ_\w+)", table)
+    if len(entries) != IQ_SKILL_COUNT:
+        raise ValueError(f"IQ_SKILLS: attese {IQ_SKILL_COUNT} voci, trovate {len(entries)}")
+    thresholds = [int(value) for value, _ in entries]
+    ids = {name: index for index, (_, name) in enumerate(entries)}
+
+    groups_text = source[source.index("IQ_GROUP_SKILLS"):]
+    rows = re.findall(r"\{([^{}]*)\}", groups_text)
+    if len(rows) != IQ_GROUP_COUNT:
+        raise ValueError(f"IQ_GROUP_SKILLS: attesi {IQ_GROUP_COUNT} gruppi, trovati {len(rows)}")
+    groups = []
+    for row in rows:
+        names = re.findall(r"IQ_\w+", row)
+        if len(names) != IQ_GROUP_SIZE:
+            raise ValueError(f"IQ_GROUP_SKILLS: un gruppo ha {len(names)} voci invece di {IQ_GROUP_SIZE}")
+        # IQ_NONE_2 (0xFF) chiude l'elenco.
+        groups.append([ids[name] for name in names[:names.index("IQ_NONE_2")] if name in ids]
+                      if "IQ_NONE_2" in names else [ids[name] for name in names])
+
+    restrictions_source = restrictions_c.decode("utf-8")
+    block_text = restrictions_source[restrictions_source.index("IQ_SKILL_RESTRICTIONS"):]
+    restrictions = [int(value) for value in re.findall(r"(-?\d+),?\s*// IQ_", block_text)][:IQ_SKILL_COUNT]
+    if len(restrictions) != IQ_SKILL_COUNT:
+        raise ValueError(f"IQ_SKILL_RESTRICTIONS: attese {IQ_SKILL_COUNT} voci, trovate {len(restrictions)}")
+
+    return {
+        "thresholds": thresholds,
+        "groups": groups,
+        "restrictions": restrictions,
+        "story": IQ_STORY_SKILLS,
+        "monsterGroup": monsters["iqGroup"][:600],
+    }
+
+
 def write_js(path: Path, variable: str, payload: dict, header: str, body: str | None = None) -> None:
     if body is None:
         body = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
@@ -1376,6 +1488,8 @@ def main() -> int:
     shared.update(build_mission_pokemon(monsters, banned))
     # Numero del Pokédex nazionale di ogni ID del gioco (per i ritratti di PMDCollab).
     shared["nationalDex"] = monsters["dex"][:600]
+    shared["monsterInfo"] = build_monster_info(monsters)
+    shared["iq"] = build_iq(load_source("iqSkills", args.pmd_sky), load_source("iqRestrictions", args.pmd_sky), monsters)
     shared["missionText"] = mission_text
     shared["board"] = build_board(load_source("rescue", args.pmd_sky), main_rodata,
                                   load_source("dungeonRodata", args.pmd_sky), load_source("textRodata", args.pmd_sky),

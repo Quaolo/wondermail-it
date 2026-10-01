@@ -1497,7 +1497,7 @@ body.wiki-shown { overflow: hidden; }
 .wiki-list-back { display: none; align-self: flex-start; }
 .wiki-placeholder { margin: 0; color: var(--muted); }
 .wiki-detail-content { display: grid; gap: 14px; }
-.wiki-detail-head { display: flex; gap: 16px; align-items: center; }
+.wiki-detail-head { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
 .wiki-detail-frame {
   flex: 0 0 auto;
   display: grid;
@@ -1513,6 +1513,7 @@ body.wiki-shown { overflow: hidden; }
 .wiki-detail-icon { width: 56px; height: 56px; object-fit: contain; image-rendering: pixelated; }
 .wiki-frame-pokemon .wiki-detail-icon { width: 100%; height: 100%; object-fit: cover; }
 .wiki-detail-copy { display: grid; gap: 2px; min-width: 0; }
+.wiki-copy-link { margin-left: auto; align-self: flex-start; min-width: 0; padding: 4px 10px; font-size: .82rem; white-space: nowrap; }
 .wiki-kicker { margin: 0; font-family: var(--font-pixel); color: var(--gold); font-size: .85rem; letter-spacing: .06em; }
 .wiki-detail-title { margin: 0; overflow-wrap: anywhere; }
 .wiki-other-name { margin: 0; color: var(--muted); font-size: .9rem; }
@@ -1564,6 +1565,26 @@ body.wiki-shown { overflow: hidden; }
 .wiki-link:active { transform: none; box-shadow: none; }
 .wiki-more > summary { cursor: pointer; color: var(--teal); font-weight: 700; font-size: .9rem; padding: 4px 2px; }
 .wiki-more > .wiki-rows { margin-top: 4px; }
+.wiki-types { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; }
+.wiki-type {
+  display: inline-block;
+  padding: 2px 12px;
+  border: 1px solid var(--type-color, var(--line-strong));
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .04);
+  color: var(--type-color, var(--text));
+  font-size: .84rem;
+  font-weight: 700;
+}
+.wiki-ability { display: grid; gap: 2px; }
+.wiki-row-action { margin-left: auto; min-width: 0; padding: 2px 10px; font-size: .8rem; white-space: nowrap; }
+.wiki-row-action:disabled { opacity: .45; cursor: not-allowed; }
+.wiki-evo { flex-wrap: wrap; }
+.wiki-evo-arrow { color: var(--dim); }
+.wiki-evo-condition { flex-basis: 100%; padding-left: 38px; }
+.wiki-current { color: var(--gold); }
+.wiki-chips { display: flex; flex-wrap: wrap; gap: 4px 12px; padding: 6px 2px 8px; }
+.wiki-iq-group { border-radius: 8px; background: rgba(255, 255, 255, .03); padding: 2px 8px; }
 .wiki-floor-nav { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .wiki-floor-label { font-family: var(--font-pixel); font-size: 1.25rem; font-weight: 600; min-width: 70px; text-align: center; }
 .wiki-floor-stats { margin: 0; }
@@ -1576,8 +1597,8 @@ body.wiki-shown { overflow: hidden; }
   .wiki-window { width: 100%; height: 100vh; height: 100dvh; border-radius: 0; padding: 12px; gap: 10px; }
   .wiki-top { gap: 8px; }
   .wiki-top h2 { display: none; }
-  .wiki-tabs { order: 3; width: 100%; margin: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .wiki-tab { justify-content: center; padding: 6px 8px; }
+  .wiki-tabs { order: 3; width: 100%; margin: 0; gap: 6px; }
+  .wiki-tab { flex: 1 1 auto; justify-content: center; padding: 6px 8px; font-size: .88rem; }
   .wiki-close { margin-left: auto; }
   .wiki-body { grid-template-columns: minmax(0, 1fr); }
   /* Su telefono una cosa alla volta: l'elenco oppure la voce scelta. */

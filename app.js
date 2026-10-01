@@ -4536,7 +4536,7 @@ function renderFloorCard() {
   renderFloorMonsters(data.monsters);
   renderFloorItems(data.items);
   renderFloorPlaces(data);
-  renderFloorTraps(data.traps);
+  renderFloorTraps(data.layout.trapDensity > 0 ? data.traps : []);
 }
 
 function moveFloorView(step) {

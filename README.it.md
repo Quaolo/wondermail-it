@@ -138,12 +138,33 @@ forma, strumenti e trappole sono quelli della stanza: la scheda lo dice.
 
 ## La Wiki
 
-Il pulsante Wiki in alto apre una finestra sopra al generatore con tutti gli strumenti, i Pokémon e i dungeon
-del gioco. Si cerca in italiano o in inglese, e gli strumenti si possono filtrare per categoria. Ogni voce dice
+Il pulsante Wiki in alto apre una finestra sopra al generatore con tutti gli strumenti, i Pokémon, i dungeon, le
+abilità, le abilità QI e le trappole del gioco. Si cerca in italiano o in inglese, e gli strumenti si possono filtrare per categoria. Ogni voce dice
 dove si trova piano per piano: per uno strumento i dungeon dove sta a terra, nei negozi di Kecleon, nei covi o
 sepolto nei muri; per un Pokémon i dungeon dove compare, con piani, livello e probabilità; per un dungeon
 cosa c'è su ogni piano. I nomi sono collegamenti, quindi da una bacca si passa al dungeon e da lì ai Pokémon
 che ci vivono.
+
+La scheda QI elenca tutte le abilità QI con l'effetto (si cerca anche per effetto, per esempio "trappole"), il QI che
+serve, le abilità con cui non si possono attivare insieme e i gruppi QI che le possono avere. Nella scheda di un
+Pokémon si vedono il suo gruppo QI e le abilità che può ottenere.
+
+La scheda Trappole spiega ogni trappola e dice in quali dungeon e piani il gioco la mette, con la probabilità
+massima. Nella scheda del piano ogni trappola è un collegamento alla sua voce.
+
+Ogni voce della Wiki ha un suo indirizzo, per esempio `#wiki/pokemon/25` o `#wiki/dungeons/12/5` (dungeon 12, piano
+5): la barra degli indirizzi segue quello che stai leggendo e il pulsante Copia link accanto al titolo lo copia,
+quindi puoi mandare qualcuno dritto a una voce. Aprendo un indirizzo così, la Wiki si apre su quella voce.
+
+La scheda di un Pokémon mostra anche i tipi, le abilità con il loro effetto, le statistiche di partenza (i valori
+di livello 1 della tabella del gioco, che crescono con i livelli) e tutta la famiglia evolutiva, con quello che
+serve a ogni evoluzione: livello, QI, uno strumento o una condizione in più come un fiocco, una mossa o l'Attacco
+rispetto alla Difesa. I Pokémon si cercano anche per tipo o per abilità. La scheda Abilità spiega ogni abilità ed elenca i Pokémon che la hanno.
+
+Negli elenchi «Dove si trova» di un Pokémon o di uno strumento, il pulsante Missione qui prepara la missione: quel
+dungeon, il primo piano dove una missione è permessa e il Pokémon o lo strumento come obiettivo. Funziona quando il
+tipo di missione scelto ha un obiettivo libero; altrimenti il pulsante è spento e dice perché. Annulla c'è come
+sempre.
 
 La Wiki non tocca la missione: la chiudi (anche con Esc) e ritrovi tutto com'era, e riaprendola torni alla
 voce che stavi guardando. Se invece vuoi usare quello che hai trovato, ci sono i pulsanti per metterlo nel
