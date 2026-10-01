@@ -4,7 +4,7 @@
   (con Annulla, come gli altri punti di partenza). Usa le funzioni di app.js, che viene caricato prima.
 */
 
-const WIKI_TABS = ['items', 'pokemon', 'dungeons', 'iq', 'traps', 'abilities'];
+const WIKI_TABS = ['items', 'pokemon', 'dungeons', 'iq', 'traps', 'abilities', 'moves'];
 const WIKI_PLACES_SHOWN = 12;
 const WIKI_FLOOR_ITEMS_SHOWN = 12;
 // Luoghi di un piano in cui compaiono strumenti: colonna di WMSkyFloors.byDungeon e campo del piano che dice
@@ -21,7 +21,7 @@ const wikiState = {
   tab: 'items',
   query: '',
   itemGroup: -1,
-  selected: { items: null, pokemon: null, dungeons: null, iq: null, traps: null, abilities: null },
+  selected: { items: null, pokemon: null, dungeons: null, iq: null, traps: null, abilities: null, moves: null },
   floor: 1,
   history: [],
   lastFocus: null
@@ -123,6 +123,27 @@ function buildWikiIndex() {
     });
   }
 
+  // Mosse: quali Pokémon (della Wiki) le imparano e come (livello, MT/MN, uovo).
+  const moveData = game.moves || null;
+  const moveLearners = new Map();
+  const moves = [];
+  if (moveData) {
+    (itText.moveNames || []).forEach((name, id) => {
+      if (id > 0 && id < moveData.data.length && isWikiRealName(name)) moves.push({ id });
+    });
+    pokemon.forEach((entry) => {
+      const learn = moveData.learn[entry.id];
+      if (!learn) return;
+      const add = (moveId, kind, level) => {
+        if (!moveLearners.has(moveId)) moveLearners.set(moveId, { level: [], tm: [], egg: [] });
+        moveLearners.get(moveId)[kind].push(kind === 'level' ? [entry.id, level] : entry.id);
+      };
+      for (let i = 0; i < learn[0].length; i += 2) add(learn[0][i], 'level', learn[0][i + 1]);
+      learn[1].forEach((moveId) => add(moveId, 'tm'));
+      learn[2].forEach((moveId) => add(moveId, 'egg'));
+    });
+  }
+
   // Abilità QI: quali Pokémon stanno in ogni gruppo QI e in quali gruppi compare ogni abilità.
   const groupMons = new Map();
   pokemon.forEach((entry) => {
@@ -153,6 +174,8 @@ function buildWikiIndex() {
     traps,
     abilities: abilityEntries,
     abilityMons,
+    moves,
+    moveLearners,
     trapPlaces,
     groupMons,
     skillGroups,
@@ -172,9 +195,9 @@ function getWikiIndex() {
 // Nomi e testi
 // ---------------------------------------------------------------------------
 
-const WIKI_NAME_LISTS = { items: 'items', pokemon: 'pokemon', dungeons: 'dungeons', iq: 'iqNames', traps: 'traps', abilities: 'abilityNames' };
+const WIKI_NAME_LISTS = { items: 'items', pokemon: 'pokemon', dungeons: 'dungeons', iq: 'iqNames', traps: 'traps', abilities: 'abilityNames', moves: 'moveNames' };
 // Schede con una descrizione ufficiale: si cerca anche lì.
-const WIKI_DESCRIPTION_LISTS = { iq: 'iqDescriptions', traps: 'trapDescriptions', abilities: 'abilityDescriptions' };
+const WIKI_DESCRIPTION_LISTS = { iq: 'iqDescriptions', traps: 'trapDescriptions', abilities: 'abilityDescriptions', moves: 'moveDescriptions' };
 
 function wikiEntryName(tab, id) {
   if (tab === 'items') return getItemDisplayName(id);
@@ -182,6 +205,7 @@ function wikiEntryName(tab, id) {
   if (tab === 'iq') return (getGameText()?.iqNames || [])[id] || '';
   if (tab === 'traps') return (getGameText()?.traps || [])[id] || '';
   if (tab === 'abilities') return (getGameText()?.abilityNames || [])[id] || '';
+  if (tab === 'moves') return (getGameText()?.moveNames || [])[id] || '';
   return getDungeonName(id);
 }
 
@@ -310,7 +334,7 @@ function wikiImage(tab, id, className) {
   const name = wikiEntryName(tab, id);
   if (tab === 'items') return createFallbackImage(getItemImage(id, name, true), className);
   if (tab === 'pokemon') return createFallbackImage(getPokemonImage(id, name), className);
-  const theme = tab === 'iq' ? 'reward' : tab === 'traps' ? 'item' : 'pokemon';
+  const theme = tab === 'iq' ? 'reward' : (tab === 'traps' || tab === 'moves') ? 'item' : 'pokemon';
   return createFallbackImage({ src: buildPreviewBadge(name, theme), fallback: '' }, className);
 }
 
@@ -480,6 +504,8 @@ function renderWikiList() {
     } else if (tab === 'abilities') {
       const count = (index.abilityMons.get(entry.id) || []).length;
       meta = !count ? t('wikiAbilityNobody') : count === 1 ? t('wikiAbilityMonsOne') : t('wikiAbilityMons', { count });
+    } else if (tab === 'moves') {
+      meta = wikiMoveSummary(entry.id);
     } else if (tab === 'traps') {
       const places = index.trapPlaces.get(entry.id);
       meta = !places ? t('wikiTrapNotOnFloors')
@@ -584,6 +610,7 @@ function renderPokemonDetail(root, monId) {
   renderPokemonAbilities(root, monId);
   renderPokemonStats(root, monId);
   renderPokemonEvolution(root, monId);
+  renderPokemonMoves(root, monId);
   renderPokemonIq(root, monId);
 
   const places = index.monPlaces.get(monId);
@@ -633,12 +660,14 @@ function wikiTypeChips(monId) {
   const types = info ? (info.types[monId] || []).filter((type) => type > 0 && names[type]) : [];
   if (!types.length) return null;
   const row = wikiEl('p', 'wiki-types');
-  Array.from(new Set(types)).forEach((type) => {
-    const chip = wikiEl('span', 'wiki-type', names[type]);
-    chip.style.setProperty('--type-color', WIKI_TYPE_COLORS[type] || '#9a9a9a');
-    row.append(chip);
-  });
+  Array.from(new Set(types)).forEach((type) => row.append(wikiTypeChip(type)));
   return row;
+}
+
+function wikiTypeChip(type) {
+  const chip = wikiEl('span', 'wiki-type', (getGameText()?.types || [])[type] || '');
+  chip.style.setProperty('--type-color', WIKI_TYPE_COLORS[type] || '#9a9a9a');
+  return chip;
 }
 
 // La descrizione del gioco comincia con il nome ("Statico: ..."): si toglie, il nome è già il titolo.
@@ -662,6 +691,113 @@ function renderAbilityDetail(root, abilityId) {
     mons.forEach((monId) => chips.append(wikiLink('pokemon', monId, wikiEntryName('pokemon', monId))));
     section.append(chips);
   }
+  root.append(section);
+}
+
+// ---------------------------------------------------------------------------
+// Mosse
+// ---------------------------------------------------------------------------
+
+function wikiMoveData(moveId) {
+  const row = window.WMSkyGameData?.moves?.data[moveId];
+  return row ? { power: row[0], type: row[1], category: row[2], pp: row[3], accuracy: row[4] } : null;
+}
+
+function wikiMoveCategory(category) {
+  return [t('wikiMovePhysical'), t('wikiMoveSpecial'), t('wikiMoveStatus')][category] || '';
+}
+
+// Valori della tabella delle mosse: sopra il 100% la mossa non sbaglia mai.
+function wikiMoveAccuracy(accuracy) {
+  return accuracy > 100 ? t('wikiMoveNeverMisses') : `${accuracy}%`;
+}
+
+// Riga breve per elenchi: tipo · categoria · potenza · PP.
+function wikiMoveSummary(moveId) {
+  const move = wikiMoveData(moveId);
+  if (!move) return '';
+  const typeName = (getGameText()?.types || [])[move.type] || '';
+  return [typeName, wikiMoveCategory(move.category), move.power > 0 ? t('wikiMovePowerValue', { power: move.power }) : '',
+    t('wikiMovePpValue', { pp: move.pp })].filter(Boolean).join(' · ');
+}
+
+function wikiMoveLearnerGroup(parent, title, chipsData, open) {
+  if (!chipsData.length) return;
+  const details = wikiEl('details', 'wiki-more wiki-iq-group');
+  details.open = open;
+  details.append(wikiEl('summary', '', `${title} · ${chipsData.length}`));
+  const chips = wikiEl('div', 'wiki-chips');
+  chipsData.forEach(({ monId, level }) => {
+    const name = wikiEntryName('pokemon', monId);
+    chips.append(wikiLink('pokemon', monId, level ? `${name} · ${t('floorLevel', { level })}` : name));
+  });
+  details.append(chips);
+  parent.append(details);
+}
+
+// Scheda di una mossa: tipo, valori, effetto e Pokémon che la imparano.
+function renderMoveDetail(root, moveId) {
+  const move = wikiMoveData(moveId);
+  const text = getGameText();
+  root.append(wikiHeader('moves', moveId, ''));
+  if (move) {
+    const row = wikiEl('p', 'wiki-types');
+    row.append(wikiTypeChip(move.type), wikiEl('span', 'wiki-badge', wikiMoveCategory(move.category)));
+    root.append(row);
+  }
+  const description = (text?.moveDescriptions || [])[moveId];
+  root.append(wikiEl('p', description ? 'wiki-description' : 'hint', description || t('wikiMoveNoDescription')));
+  if (move) {
+    const list = wikiEl('ul', 'floor-stats wiki-floor-stats');
+    list.append(makeFloorStat(t('wikiMovePower'), move.power > 0 ? String(move.power) : '—'));
+    list.append(makeFloorStat(t('wikiMovePp'), String(move.pp)));
+    list.append(makeFloorStat(t('wikiMoveAccuracy'), wikiMoveAccuracy(move.accuracy)));
+    const range = (text?.moveRanges || [])[moveId];
+    if (range) list.append(makeFloorStat(t('wikiMoveRange'), range));
+    root.append(list, wikiEl('p', 'hint', t('wikiMoveHint')));
+  }
+  const learners = getWikiIndex().moveLearners.get(moveId);
+  const section = wikiSection(t('wikiMoveLearners'));
+  if (!learners) {
+    section.append(wikiEl('p', 'hint', t('wikiMoveNobody')));
+  } else {
+    wikiMoveLearnerGroup(section, t('wikiMoveByLevel'), learners.level.map(([monId, level]) => ({ monId, level })), learners.level.length <= 40);
+    wikiMoveLearnerGroup(section, t('wikiMoveByTm'), learners.tm.map((monId) => ({ monId })), false);
+    wikiMoveLearnerGroup(section, t('wikiMoveByEgg'), learners.egg.map((monId) => ({ monId })), learners.egg.length <= 40);
+  }
+  root.append(section);
+}
+
+// Mosse di un Pokémon: salendo di livello (con il livello), con MT/MN e da uovo.
+function renderPokemonMoves(root, monId) {
+  const learn = window.WMSkyGameData?.moves?.learn[monId];
+  const names = getGameText()?.moveNames || [];
+  if (!learn) return;
+  const real = (moveId) => moveId > 0 && isWikiRealName(names[moveId]);
+  const levelUp = [];
+  for (let i = 0; i < learn[0].length; i += 2) if (real(learn[0][i])) levelUp.push([learn[0][i], learn[0][i + 1]]);
+  const tm = learn[1].filter(real);
+  const egg = learn[2].filter(real);
+  if (!levelUp.length && !tm.length && !egg.length) return;
+  const section = wikiSection(t('wikiMoves'), levelUp.length + tm.length + egg.length);
+  const addGroup = (title, entries, open) => {
+    if (!entries.length) return;
+    const details = wikiEl('details', 'wiki-more wiki-iq-group');
+    details.open = open;
+    details.append(wikiEl('summary', '', `${title} · ${entries.length}`));
+    const list = wikiEl('ul', 'wiki-rows');
+    entries.forEach(([moveId, level]) => {
+      const row = wikiEl('li', 'wiki-row');
+      row.append(wikiLink('moves', moveId, level ? `${t('floorLevel', { level })} · ${names[moveId]}` : names[moveId]));
+      row.append(wikiEl('span', 'wiki-row-meta', wikiMoveSummary(moveId)));
+      list.append(row);
+    });
+    details.append(list);
+    section.append(details);
+  };
+  addGroup(t('wikiMoveByLevel'), levelUp, true);
+  addGroup(t('wikiMoveByTm'), tm.map((moveId) => [moveId, 0]), false);
+  addGroup(t('wikiMoveByEgg'), egg.map((moveId) => [moveId, 0]), false);
   root.append(section);
 }
 
@@ -978,6 +1114,7 @@ function renderWikiDetail() {
   else if (tab === 'iq') renderIqDetail(content, id);
   else if (tab === 'traps') renderTrapDetail(content, id);
   else if (tab === 'abilities') renderAbilityDetail(content, id);
+  else if (tab === 'moves') renderMoveDetail(content, id);
   else renderDungeonDetail(content, id);
   root.append(content);
 }

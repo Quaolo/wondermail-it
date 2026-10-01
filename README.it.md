@@ -159,7 +159,9 @@ quindi puoi mandare qualcuno dritto a una voce. Aprendo un indirizzo così, la W
 La scheda di un Pokémon mostra anche i tipi, le abilità con il loro effetto, le statistiche di partenza (i valori
 di livello 1 della tabella del gioco, che crescono con i livelli) e tutta la famiglia evolutiva, con quello che
 serve a ogni evoluzione: livello, QI, uno strumento o una condizione in più come un fiocco, una mossa o l'Attacco
-rispetto alla Difesa. I Pokémon si cercano anche per tipo o per abilità. La scheda Abilità spiega ogni abilità ed elenca i Pokémon che la hanno.
+rispetto alla Difesa. I Pokémon si cercano anche per tipo o per abilità. La scheda Abilità spiega ogni abilità ed elenca i Pokémon che la hanno. La scheda Mosse mostra tipo, categoria, potenza, PP,
+precisione, raggio ed effetto di ogni mossa e quali Pokémon la imparano (salendo di livello, con MT/MN o come mossa
+uovo); la scheda di un Pokémon elenca le sue mosse allo stesso modo.
 
 Negli elenchi «Dove si trova» di un Pokémon o di uno strumento, il pulsante Missione qui prepara la missione: quel
 dungeon, il primo piano dove una missione è permessa e il Pokémon o lo strumento come obiettivo. Funziona quando il

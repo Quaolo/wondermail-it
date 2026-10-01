@@ -156,7 +156,9 @@ someone straight to an entry. Opening such an address opens the Wiki on that ent
 A Pokémon's entry also shows its types, its abilities with their effect, its starting stats (the level-1 values from
 the game's table, which grow with levels) and its whole evolution family, with what each evolution needs: level,
 IQ, an item, or an extra condition such as a ribbon, a move or Attack against Defense. You can also search Pokémon
-by type or by ability. The Abilities tab explains each ability and lists the Pokémon that have it.
+by type or by ability. The Abilities tab explains each ability and lists the Pokémon that have it. The Moves tab shows type, category, power, PP,
+accuracy, range and effect of every move and which Pokémon learn it (by level, with TM/HM or as an egg move); each
+Pokémon's entry lists its own moves the same way.
 
 In the "Where to find it" lists of a Pokémon or an item, the Mission here button sets up the mission for you: that
 dungeon, the first floor where a mission is allowed, and the Pokémon or item as the target. It works when the chosen

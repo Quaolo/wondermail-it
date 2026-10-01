@@ -71,6 +71,8 @@ SOURCES = {
     # non si possono avere insieme (IQ_SKILL_RESTRICTIONS).
     "iqSkills": ("src/iq_skills.c", "48cf269397d68786388d0b5ac97141e8f7d97c42"),
     "iqRestrictions": ("src/monster_parameters.c", "8285a2de9ca9a2732d3bc1234f5d0b5d3cdab41c"),
+    # Mosse: dati di ogni mossa (potenza, tipo, PP...) e mosse apprese da ogni Pokémon (SIR0 della versione europea).
+    "waza": ("files/BALANCE/waza_p.bin", "f85089b1c47c9392c93f76f5d1baf9b28677454c"),
 }
 LANGUAGES = ("it", "en")
 
@@ -91,6 +93,8 @@ BLOCKS = {
     "iqDescriptions": (10027, 69),  # descrizioni delle abilità QI, per ID (0 = "?")
     "abilityNames": (13791, 124),   # nomi delle abilità dei Pokémon, per ID (0 = "Unknown")
     "abilityDescriptions": (13915, 124),  # descrizioni delle abilità, per ID (la 0 è una riga di trattini)
+    "moveNames": (8175, 559),       # nomi delle mosse, per ID (verificato sulle mosse di Bulbasaur)
+    "moveDescriptions": (10147, 559),  # schede delle mosse: informazioni di base + dettagli (raggio)
 }
 FLOOR_PLACES = {
     "kecleonShop": 16303,        # negozio di Kecleon
@@ -243,6 +247,32 @@ def clean_description(text: str) -> str | None:
     return text or None
 
 
+MOVE_SECTION = re.compile(r'"[^"\n]*"\[CS:E\]\[BAR\]\[CR\]\n')
+
+
+def clean_move_description(text: str) -> str | None:
+    """Scheda di una mossa: la parte "Informazioni di base" è il testo fino alla prima riga vuota."""
+    if text.startswith(DUMMY_PREFIX) or "[BAR]" not in text:
+        return None
+    parts = MOVE_SECTION.split(text)
+    if len(parts) < 2:
+        return None
+    basic = parts[1].split("\n\n")[0]
+    return clean_description(basic)
+
+
+def clean_move_range(text: str) -> str | None:
+    """Raggio della mossa: la prima riga della sezione "Informazioni dettagliate" ("Range: Enemy in front")."""
+    parts = MOVE_SECTION.split(text)
+    if len(parts) < 3:
+        return None
+    first_line = parts[2].split("\n")[0]
+    if "[CLUM_SET:" not in first_line:
+        return None
+    value = re.sub(r"\[CLUM_SET:[^\]]*\]", "\x00", first_line).split("\x00", 1)[1]
+    return clean_description(value)
+
+
 def clean_job_text(text: str) -> str:
     """Toglie colori e spazi finali, lasciando i segnaposto [name:0], [item:0], [type:0] e [kind:0]."""
     text = re.sub(r"\[(?!(?:name|item|type|kind):0\])[^\]]*\]", "", text)
@@ -271,6 +301,9 @@ def build_language(strings: list[str]) -> dict:
         "iqDescriptions": block("iqDescriptions", clean_description),
         "abilityNames": block("abilityNames", clean_name),
         "abilityDescriptions": block("abilityDescriptions", clean_description),
+        "moveNames": block("moveNames", clean_name),
+        "moveDescriptions": block("moveDescriptions", clean_move_description),
+        "moveRanges": block("moveDescriptions", clean_move_range),
         "job": {key: clean_job_text(strings[index]) for key, index in JOB_TEXTS.items()},
         "extra": {key: clean_job_text(strings[index]) for key, index in EXTRA_TEXTS.items()},
     }
@@ -1379,6 +1412,71 @@ def build_monster_info(monsters: dict) -> dict:
 
 
 # ---------------------------------------------------------------------------
+# Mosse (waza_p.bin)
+# ---------------------------------------------------------------------------
+
+MOVE_COUNT = 559
+MOVE_ENTRY = 26
+
+
+def read_sir0_varint(data: bytes, pos: int) -> tuple[int, int]:
+    """Numero a lunghezza variabile: 7 bit per byte, il bit alto segnala che continua."""
+    value = 0
+    while True:
+        byte = data[pos]
+        pos += 1
+        value = (value << 7) | (byte & 0x7F)
+        if not byte & 0x80:
+            return value, pos
+
+
+def build_moves(waza: bytes) -> dict:
+    """data: per ID mossa [potenza, tipo, categoria (0 fisica, 1 speciale, 2 stato), PP, precisione].
+    learn: per ID Pokémon [[mossa, livello, ...], [mosse MT/MN], [mosse uovo]].
+    Layout: l'intestazione SIR0 punta a una piccola intestazione con il puntatore alle mosse e a quello
+    delle mosse apprese (struct move_data_table_outer di pmd-sky). Le mosse sono struct move_data da 26 byte."""
+    if waza[:4] != b"SIR0":
+        raise ValueError("waza_p.bin: manca l'intestazione SIR0")
+    header = struct.unpack_from("<I", waza, 4)[0]
+    moves_ptr, learn_ptr = struct.unpack_from("<2I", waza, header)
+    data = []
+    for move_id in range(MOVE_COUNT):
+        base = moves_ptr + MOVE_ENTRY * move_id
+        power, move_type, category = struct.unpack_from("<HBB", waza, base)
+        pp = waza[base + 8]
+        accuracy = waza[base + 0xB]
+        stored_id = struct.unpack_from("<H", waza, base + 0x16)[0]
+        # Le ultime 16 mosse (543-558) hanno un ID interno ripetuto: le altre devono coincidere.
+        if stored_id != move_id and move_id < 543:
+            raise ValueError(f"waza_p.bin: la mossa {move_id} ha ID {stored_id}")
+        data.append([power, move_type, category, pp, accuracy])
+
+    learn = []
+    count = (header - learn_ptr) // 12
+    for index in range(count):
+        level_ptr, tm_ptr, egg_ptr = struct.unpack_from("<3I", waza, learn_ptr + 12 * index)
+        if not level_ptr:
+            learn.append([[], [], []])
+            continue
+        levelup = []
+        pos = level_ptr
+        while waza[pos]:
+            move, pos = read_sir0_varint(waza, pos)
+            level, pos = read_sir0_varint(waza, pos)
+            levelup.extend([move, level])
+        lists = []
+        for pointer in (tm_ptr, egg_ptr):
+            moves = []
+            pos = pointer
+            while waza[pos]:
+                move, pos = read_sir0_varint(waza, pos)
+                moves.append(move)
+            lists.append(moves)
+        learn.append([levelup, *lists])
+    return {"data": data, "learn": learn}
+
+
+# ---------------------------------------------------------------------------
 # Abilità QI
 # ---------------------------------------------------------------------------
 
@@ -1489,6 +1587,7 @@ def main() -> int:
     # Numero del Pokédex nazionale di ogni ID del gioco (per i ritratti di PMDCollab).
     shared["nationalDex"] = monsters["dex"][:600]
     shared["monsterInfo"] = build_monster_info(monsters)
+    shared["moves"] = build_moves(load_source("waza", args.pmd_sky))
     shared["iq"] = build_iq(load_source("iqSkills", args.pmd_sky), load_source("iqRestrictions", args.pmd_sky), monsters)
     shared["missionText"] = mission_text
     shared["board"] = build_board(load_source("rescue", args.pmd_sky), main_rodata,

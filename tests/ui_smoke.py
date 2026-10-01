@@ -880,6 +880,13 @@ def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
         page.wait_for_timeout(300)
         check(page.text_content(".wiki-detail-title") == "Statico" and "Pikachu" in page.text_content("#wikiDetail"),
               "la scheda Abilità di Statico elenca Pikachu")
+        page.evaluate("location.hash = '#wiki/moves/154'")
+        page.wait_for_timeout(300)
+        check(page.text_content(".wiki-detail-title") == "Azione" and page.locator("#wikiDetail summary").count() >= 1, "la scheda Mosse di Azione ha i Pokémon che la imparano")
+        page.evaluate("location.hash = '#wiki/pokemon/25'")
+        page.wait_for_timeout(300)
+        check(page.locator("#wikiDetail .wiki-section:has(summary) .wiki-link").count() >= 10,
+              "la scheda di Pikachu elenca le mosse che impara")
         page.click("#wikiClose")
         previous_type = page.evaluate("document.getElementById('missionTypeBox').value")
         set_select(page, "missionTypeBox", 1)
