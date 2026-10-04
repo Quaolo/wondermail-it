@@ -2559,10 +2559,24 @@ function applyPresetNow(kind) {
     relabelMissionTypeSelect();
     relabelMissionSubTypeSelect();
     WMSGen.update();
+    if (kind === 'memo') keepMemoDungeonValid();
     refreshMissionUi();
     // La password deve seguire subito il preset scelto.
     scheduleLiveGeneration();
   }
+}
+
+// Il preset del Memo tesoro non cambia il dungeon, ma in alcuni dungeon il gioco non ha un testo per il Memo e si
+// blocca (errorNoTemplate): se quello rimasto nel modulo è così, si passa al primo dungeon dell'elenco che va bene.
+function keepMemoDungeonValid() {
+  const select = document.getElementById('dungeonBox');
+  if (!select || memoHasText(parseInt(select.value, 10))) return;
+  const next = Array.from(select.options).find((option) => memoHasText(parseInt(option.value, 10)));
+  if (!next) return;
+  setSelectByValue(select, next.value);
+  select.dispatchEvent(new Event('change', { bubbles: true }));
+  syncDungeonFloorLimit(true);
+  WMSGen.update();
 }
 
 onReady(() => {

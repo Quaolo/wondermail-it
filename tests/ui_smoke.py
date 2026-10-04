@@ -951,6 +951,17 @@ def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
             page.wait_for_timeout(120)
             eggs.add(page.evaluate("document.getElementById('eggPokemonBox').value"))
         check(len(eggs) >= 3, f"l'uovo cambia specie a ogni clic: {len(eggs)} su 4")
+        # Il preset Memo tesoro non deve restare in un dungeon dove il gioco non ha un testo per il Memo (la password si
+        # blocca). Succede quando una password letta aggiunge al menu un dungeon fuori dai 54 dei Memo, per esempio il
+        # Cratere Oscuro di «Sblocca un dungeon»: era la causa dell'oscillazione del controllo su telefono qui sotto.
+        no_text = page.evaluate("""Array.from({length: 0xB4}, (_, i) => i).filter((i) =>
+            !Array.from(document.getElementById('dungeonBox').options).some((o) => o.value === String(i)) && !memoHasText(i))""")
+        check(len(no_text) > 0, f"ci sono dungeon fuori dal menu e senza testo per il Memo da provare ({len(no_text)})")
+        wrong = [d for d in no_text if page.evaluate(f"""(() => {{ applyPresetNow('standard'); const s = document.getElementById('dungeonBox');
+            ensureSelectOption(s, {d}, 'extra'); setSelectByValue(s, {d}); s.dispatchEvent(new Event('change', {{bubbles: true}}));
+            applyPresetNow('memo'); return WMSGen.verify().length; }})()""")]
+        check(not wrong, f"il preset Memo tesoro dà una password valida anche da un dungeon senza testo (sbagliati: {wrong[:5]})")
+        open_tool_card(page, "presetsCard")  # cambiando il modulo a mano il pannello si è chiuso
         page.click('.preset-btn[data-preset="standard"]')
         page.wait_for_timeout(120)
 
@@ -962,7 +973,10 @@ def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
         page.set_viewport_size({"width": 360, "height": 800})
         open_tool_card(page, "presetsCard")
         page.click('.preset-btn[data-preset="memo"]')
-        page.wait_for_timeout(200)
+        # La password e la scheda della stanza arrivano dopo un po' di lavoro (circa 150 ms, di più su una macchina carica):
+        # si aspetta che ci siano, senza un'attesa fissa (prima il controllo qui sotto oscillava).
+        page.wait_for_function("document.getElementById('compactOutput').value !== '' && !document.getElementById('roomCard').classList.contains('hidden')", timeout=15000)
+        page.wait_for_timeout(100)
         # Su telefono: «Parti da», poi il modulo, poi il risultato; la password resta in fondo allo schermo
         tops = page.evaluate("""Object.fromEntries(['startBar', 'genForm', 'jobCard', 'resultCard', 'roomCard']
             .map((id) => [id, Math.round(document.getElementById(id).getBoundingClientRect().top + window.scrollY)]))""")
