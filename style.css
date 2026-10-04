@@ -1453,6 +1453,7 @@ body.wiki-shown { overflow: hidden; }
 .wiki-browse input { width: 100%; }
 .wiki-groups { display: flex; flex-wrap: wrap; gap: 6px; }
 .wiki-groups[hidden] { display: none; }
+.wiki-group-row { display: flex; flex-wrap: wrap; gap: 6px; width: 100%; }
 .wiki-result-count { margin: 0; }
 .wiki-list, .wiki-detail {
   flex: 1 1 auto;

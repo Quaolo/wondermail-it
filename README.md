@@ -156,7 +156,7 @@ someone straight to an entry. Opening such an address opens the Wiki on that ent
 A Pokémon's entry also shows its types, its abilities with their effect, its stats (the level-1 values from the game's
 table plus the growth of each level, with a slider from level 1 to 100, and the experience points needed to reach that level and the next; I haven't compared those yet with a real playthrough) and its whole evolution family, with what each evolution needs: level,
 IQ, an item, or an extra condition such as a ribbon, a move or Attack against Defense. You can also search Pokémon
-by type or by ability. The Abilities tab explains each ability and lists the Pokémon that have it. The Moves tab shows type, category, power, PP,
+by type or by ability. The Abilities tab explains each ability and lists the Pokémon that have it. The Moves tab can be filtered by type and category, and shows type, category, power, PP,
 accuracy, range and effect of every move and which Pokémon learn it (by level, with TM/HM or as an egg move); each
 Pokémon's entry lists its own moves the same way.
 

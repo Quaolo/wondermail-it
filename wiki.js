@@ -21,6 +21,8 @@ const wikiState = {
   tab: 'items',
   query: '',
   itemGroup: -1,
+  moveType: -1,
+  moveCategory: -1,
   selected: { items: null, pokemon: null, dungeons: null, iq: null, traps: null, abilities: null, moves: null },
   floor: 1,
   history: [],
@@ -418,6 +420,13 @@ function getWikiEntries(tab, query = wikiState.query) {
   if (tab === 'items' && wikiState.itemGroup >= 0) {
     entries = entries.filter((entry) => entry.group === wikiState.itemGroup);
   }
+  if (tab === 'moves') {
+    entries = entries.filter((entry) => {
+      const move = wikiMoveData(entry.id);
+      return move && (wikiState.moveType < 0 || move.type === wikiState.moveType)
+        && (wikiState.moveCategory < 0 || move.category === wikiState.moveCategory);
+    });
+  }
   if (normalized) {
     entries = entries.filter((entry) => wikiEntrySearchText(tab, entry.id).includes(normalized));
   }
@@ -445,25 +454,39 @@ function renderWikiTabs() {
   });
 }
 
+// Filtri sopra l'elenco: categorie degli strumenti, oppure tipo e categoria delle mosse.
 function renderWikiGroups() {
   const box = document.getElementById('wikiGroups');
   if (!box) return;
-  box.hidden = wikiState.tab !== 'items';
+  box.hidden = wikiState.tab !== 'items' && wikiState.tab !== 'moves';
   if (box.hidden) return;
   box.textContent = '';
-  const groups = [-1].concat(ITEM_GROUPS.map((_, index) => index));
-  groups.forEach((group) => {
-    const chip = wikiEl('button', `chip wiki-group${group === wikiState.itemGroup ? ' active' : ''}`,
-      group < 0 ? t('wikiAll') : getItemGroupLabel(group));
-    chip.type = 'button';
-    chip.setAttribute('aria-pressed', group === wikiState.itemGroup ? 'true' : 'false');
-    chip.addEventListener('click', () => {
-      wikiState.itemGroup = group;
-      renderWikiList();
-      renderWikiGroups();
+  const addRow = (values, current, label, apply) => {
+    const row = wikiEl('div', 'wiki-group-row');
+    values.forEach((value) => {
+      const chip = wikiEl('button', `chip wiki-group${value === current ? ' active' : ''}`, value < 0 ? t('wikiAll') : label(value));
+      chip.type = 'button';
+      chip.setAttribute('aria-pressed', value === current ? 'true' : 'false');
+      chip.addEventListener('click', () => {
+        apply(value);
+        renderWikiList();
+        renderWikiGroups();
+      });
+      row.append(chip);
     });
-    box.append(chip);
-  });
+    box.append(row);
+  };
+  if (wikiState.tab === 'items') {
+    addRow([-1].concat(ITEM_GROUPS.map((_, index) => index)), wikiState.itemGroup, getItemGroupLabel,
+      (value) => { wikiState.itemGroup = value; });
+    return;
+  }
+  const typeNames = getGameText()?.types || [];
+  const used = new Set();
+  getWikiIndex().moves.forEach((entry) => { const move = wikiMoveData(entry.id); if (move) used.add(move.type); });
+  addRow([-1].concat(Array.from(used).sort((a, b) => a - b)), wikiState.moveType, (value) => typeNames[value] || String(value),
+    (value) => { wikiState.moveType = value; });
+  addRow([-1, 0, 1, 2], wikiState.moveCategory, wikiMoveCategory, (value) => { wikiState.moveCategory = value; });
 }
 
 function renderWikiList() {
@@ -1331,6 +1354,7 @@ function wikiGo(tab, id, floor) {
     if (search) search.value = '';
   }
   if (tab === 'items') wikiState.itemGroup = -1;
+  if (tab === 'moves') { wikiState.moveType = -1; wikiState.moveCategory = -1; }
   wikiSelect(tab, id, { floor });
 }
 
