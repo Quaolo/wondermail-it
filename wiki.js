@@ -875,6 +875,7 @@ function renderPokemonStats(root, monId) {
     slider.value = '1';
     const showLevel = (level) => {
       output.textContent = String(level);
+      slider.style.setProperty('--p', String((level - 1) / (WIKI_MAX_LEVEL - 1)));
       if (growth) values.forEach((strong, position) => { strong.textContent = String(wikiStatAtLevel(monId, growth, position, level)); });
       if (curve) {
         const number = new Intl.NumberFormat(getCurrentLanguage());

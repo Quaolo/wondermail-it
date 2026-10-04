@@ -1758,5 +1758,42 @@ button, .chip, .preset-btn { transition: transform .08s ease; }
 }
 
 .wiki-level { display: flex; align-items: center; gap: 0.6rem; margin: 0.2rem 0 0.6rem; }
-.wiki-level input[type="range"] { flex: 1 1 auto; min-width: 0; }
+/* Cursore del livello: barra riempita fino al livello scelto e una pallina grande da afferrare (--p = posizione 0-1). */
+.wiki-level input[type="range"] {
+  --p: 0;
+  --thumb: 26px;
+  --track: 10px;
+  --fill-edge: calc(var(--thumb) / 2 + (100% - var(--thumb)) * var(--p));
+  flex: 1 1 auto; min-width: 0; height: 34px; margin: 0; padding: 0;
+  background: transparent; cursor: pointer;
+  -webkit-appearance: none; appearance: none;
+}
+.wiki-level input[type="range"]::-webkit-slider-runnable-track {
+  height: var(--track); border-radius: 999px;
+  background: linear-gradient(90deg, var(--gold-deep), var(--gold) var(--fill-edge), rgba(170, 205, 255, .22) var(--fill-edge));
+  box-shadow: inset 0 0 0 1px rgba(5, 9, 24, .5);
+}
+.wiki-level input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: var(--thumb); height: var(--thumb); margin-top: calc((var(--track) - var(--thumb)) / 2);
+  border-radius: 50%; border: 3px solid var(--bg-deep);
+  background: radial-gradient(circle at 35% 30%, #fff 0 12%, var(--gold) 45%, var(--gold-deep) 100%);
+  box-shadow: 0 0 0 2px var(--win-edge), 0 2px 6px rgba(0, 0, 0, .5);
+}
+.wiki-level input[type="range"]::-moz-range-track {
+  height: var(--track); border-radius: 999px; background: rgba(170, 205, 255, .22);
+  box-shadow: inset 0 0 0 1px rgba(5, 9, 24, .5);
+}
+.wiki-level input[type="range"]::-moz-range-progress {
+  height: var(--track); border-radius: 999px; background: linear-gradient(90deg, var(--gold-deep), var(--gold));
+}
+.wiki-level input[type="range"]::-moz-range-thumb {
+  box-sizing: border-box; width: var(--thumb); height: var(--thumb);
+  border-radius: 50%; border: 3px solid var(--bg-deep);
+  background: radial-gradient(circle at 35% 30%, #fff 0 12%, var(--gold) 45%, var(--gold-deep) 100%);
+  box-shadow: 0 0 0 2px var(--win-edge), 0 2px 6px rgba(0, 0, 0, .5);
+}
+.wiki-level input[type="range"]:focus-visible { outline: none; }
+.wiki-level input[type="range"]:focus-visible::-webkit-slider-thumb { box-shadow: 0 0 0 2px var(--win-edge), 0 0 0 5px var(--teal); }
+.wiki-level input[type="range"]:focus-visible::-moz-range-thumb { box-shadow: 0 0 0 2px var(--win-edge), 0 0 0 5px var(--teal); }
 .wiki-level-value { min-width: 2.2ch; text-align: right; font-weight: 700; }
