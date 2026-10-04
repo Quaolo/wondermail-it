@@ -1541,13 +1541,45 @@ def px_decompress(container: bytes) -> bytes:
     return bytes(out[:size])
 
 
+BASE36 = "0123456789abcdefghijklmnopqrstuvwxyz"
+
+
+def to_base36(value: int, width: int) -> str:
+    if value < 0 or value >= 36 ** width:
+        raise ValueError(f"{value} non entra in {width} cifre in base 36")
+    digits = ""
+    for _ in range(width):
+        digits = BASE36[value % 36] + digits
+        value //= 36
+    return digits
+
+
+def encode_experience(experience: list[int]) -> str:
+    """Esperienza totale per raggiungere i livelli 1..100 (il livello 1 vale 0) in forma compatta: la differenza tra
+    il livello 2 e il livello 1 (4 cifre in base 36), poi per ogni livello la variazione di quella differenza
+    (3 cifre, con il segno spostato nel bit basso: n >= 0 -> 2n, n < 0 -> -2n - 1). Le differenze seconde sono
+    piccole, quindi la stringa è corta e si comprime bene. Decodifica: wikiExpCurve in wiki.js."""
+    if experience[0] != 0:
+        raise ValueError("m_level.bin: l'esperienza del livello 1 non è 0")
+    steps = [experience[k + 1] - experience[k] for k in range(LEVEL_COUNT - 1)]
+    text = to_base36(steps[0], 4)
+    for k in range(1, len(steps)):
+        change = steps[k] - steps[k - 1]
+        text += to_base36(change * 2 if change >= 0 else -change * 2 - 1, 3)
+    return text
+
+
 def build_growth(m_level: bytes, monster_count: int) -> dict:
     """Aumenti di PS, Att, Att sp., Dif, Dif sp. a ogni livello (a livello L: statistiche a livello 1 + somma delle
     righe dei livelli 2..L). tables: una stringa per tabella (5 statistiche x 100 livelli, una lettera 'a'..'z' per
-    aumento 0-25), senza doppioni. monsters: tabella di ogni ID Pokémon (-1 se il file non c'è)."""
+    aumento 0-25), senza doppioni. monsters: tabella di ogni ID Pokémon (-1 se il file non c'è).
+    expCurves: esperienza totale per livello (campo ExpReq, vedi encode_experience), senza doppioni; expMonsters:
+    curva di ogni ID Pokémon (-1 se il file non c'è)."""
     count = struct.unpack_from("<I", m_level, 4)[0]
     tables: list[str] = []
     monsters = []
+    curves: list[str] = []
+    curve_monsters = []
     for index in range(min(count, monster_count)):
         offset, size = struct.unpack_from("<2I", m_level, 8 + 8 * index)
         data = px_decompress(m_level[offset:offset + size])
@@ -1562,7 +1594,11 @@ def build_growth(m_level: bytes, monster_count: int) -> dict:
         if text not in tables:
             tables.append(text)
         monsters.append(tables.index(text))
-    return {"tables": tables, "monsters": monsters}
+        curve = encode_experience(experience)
+        if curve not in curves:
+            curves.append(curve)
+        curve_monsters.append(curves.index(curve))
+    return {"tables": tables, "monsters": monsters, "expCurves": curves, "expMonsters": curve_monsters}
 
 
 # ---------------------------------------------------------------------------

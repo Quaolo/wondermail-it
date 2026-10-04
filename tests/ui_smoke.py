@@ -10,6 +10,7 @@ import argparse
 import functools
 import http.server
 import json
+import re
 import socketserver
 import sys
 import threading
@@ -888,9 +889,13 @@ def run(url: str, screenshot_dir: Path | None, offline: bool) -> None:
         check(page.locator("#wikiDetail .wiki-section:has(summary) .wiki-link").count() >= 10,
               "la scheda di Pikachu elenca le mosse che impara")
         start_hp = page.text_content("#wikiDetail .wiki-floor-stats .floor-stat strong")
+        exp_values = lambda: [re.sub(r"\D", "", page.text_content(f"#wikiDetail .wiki-exp .floor-stat:nth-child({n}) strong")) for n in (1, 2)]
+        check(exp_values() == ["0", "8"], "la scheda di Pikachu parte dall'esperienza del livello 1 (0) e del 2 (8)")
         page.evaluate("const s = document.querySelector('#wikiDetail .wiki-level input'); s.value = '100'; s.dispatchEvent(new Event('input', {bubbles: true}))")
         check(int(page.text_content("#wikiDetail .wiki-floor-stats .floor-stat strong")) > int(start_hp)
               and page.text_content("#wikiDetail .wiki-level-value") == "100", "il livello della scheda Pokémon cambia le statistiche")
+        check(exp_values() == ["2499090", ""] and page.text_content("#wikiDetail .wiki-exp .floor-stat:nth-child(2) strong") == "\u2014",
+              "al livello 100 l'esperienza è 2.499.090 e non c'è un livello dopo")
         page.click("#wikiClose")
         previous_type = page.evaluate("document.getElementById('missionTypeBox').value")
         set_select(page, "missionTypeBox", 1)

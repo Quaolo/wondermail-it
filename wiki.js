@@ -834,7 +834,15 @@ function renderPokemonStats(root, monId) {
     return item.querySelector('strong');
   });
   const growth = wikiGrowthTable(monId);
-  if (growth) {
+  const curve = wikiExpCurve(monId);
+  // Esperienza: totale per arrivare a questo livello e a quello dopo (non quella da guadagnare livello per livello).
+  const expList = curve ? wikiEl('ul', 'floor-stats wiki-floor-stats wiki-exp') : null;
+  const expValues = curve ? [t('wikiExpHere'), t('wikiExpNext')].map((label) => {
+    const item = makeFloorStat(label, '');
+    expList.append(item);
+    return item.querySelector('strong');
+  }) : [];
+  if (growth || curve) {
     const control = wikiEl('label', 'wiki-level');
     const output = wikiEl('output', 'wiki-level-value', '1');
     const slider = document.createElement('input');
@@ -842,15 +850,24 @@ function renderPokemonStats(root, monId) {
     slider.min = '1';
     slider.max = String(WIKI_MAX_LEVEL);
     slider.value = '1';
-    slider.addEventListener('input', () => {
-      const level = parseInt(slider.value, 10);
+    const showLevel = (level) => {
       output.textContent = String(level);
-      values.forEach((strong, position) => { strong.textContent = String(wikiStatAtLevel(monId, growth, position, level)); });
-    });
+      if (growth) values.forEach((strong, position) => { strong.textContent = String(wikiStatAtLevel(monId, growth, position, level)); });
+      if (curve) {
+        const number = new Intl.NumberFormat(getCurrentLanguage());
+        expValues[0].textContent = number.format(curve[level - 1]);
+        expValues[1].textContent = level < WIKI_MAX_LEVEL ? number.format(curve[level]) : '\u2014';
+      }
+    };
+    slider.addEventListener('input', () => showLevel(parseInt(slider.value, 10)));
     control.append(wikiEl('span', '', t('wikiStatsLevel')), slider, output);
     section.append(control);
+    showLevel(1);
   }
-  section.append(list, wikiEl('p', 'hint', t('wikiStatsHint')));
+  section.append(list);
+  if (expList) section.append(expList);
+  section.append(wikiEl('p', 'hint', t('wikiStatsHint')));
+  if (curve) section.append(wikiEl('p', 'hint', t('wikiExpHint')));
   root.append(section);
 }
 
@@ -861,6 +878,28 @@ function wikiGrowthTable(monId) {
   const growth = window.WMSkyGameData?.growth;
   const table = growth && growth.tables[growth.monsters[monId]];
   return table || null;
+}
+
+// Esperienza totale per raggiungere ogni livello (100 valori, il primo è 0) o null se il gioco non ha la curva.
+// Formato (estrai_dati.py, encode_experience): differenza tra livello 2 e 1 in 4 cifre base 36, poi per ogni livello la
+// variazione di quella differenza in 3 cifre (n >= 0 -> 2n, n < 0 -> -2n - 1).
+const wikiExpCache = new Map();
+function wikiExpCurve(monId) {
+  const growth = window.WMSkyGameData?.growth;
+  const index = growth?.expMonsters?.[monId];
+  const text = growth?.expCurves?.[index];
+  if (typeof text !== 'string') return null;
+  if (!wikiExpCache.has(index)) {
+    let step = parseInt(text.slice(0, 4), 36);
+    const curve = [0, step];
+    for (let at = 4; at < text.length; at += 3) {
+      const code = parseInt(text.slice(at, at + 3), 36);
+      step += code % 2 ? -(code + 1) / 2 : code / 2;
+      curve.push(curve[curve.length - 1] + step);
+    }
+    wikiExpCache.set(index, curve);
+  }
+  return wikiExpCache.get(index);
 }
 
 // Statistica a un livello: valore a livello 1 più gli aumenti dei livelli 2..L.
