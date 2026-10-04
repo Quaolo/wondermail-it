@@ -158,7 +158,7 @@ table plus the growth of each level, with a slider from level 1 to 100, and the 
 IQ, an item, or an extra condition such as a ribbon, a move or Attack against Defense. You can also search Pokémon
 by type or by ability. The Abilities tab explains each ability and lists the Pokémon that have it. The Moves tab can be filtered by type and category, and shows type, category, power, PP,
 accuracy (both values the game uses, not yet checked in play), range and effect of every move and which Pokémon learn it (by level, with TM/HM or as an egg move); each
-Pokémon's entry lists its own moves the same way.
+Pokémon's entry lists its own moves the same way. Types have a small pixel-art symbol drawn for this site, not the game's own.
 
 In the "Where to find it" lists of a Pokémon or an item, the Mission here button sets up the mission for you: that
 dungeon, the first floor where a mission is allowed, and the Pokémon or item as the target. It works when the chosen

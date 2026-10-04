@@ -461,10 +461,12 @@ function renderWikiGroups() {
   box.hidden = wikiState.tab !== 'items' && wikiState.tab !== 'moves';
   if (box.hidden) return;
   box.textContent = '';
-  const addRow = (values, current, label, apply) => {
+  const addRow = (values, current, label, apply, icon) => {
     const row = wikiEl('div', 'wiki-group-row');
     values.forEach((value) => {
       const chip = wikiEl('button', `chip wiki-group${value === current ? ' active' : ''}`, value < 0 ? t('wikiAll') : label(value));
+      const symbol = icon && value >= 0 ? icon(value) : null;
+      if (symbol) chip.prepend(symbol);
       chip.type = 'button';
       chip.setAttribute('aria-pressed', value === current ? 'true' : 'false');
       chip.addEventListener('click', () => {
@@ -485,7 +487,7 @@ function renderWikiGroups() {
   const used = new Set();
   getWikiIndex().moves.forEach((entry) => { const move = wikiMoveData(entry.id); if (move) used.add(move.type); });
   addRow([-1].concat(Array.from(used).sort((a, b) => a - b)), wikiState.moveType, (value) => typeNames[value] || String(value),
-    (value) => { wikiState.moveType = value; });
+    (value) => { wikiState.moveType = value; }, wikiTypeIcon);
   addRow([-1, 0, 1, 2], wikiState.moveCategory, wikiMoveCategory, (value) => { wikiState.moveCategory = value; });
 }
 
@@ -515,6 +517,7 @@ function renderWikiList() {
     const copy = wikiEl('span', 'wiki-entry-copy');
     copy.append(wikiEl('span', 'wiki-entry-name', wikiEntryName(tab, entry.id)));
     let meta = '';
+    let moveIcon = null;
     if (tab === 'items') meta = getItemShortDescription(entry.id);
     else if (tab === 'pokemon') {
       const places = index.monPlaces.get(entry.id);
@@ -529,6 +532,7 @@ function renderWikiList() {
       meta = !count ? t('wikiAbilityNobody') : count === 1 ? t('wikiAbilityMonsOne') : t('wikiAbilityMons', { count });
     } else if (tab === 'moves') {
       meta = wikiMoveSummary(entry.id);
+      moveIcon = wikiTypeIcon((wikiMoveData(entry.id) || {}).type);
     } else if (tab === 'traps') {
       const places = index.trapPlaces.get(entry.id);
       meta = !places ? t('wikiTrapNotOnFloors')
@@ -536,7 +540,11 @@ function renderWikiList() {
     } else {
       meta = wikiFloorCountText(entry.floors);
     }
-    if (meta) copy.append(wikiEl('span', 'wiki-entry-meta', meta));
+    if (meta) {
+      const metaNode = wikiEl('span', 'wiki-entry-meta', meta);
+      if (moveIcon) metaNode.prepend(moveIcon);
+      copy.append(metaNode);
+    }
     button.append(image, copy);
     button.addEventListener('click', () => wikiSelect(tab, entry.id, { fromList: true }));
     section.append(button);
@@ -688,9 +696,372 @@ function wikiTypeChips(monId) {
 }
 
 function wikiTypeChip(type) {
-  const chip = wikiEl('span', 'wiki-type', (getGameText()?.types || [])[type] || '');
+  const chip = wikiEl('span', 'wiki-type');
+  const icon = wikiTypeIcon(type);
+  if (icon) chip.append(icon);
+  chip.append(document.createTextNode((getGameText()?.types || [])[type] || ''));
   chip.style.setProperty('--type-color', WIKI_TYPE_COLORS[type] || '#9a9a9a');
   return chip;
+}
+
+// Simboli dei tipi in pixel art, disegnati da noi (non sono quelli del gioco). Una lettera = un pixel, "." = vuoto.
+// Fatti tutti tranne Neutro (il «-»), che resta senza simbolo.
+const WIKI_TYPE_PIXELS = {
+  2: {
+    rows: [
+      '.....o.....',
+      '....oro....',
+      '...orro.o..',
+      '...orrroro.',
+      '..orrrrrro.',
+      '..orryyrrro',
+      '.orryyyyrro',
+      '.orryywyyro',
+      '.orryywyyro',
+      '.orryyyyyro',
+      '..orryyyro.',
+      '...orrrro..',
+      '....oooo...'
+    ],
+    palette: { o: '#a82a14', r: '#f2552c', y: '#ffb347', w: '#fff1b0' }
+  },
+  1: { // Normale
+    rows: [
+      '...ooooo...',
+      '..ommmmmo..',
+      '.ommllmmmdo',
+      'ommlmmmmmdo',
+      'ommlmmmmmdo',
+      'ommmmmmmmdo',
+      'ommmmmmmddo',
+      '.ommmmmddo.',
+      '..oddddoo..',
+      '...ooooo...'
+    ],
+    palette: { o: '#6e6e55', m: '#c2c2a1', l: '#f2f2dc', d: '#9a9a7c' }
+  },
+  3: { // Acqua
+    rows: [
+      '.....o.....',
+      '....omo....',
+      '....omo....',
+      '...ommmo...',
+      '...ommmo...',
+      '..ommmmmo..',
+      '.ommlmmmmo.',
+      '.omlmmmmdo.',
+      '.ommmmmmdo.',
+      '.ommmmmddo.',
+      '..oddddddo.',
+      '...ooooo...'
+    ],
+    palette: { o: '#1f4fa8', m: '#4f8ef0', l: '#d6eaff', d: '#2f6bd0' }
+  },
+  5: { // Elettro
+    rows: [
+      '......ooo',
+      '.....ommo',
+      '....ommlo',
+      '...ommmo.',
+      '..ommmo..',
+      '.ommmmmmo',
+      '.oooommdo',
+      '....ommo.',
+      '...ommo..',
+      '...omdo..',
+      '..omdo...',
+      '..odo....',
+      '..oo.....'
+    ],
+    palette: { o: '#a87a00', m: '#f8d030', l: '#fff6b0', d: '#d9a500' }
+  },
+  7: { // Lotta
+    rows: [
+      '..oo.oo.oo.oo..',
+      'yollkllkllklloy',
+      '.ommkmmkmmkmdo.',
+      'yommkmmkmmkmdoy',
+      '.ommkmmkmmkmdo.',
+      '.okkkkkkkkkkdo.',
+      '.olllllllkmmdo.',
+      '.ommmmmmmkmmdo.',
+      '.ommmmmmmkmddo.',
+      '.odddddddkmddo.',
+      '..oddddddddoo..',
+      '...owwwwwwwo...',
+      '...owggggggo...',
+      '...ooooooooo...'
+    ],
+    palette: { o: '#6e2216', m: '#e0603c', l: '#ffb08a', d: '#b03a22', k: '#7a2a1a', w: '#f2e6d4', g: '#c9b9a0', y: '#ffd45a' }
+  },
+  8: { // Veleno
+    rows: [
+      '................',
+      '.....oo....ooo..',
+      '....ommo..olmmo.',
+      '....ommo..ommmo.',
+      '...ommmmo.ommdo.',
+      '..ommmmmmo.ooo..',
+      '..ommlmmmo......',
+      '.ommmlmmmmo.....',
+      'ommmmmmmmmdo.oo.',
+      'ommlllmmmddoolmo',
+      'ommlllmmdddoommo',
+      'ommllmmddddo.oo.',
+      '.ommmmddddo.....',
+      '..ommddddo......',
+      '...oooooo.......'
+    ],
+    palette: { o: '#4a1f66', m: '#a443cc', l: '#efb8ff', d: '#7a2a9a' }
+  },
+  9: { // Terra
+    rows: [
+      '........o.......',
+      '.....oookoo.....',
+      '...oollkllloo...',
+      '..olllllkllllo..',
+      '..ollllklllllo..',
+      '.ommmmmmkmmmmmo.',
+      'ommmmmmkmmmkmmmo',
+      'odddkdddkddddddo',
+      'odddddkkdddddddo',
+      'ddddddddddddkddd',
+      'mmmkmmmmmkmmmmmm',
+      'mmmmmmmmmmmmmmmm',
+      'oooooooooooooooo'
+    ],
+    palette: { o: '#5a3d1a', m: '#b9854a', l: '#e0b87a', d: '#8a5f2c', k: '#43290e' }
+  },
+  10: { // Volante
+    rows: [
+      '.............os',
+      '........oooooso',
+      '......oolldsso.',
+      '.....oddllssso.',
+      '....ollllsssdo.',
+      '...oldddsssmmo.',
+      '..odlllsssmmmo.',
+      '..olllsssdmdo..',
+      '.oddlsssmdmdo..',
+      '.ollsssmmdmo...',
+      '..osssmmmmo....',
+      '..ossmdmdo.....',
+      '.osoomdoo......',
+      'oso..oo........',
+      'so.............'
+    ],
+    palette: { o: '#4d6f9c', m: '#a9c8ee', l: '#eaf4ff', d: '#8fb0dc', s: '#5f86bd' }
+  },
+  11: { // Psico
+    rows: [
+      '..oooowoooo..',
+      '.owwmmmmmwwo.',
+      'owwmdddddmwwo',
+      'wwwmmmmmdmwww',
+      'wwwmdddmdmwww',
+      'wwwmdmmmdmwww',
+      'owwmdddddmwwo',
+      '.owwmmmmmwwo.',
+      '..oooowoooo..'
+    ],
+    palette: { o: '#7a2a6a', m: '#ee6fc6', w: '#fff4fb', d: '#8a2a78' }
+  },
+  12: { // Coleottero
+    rows: [
+      '.......o...o.......',
+      '.o.....oo.oo.....o.',
+      '..o...ollollo...o..',
+      '...o.olelmlelo.o...',
+      '....oollmmmlloo....',
+      '..o..ooommmooo..o..',
+      '.o..oollmmmlloo..o.',
+      'oo.olllmmmmmlllo.oo',
+      '.o.ollmmmmmmmllo.o.',
+      '.o.olmmmmmmmmmlo.o.',
+      'oo.olmrrmmmrrmlo.oo',
+      '.o.olmrrmdmrrmlo.o.',
+      'oo.olmmmmdmmmmlo.oo',
+      '.o.olmmmmdmmmmlo.o.',
+      '.o.olmmrmdmrmmlo.o.',
+      '...olmmrmdmrmmlo...',
+      '....olmmdddmmlo....',
+      '.....ooddkddoo.....',
+      '.......ooooo.......'
+    ],
+    palette: { o: '#3b4a10', m: '#8fb52a', l: '#d9f27c', d: '#5f7a1a', k: '#2c3608', r: '#e5533d', e: '#2c3608' }
+  },
+  13: { // Roccia
+    rows: [
+      '....ooooo......',
+      '..oollllloo....',
+      '.olllllllmmo.oo',
+      'olllllmmmmmmolo',
+      'ollllmmmkmmmmo.',
+      'ollmmmmkkmmmmmo',
+      'ommmmmmmkmmmddo',
+      'ommmmmmkkmmmddo',
+      'ommmmmmmmkmdddo',
+      '.omdmmmmmmddddo',
+      '..oodddddddddo.',
+      '....oooooooooo.'
+    ],
+    palette: { o: '#4a4036', m: '#8d8272', l: '#c7bda8', d: '#625848', k: '#3a322a' }
+  },
+  14: { // Spettro
+    rows: [
+      '....ooooooo....',
+      '..ooollllmmoo..',
+      '.olllllmmmmmmo.',
+      '.ollllmmmmmmdo.',
+      'ollmmmmmmmmmmdo',
+      'olmkkmmmmmmkkdo',
+      'olmeekmmmkeemdo',
+      'olmmemmmmmmemdo',
+      'olmmmmmmmmmmmdo',
+      'olmkkkkkkkkkmdo',
+      'olmkwkwkwkwkmdo',
+      'olmmkwkwkwkmmdo',
+      'olmmmkkkkkmmmdo',
+      'ommmmmmmmmmmddo',
+      'omommmommmommdo',
+      'o.o.omo.omo.o.o'
+    ],
+    palette: { o: '#1a0f38', m: '#5b3a9c', l: '#8a66cc', d: '#3b2470', e: '#ffe14a', k: '#0c0520', w: '#f4ecff' }
+  },
+  17: { // Acciaio
+    rows: [
+      '...olllllllllo...',
+      '...olllllllllo...',
+      '..olllllllllllo..',
+      '.olllllllllllllo.',
+      '.olllllooolllllo.',
+      'ommmmmokkkomddddo',
+      'ommmmokkkkklddddo',
+      'mmmmmokkkkklddddd',
+      'ommmmokkkkklddddo',
+      'ommmmmokkklmddddo',
+      '.odddddllldddddo.',
+      '.odddddddddddddo.',
+      '..odddddddddddo..',
+      '...odddddddddo...',
+      '...odddddddddo...'
+    ],
+    palette: { o: '#3c4a5a', m: '#a8bbcd', l: '#e4edf5', d: '#6f8296', k: '#1b222b' }
+  },
+  4: { // Erba
+    rows: [
+      '..............',
+      '......ooooo...',
+      '....oolllmmo..',
+      '...ollvlmmmmo.',
+      '..olllvmmvmmo.',
+      '..olllvmvmmdo.',
+      '.olllvmvmmddo.',
+      '.ollmmvmvvvdo.',
+      '.olmmvmvdddo..',
+      '.ommvmmddddo..',
+      '..ovmmddddo...',
+      '.ovomdddoo....',
+      'ovo.oooo......',
+      'vo............'
+    ],
+    palette: { o: '#2d6a1f', m: '#6fcf4a', l: '#b7f08a', d: '#43a032', v: '#2d7a24' }
+  },
+  6: { // Ghiaccio
+    rows: [
+      '.................',
+      '......l.l.l......',
+      '.......mmm.......',
+      '.....lm.m.ml.....',
+      '....l..mmm..l....',
+      '...l.d..m..d.l...',
+      '.l.m..d.m.d..m.l.',
+      '..m.m..mlm..m.m..',
+      '.lmmmmmlwlmmmmml.',
+      '..m.m..mlm..m.m..',
+      '.l.m..d.m.d..m.l.',
+      '...l.d..m..d.l...',
+      '....l..mmm..l....',
+      '.....lm.m.ml.....',
+      '.......mmm.......',
+      '......l.l.l......',
+      '.................'
+    ],
+    palette: { o: '#3a8fa0', m: '#8fe0ec', l: '#e8fbff', d: '#5ec0d0', w: '#ffffff' }
+  },
+  15: { // Drago
+    rows: [
+      'hh.................hh',
+      '.hh....ooooooo....hh.',
+      '..hh.oommmmmmmoo.hh..',
+      '..hhommmmmmmmmmmohh..',
+      '...ommllmmmmmllmmo...',
+      'o..ommkkmmmmmkkmmo..o',
+      'od.ommeekmmmkeemmo.do',
+      'oddommmmmmmmmmmmmoddo',
+      '.oddommmmmmmmmmmoddo.',
+      '..oddommmmmmmmmoddo..',
+      '...oddomkmmmkmoddo...',
+      '....oddommmmmoddo....',
+      '.....oddkkkkkddo.....',
+      '.....odwkwkwkwdo.....',
+      '......oddmmmddo......',
+      '.......ooooooo.......'
+    ],
+    palette: { o: '#241562', m: '#6f4ae0', l: '#a98cff', d: '#4528b0', h: '#d9ccff', e: '#ffd23a', w: '#ffffff', k: '#150a40' }
+  },
+  16: { // Buio
+    rows: [
+      '.....o.ooooo....',
+      '....ogogbbbbo...',
+      '...ogo.okkbbbo..',
+      '..ogo..okkkbbbo.',
+      '.ogo...okkkkbbo.',
+      'ogo....okkkkkbbo',
+      '.o.....okkkkkbbo',
+      'ogo....okkkkkbbo',
+      '.o.....okkkkkbbo',
+      'ogo....okkkkkbbo',
+      '.ogo...okkkkbbo.',
+      '..ogo..okkkbbbo.',
+      '...ogo.okkbbbo..',
+      '....ogogbbbbo...',
+      '.....o.ooooo....'
+    ],
+    palette: { o: '#9a88b4', k: '#0a0610', b: '#241a30', g: '#4a4060' }
+  }
+};
+
+function wikiTypeIcon(type) {
+  const art = WIKI_TYPE_PIXELS[type];
+  if (!art) return null;
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  const width = art.rows[0].length;
+  const height = art.rows.length;
+  svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+  svg.setAttribute('class', 'wiki-type-icon');
+  svg.setAttribute('aria-hidden', 'true');
+  svg.setAttribute('shape-rendering', 'crispEdges');
+  svg.style.width = `${(width / height) * 1.25}em`;
+  art.rows.forEach((row, y) => {
+    let x = 0;
+    while (x < row.length) {
+      const letter = row[x];
+      if (letter === '.') { x += 1; continue; }
+      let end = x;
+      while (end < row.length && row[end] === letter) end += 1;
+      const rect = document.createElementNS(ns, 'rect');
+      rect.setAttribute('x', String(x));
+      rect.setAttribute('y', String(y));
+      rect.setAttribute('width', String(end - x));
+      rect.setAttribute('height', '1');
+      rect.setAttribute('fill', art.palette[letter]);
+      svg.append(rect);
+      x = end;
+    }
+  });
+  return svg;
 }
 
 // La descrizione del gioco comincia con il nome ("Statico: ..."): si toglie, il nome è già il titolo.

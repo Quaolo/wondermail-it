@@ -1577,6 +1577,8 @@ body.wiki-shown { overflow: hidden; }
   font-size: .84rem;
   font-weight: 700;
 }
+.wiki-type-icon { height: 1.25em; width: auto; flex: none; vertical-align: -0.28em; margin-right: .35em; }
+.wiki-type:has(.wiki-type-icon), .chip:has(.wiki-type-icon) { white-space: nowrap; }
 .wiki-ability { display: grid; gap: 2px; }
 .wiki-row-action { margin-left: auto; min-width: 0; padding: 2px 10px; font-size: .8rem; white-space: nowrap; }
 .wiki-row-action:disabled { opacity: .45; cursor: not-allowed; }
