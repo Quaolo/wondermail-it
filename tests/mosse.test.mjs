@@ -24,14 +24,17 @@ test('tabelle delle mosse e degli apprendimenti', () => {
   for (const list of [en.moveNames, it.moveNames, en.moveDescriptions, it.moveDescriptions, en.moveRanges, it.moveRanges]) {
     assert.equal(list.length, 559);
   }
-  for (const row of moves.data) assert.equal(row.length, 5);
+  for (const row of moves.data) assert.equal(row.length, 6);
 });
 
-test('dati di alcune mosse note (potenza, tipo, categoria, PP, precisione)', () => {
-  assert.deepEqual(moves.data[move('Tackle')], [6, 1, 0, 30, 95]);
-  assert.deepEqual(moves.data[move('Growl')], [0, 1, 2, 20, 100]);
-  assert.deepEqual(moves.data[move('Leech Seed')], [0, 4, 2, 17, 90]);
+test('dati di alcune mosse note (potenza, tipo, categoria, PP, precisione del secondo e del primo controllo)', () => {
+  assert.deepEqual(moves.data[move('Tackle')], [6, 1, 0, 30, 95, 100]);
+  assert.deepEqual(moves.data[move('Growl')], [0, 1, 2, 20, 100, 100]);
+  assert.deepEqual(moves.data[move('Leech Seed')], [0, 4, 2, 17, 90, 100]);
   assert.equal(en.types[moves.data[move('Leech Seed')][1]], 'Grass');
+  // Colpi singoli con due precisioni diverse: Fissure ha il primo controllo al 20%, Hypnosis il secondo al 60%.
+  assert.deepEqual(moves.data[move('Fissure')], [0, 9, 0, 10, 100, 20]);
+  assert.deepEqual(moves.data[move('Hypnosis')], [0, 11, 2, 13, 60, 88]);
 });
 
 test('mosse apprese salendo di livello: Bulbasaur e Pikachu', () => {

@@ -1433,7 +1433,9 @@ def read_sir0_varint(data: bytes, pos: int) -> tuple[int, int]:
 
 
 def build_moves(waza: bytes) -> dict:
-    """data: per ID mossa [potenza, tipo, categoria (0 fisica, 1 speciale, 2 stato), PP, precisione].
+    """data: per ID mossa [potenza, tipo, categoria (0 fisica, 1 speciale, 2 stato), PP, precisione del secondo tiro
+    (accuracy2, +0xB), precisione del primo tiro (accuracy1, +0xA)]. Il gioco fa due controlli per bersaglio: il primo
+    con accuracy1 (ExecuteMoveEffect), il secondo con accuracy2 solo se la mossa fa danno (PerformDamageSequence).
     learn: per ID Pokémon [[mossa, livello, ...], [mosse MT/MN], [mosse uovo]].
     Layout: l'intestazione SIR0 punta a una piccola intestazione con il puntatore alle mosse e a quello
     delle mosse apprese (struct move_data_table_outer di pmd-sky). Le mosse sono struct move_data da 26 byte."""
@@ -1447,11 +1449,12 @@ def build_moves(waza: bytes) -> dict:
         power, move_type, category = struct.unpack_from("<HBB", waza, base)
         pp = waza[base + 8]
         accuracy = waza[base + 0xB]
+        accuracy_first = waza[base + 0xA]
         stored_id = struct.unpack_from("<H", waza, base + 0x16)[0]
         # Le ultime 16 mosse (543-558) hanno un ID interno ripetuto: le altre devono coincidere.
         if stored_id != move_id and move_id < 543:
             raise ValueError(f"waza_p.bin: la mossa {move_id} ha ID {stored_id}")
-        data.append([power, move_type, category, pp, accuracy])
+        data.append([power, move_type, category, pp, accuracy, accuracy_first])
 
     learn = []
     count = (header - learn_ptr) // 12

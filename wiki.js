@@ -723,7 +723,7 @@ function renderAbilityDetail(root, abilityId) {
 
 function wikiMoveData(moveId) {
   const row = window.WMSkyGameData?.moves?.data[moveId];
-  return row ? { power: row[0], type: row[1], category: row[2], pp: row[3], accuracy: row[4] } : null;
+  return row ? { power: row[0], type: row[1], category: row[2], pp: row[3], accuracy: row[4], accuracyFirst: row[5] } : null;
 }
 
 function wikiMoveCategory(category) {
@@ -774,10 +774,11 @@ function renderMoveDetail(root, moveId) {
     const list = wikiEl('ul', 'floor-stats wiki-floor-stats');
     list.append(makeFloorStat(t('wikiMovePower'), move.power > 0 ? String(move.power) : '—'));
     list.append(makeFloorStat(t('wikiMovePp'), String(move.pp)));
-    list.append(makeFloorStat(t('wikiMoveAccuracy'), wikiMoveAccuracy(move.accuracy)));
+    list.append(makeFloorStat(t('wikiMoveAccuracyFirst'), wikiMoveAccuracy(move.accuracyFirst)));
+    list.append(makeFloorStat(t('wikiMoveAccuracySecond'), wikiMoveAccuracy(move.accuracy)));
     const range = (text?.moveRanges || [])[moveId];
     if (range) list.append(makeFloorStat(t('wikiMoveRange'), range));
-    root.append(list, wikiEl('p', 'hint', t('wikiMoveHint')));
+    root.append(list, wikiEl('p', 'hint', t('wikiMoveHint')), wikiEl('p', 'hint', t('wikiMoveAccuracyHint')));
   }
   const learners = getWikiIndex().moveLearners.get(moveId);
   const section = wikiSection(t('wikiMoveLearners'));
