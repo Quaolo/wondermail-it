@@ -358,8 +358,39 @@ const WIKI_STATUS_ICON_FILES = {
   92: 'Cycle-Yellow', 96: 'Shield-Purple', 97: 'Exposed-Yellow', 99: 'Exclaim-White'
 };
 
+// Abilità e QI per famiglia di effetto: un'icona PMDO (stessi file degli effetti) per gruppo, scelta a mano
+// dal testo ufficiale. Le voci che non rientrano in nessun gruppo restano con le iniziali.
+const WIKI_FAMILY_ICON_FILES = { attack: 'Sword-Red', defense: 'Shield-Blue', accuracy: 'Sight-Yellow', status: 'Skull-White' };
+const WIKI_FAMILY_IDS = {
+  abilities: {
+    attack: [16, 17, 26, 34, 48, 56, 63, 67, 70, 75, 79, 80, 87, 88, 90, 92, 93, 96, 99, 100, 101, 104, 113],
+    defense: [2, 7, 9, 12, 13, 15, 19, 24, 35, 36, 50, 53, 55, 60, 72, 76, 95, 102, 108, 110, 115, 122],
+    accuracy: [29, 30, 51, 82, 86, 98, 103, 106, 119, 121],
+    status: [1, 20, 22, 25, 32, 33, 39, 41, 47, 54, 61, 62, 64, 65, 66, 68, 69, 73, 81, 114, 123]
+  },
+  iq: {
+    attack: [1, 4, 29, 34, 40, 43, 47, 50, 60],
+    defense: [32, 35, 41, 49, 63, 64],
+    accuracy: [5, 45, 48],
+    status: [7, 8, 17, 18]
+  }
+};
+
+function wikiFamilyIcon(tab, id) {
+  const families = WIKI_FAMILY_IDS[tab];
+  const family = families && Object.keys(families).find((key) => families[key].includes(id));
+  return family ? WIKI_FAMILY_ICON_FILES[family] : '';
+}
+
 function wikiImage(tab, id, className) {
   const name = wikiEntryName(tab, id);
+  const familyIcon = wikiFamilyIcon(tab, id);
+  if (familyIcon) {
+    return createFallbackImage({
+      src: `assets/effect-icons-pmdo/${familyIcon}.png`,
+      fallback: buildPreviewBadge(name, tab === 'iq' ? 'reward' : 'pokemon')
+    }, className);
+  }
   if (tab === 'status' && WIKI_STATUS_ICON_FILES[id]) {
     return createFallbackImage({
       src: `assets/effect-icons-pmdo/${WIKI_STATUS_ICON_FILES[id]}.png`,
