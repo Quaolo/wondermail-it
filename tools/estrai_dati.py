@@ -281,10 +281,29 @@ def clean_job_text(text: str) -> str:
     return re.sub(r"\s+", " ", text).strip()
 
 
+# Effetti di stato (schermata «Stato» del gioco): coppie nome + descrizione a partire dalla frase 13558, 102 voci.
+# Alcune voci sono vuote (non usate); la descrizione di «Blinker» sta nella coppia dopo, con il nome vuoto.
+STATUS_START = 13558
+STATUS_COUNT = 102
+
+
+def build_statuses(strings: list[str]) -> tuple[list[str], list[str]]:
+    names, descriptions = [], []
+    for k in range(STATUS_COUNT):
+        names.append(clean_name(strings[STATUS_START + 2 * k]))
+        descriptions.append(clean_description(strings[STATUS_START + 2 * k + 1]))
+    for k in range(STATUS_COUNT - 1):
+        if names[k] and not descriptions[k] and not names[k + 1] and descriptions[k + 1]:
+            descriptions[k], descriptions[k + 1] = descriptions[k + 1], ""
+    return names, descriptions
+
+
 def build_language(strings: list[str]) -> dict:
     def block(name, cleaner):
         start, count = BLOCKS[name]
         return [cleaner(s) for s in strings[start:start + count]]
+
+    status_names, status_descriptions = build_statuses(strings)
 
     return {
         "items": block("items", clean_name),
@@ -294,6 +313,8 @@ def build_language(strings: list[str]) -> dict:
         "dungeons": block("dungeons", clean_name),
         "traps": block("traps", clean_name),
         "trapDescriptions": block("trapDescriptions", clean_description),
+        "statusNames": status_names,
+        "statusDescriptions": status_descriptions,
         # Meteo dei piani (nomi brevi della schermata del dungeon) e posti speciali di un piano.
         "weather": block("weather", clean_name),
         "floorPlaces": {key: clean_name(strings[index]).strip(" !") for key, index in FLOOR_PLACES.items()},

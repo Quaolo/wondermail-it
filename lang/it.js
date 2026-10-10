@@ -440,6 +440,8 @@ window.WMSkyRegisterLocale('it', {
     wikiTabDungeons: 'Dungeon',
     wikiTabIq: 'QI',
     wikiTabAbilities: 'Abilità',
+    wikiTabStatus: 'Effetti',
+    wikiStatusIconNote: "L'icona è di PMDO e può differire da quella del gioco originale: l'abbinamento effetto-icona segue la convenzione di PMDO.",
     wikiTabMoves: 'Mosse',
     wikiMovePhysical: 'Fisica',
     wikiMoveSpecial: 'Speciale',

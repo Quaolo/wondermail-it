@@ -15,7 +15,7 @@ const SELF = 'tests/repo.test.mjs';
 const ALLOWED = [
   /^(\.nojekyll|LICENSE|README(\.[a-z]{2})?\.md|index\.html|style\.css)$/,
   /^[a-z_]+\.js$/,
-  /^assets\/(item-icons|item-icons-pmdo)\/[A-Za-z0-9_.()'-]+\.png$/,
+  /^assets\/(item-icons|item-icons-pmdo|trap-icons-pmdo|effect-icons-pmdo)\/[A-Za-z0-9_.()'-]+\.png$/,
   /^assets\/favicon\.svg$/,
   /^assets\/flags\/[a-z]{2}\.svg$/,
   /^assets\/fonts\/[a-z0-9-]+\.woff2$/,

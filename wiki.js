@@ -4,7 +4,7 @@
   (con Annulla, come gli altri punti di partenza). Usa le funzioni di app.js, che viene caricato prima.
 */
 
-const WIKI_TABS = ['items', 'pokemon', 'dungeons', 'iq', 'traps', 'abilities', 'moves'];
+const WIKI_TABS = ['items', 'pokemon', 'dungeons', 'iq', 'traps', 'abilities', 'moves', 'status'];
 const WIKI_PLACES_SHOWN = 12;
 const WIKI_FLOOR_ITEMS_SHOWN = 12;
 // Luoghi di un piano in cui compaiono strumenti: colonna di WMSkyFloors.byDungeon e campo del piano che dice
@@ -23,7 +23,7 @@ const wikiState = {
   itemGroup: -1,
   moveType: -1,
   moveCategory: -1,
-  selected: { items: null, pokemon: null, dungeons: null, iq: null, traps: null, abilities: null, moves: null },
+  selected: { items: null, pokemon: null, dungeons: null, iq: null, traps: null, abilities: null, moves: null, status: null },
   floor: 1,
   history: [],
   lastFocus: null
@@ -106,6 +106,11 @@ function buildWikiIndex() {
     .filter(({ id, name }) => id > 0 && isWikiRealName(name) && !String(name).startsWith('$'))
     .map(({ id }) => ({ id }));
 
+  // Effetti (legenda): solo quelli con un'icona PMDO e un nome nel testo del gioco.
+  const statusEntries = ((itText.statusNames || []).map((name, id) => ({ id, name })))
+    .filter(({ id, name }) => WIKI_STATUS_ICON_FILES[id] && isWikiRealName(name))
+    .map(({ id }) => ({ id }));
+
   const dex = game.nationalDex || [];
   const iqData = game.iq || null;
   const pokemon = [];
@@ -175,6 +180,7 @@ function buildWikiIndex() {
     iq,
     traps,
     abilities: abilityEntries,
+    status: statusEntries,
     abilityMons,
     moves,
     moveLearners,
@@ -197,9 +203,9 @@ function getWikiIndex() {
 // Nomi e testi
 // ---------------------------------------------------------------------------
 
-const WIKI_NAME_LISTS = { items: 'items', pokemon: 'pokemon', dungeons: 'dungeons', iq: 'iqNames', traps: 'traps', abilities: 'abilityNames', moves: 'moveNames' };
+const WIKI_NAME_LISTS = { items: 'items', pokemon: 'pokemon', dungeons: 'dungeons', iq: 'iqNames', traps: 'traps', abilities: 'abilityNames', moves: 'moveNames', status: 'statusNames' };
 // Schede con una descrizione ufficiale: si cerca anche lì.
-const WIKI_DESCRIPTION_LISTS = { iq: 'iqDescriptions', traps: 'trapDescriptions', abilities: 'abilityDescriptions', moves: 'moveDescriptions' };
+const WIKI_DESCRIPTION_LISTS = { iq: 'iqDescriptions', traps: 'trapDescriptions', abilities: 'abilityDescriptions', moves: 'moveDescriptions', status: 'statusDescriptions' };
 
 function wikiEntryName(tab, id) {
   if (tab === 'items') return getItemDisplayName(id);
@@ -208,6 +214,7 @@ function wikiEntryName(tab, id) {
   if (tab === 'traps') return (getGameText()?.traps || [])[id] || '';
   if (tab === 'abilities') return (getGameText()?.abilityNames || [])[id] || '';
   if (tab === 'moves') return (getGameText()?.moveNames || [])[id] || '';
+  if (tab === 'status') return (getGameText()?.statusNames || [])[id] || '';
   return getDungeonName(id);
 }
 
@@ -332,11 +339,43 @@ function wikiEl(tag, className, text) {
   return node;
 }
 
+// Sprite delle trappole di PMDO (24x24, nello stile del gioco), uno per ID di trappola.
+const WIKI_TRAP_ICON_FILES = {
+  1: 'Mud', 2: 'Sticky', 3: 'Grimy', 4: 'Summon', 5: 'Pitfall', 6: 'Warp', 7: 'Gust', 8: 'Spin', 9: 'Slumber', 10: 'Slow',
+  11: 'Seal', 12: 'Poison', 13: 'Self-Destruct', 14: 'Explosion', 15: 'PP-Zero', 16: 'Chestnut', 17: 'Tile-Wonder',
+  18: 'Pokemon', 19: 'Spikes', 20: 'Stealth-Rock', 21: 'Toxic-Spikes', 22: 'Trip', 23: 'Random', 24: 'Grudge'
+};
+
+// Icone degli effetti (PMDO, non quelle del gioco originale), per indice del blocco "stati" del gioco.
+const WIKI_STATUS_ICON_FILES = {
+  0: 'Sleep', 1: 'Exposed-Red', 2: 'Skull-Pink', 3: 'Yawn', 6: 'Burn', 7: 'Skull-White', 8: 'Skull-Purple',
+  11: 'Freeze', 20: 'Confuse', 23: 'Fist-DarkBlue', 24: 'Exclaim-Pink', 25: 'Exclaim-Pink', 38: 'Fist-Yellow',
+  41: 'Shield-Blue', 42: 'Shield-Tan', 43: 'Shield-Yellow', 44: 'Sword-Shield-Brown', 45: 'Shield-Green',
+  46: 'Exclaim-Yellow', 47: 'Shield-Green', 48: 'Sword-Shield-Pink', 49: 'Exclaim-Red',
+  50: 'Sword-Shield-Blue', 54: 'Shield-White', 55: 'Sword-Shield-White', 56: 'Cycle-Blue', 57: 'Cycle-White',
+  59: 'Skull-Red', 61: 'Question-DarkBlue', 63: 'X-Gray', 64: 'X-Brown', 67: 'Skull-DarkBlue',
+  69: 'Sword-LightBlue', 72: 'Sword-Pink', 75: 'Sword-LightBlue', 82: 'Blind-Blue', 90: 'Sight-Red',
+  92: 'Cycle-Yellow', 96: 'Shield-Purple', 97: 'Exposed-Yellow', 99: 'Exclaim-White'
+};
+
 function wikiImage(tab, id, className) {
   const name = wikiEntryName(tab, id);
+  if (tab === 'status' && WIKI_STATUS_ICON_FILES[id]) {
+    return createFallbackImage({
+      src: `assets/effect-icons-pmdo/${WIKI_STATUS_ICON_FILES[id]}.png`,
+      fallback: buildPreviewBadge(name, 'item')
+    }, className);
+  }
+  if (tab === 'traps' && WIKI_TRAP_ICON_FILES[id]) {
+    const fallback = buildPreviewBadge(name, 'item');
+    return createFallbackImage({
+      src: `assets/trap-icons-pmdo/Trap-${String(id).padStart(2, '0')}-${WIKI_TRAP_ICON_FILES[id]}.png`,
+      fallback
+    }, className);
+  }
   if (tab === 'items') return createFallbackImage(getItemImage(id, name, true), className);
   if (tab === 'pokemon') return createFallbackImage(getPokemonImage(id, name), className);
-  const theme = tab === 'iq' ? 'reward' : (tab === 'traps' || tab === 'moves') ? 'item' : 'pokemon';
+  const theme = tab === 'iq' ? 'reward' : (tab === 'traps' || tab === 'moves' || tab === 'status') ? 'item' : 'pokemon';
   return createFallbackImage({ src: buildPreviewBadge(name, theme), fallback: '' }, className);
 }
 
@@ -532,7 +571,10 @@ function renderWikiList() {
       meta = !count ? t('wikiAbilityNobody') : count === 1 ? t('wikiAbilityMonsOne') : t('wikiAbilityMons', { count });
     } else if (tab === 'moves') {
       meta = wikiMoveSummary(entry.id);
-      moveIcon = wikiTypeIcon((wikiMoveData(entry.id) || {}).type);
+      const moveData = wikiMoveData(entry.id) || {};
+      moveIcon = wikiTypeIcon(moveData.type, moveData.category);
+    } else if (tab === 'status') {
+      meta = '';
     } else if (tab === 'traps') {
       const places = index.trapPlaces.get(entry.id);
       meta = !places ? t('wikiTrapNotOnFloors')
@@ -705,8 +747,23 @@ function wikiTypeChip(type) {
 }
 
 // Simboli dei tipi in pixel art, disegnati da noi (non sono quelli del gioco). Una lettera = un pixel, "." = vuoto.
-// Fatti tutti tranne Neutro (il «-»), che resta senza simbolo.
+// Fatti tutti i tipi; Neutro (il «-», tipo 0) è un disco grigio con un trattino.
 const WIKI_TYPE_PIXELS = {
+  0: { // Neutro
+    rows: [
+      '...ooooo...',
+      '..olllllo..',
+      '.olmmmmmmo.',
+      'olmmmmmmmdo',
+      'olmkkkkkmdo',
+      'olmkkkkkmdo',
+      'olmmmmmmmdo',
+      '.olmmmmmdo.',
+      '..oddddddo..',
+      '...ooooo...'
+    ],
+    palette: { o: '#4d5560', l: '#d5dae0', m: '#a3abb5', d: '#7d8691', k: '#4d5560' }
+  },
   2: {
     rows: [
       '.....o.....',
@@ -1032,18 +1089,24 @@ const WIKI_TYPE_PIXELS = {
   }
 };
 
-function wikiTypeIcon(type) {
-  const art = WIKI_TYPE_PIXELS[type];
-  if (!art) return null;
+// Segni di categoria delle mosse (0 fisica, 1 speciale, 2 stato): piccoli, in angolo in basso a destra del simbolo del tipo.
+const WIKI_CATEGORY_PIXELS = {
+  0: {
+    rows: ['...o...', '..oyo..', '..oyo..', 'ooyyyoo', '..oyo..', '..oyo..', '...o...'],
+    palette: { o: '#7a3a0a', y: '#ffa53a' }
+  },
+  1: {
+    rows: ['.ooooo.', 'oLLLLLo', 'oLoooLo', 'oLoWoLo', 'oLoooLo', 'oLLLLLo', '.ooooo.'],
+    palette: { o: '#3a2a8a', L: '#8a72ff', W: '#e8e0ff' }
+  },
+  2: {
+    rows: ['...o...', '..olo..', '.olllo.', 'ollwllo', '.olllo.', '..olo..', '...o...'],
+    palette: { o: '#2f5a44', l: '#7fcf9f', w: '#e8fff0' }
+  }
+};
+
+function wikiDrawPixels(svg, art, offsetX, offsetY) {
   const ns = 'http://www.w3.org/2000/svg';
-  const svg = document.createElementNS(ns, 'svg');
-  const width = art.rows[0].length;
-  const height = art.rows.length;
-  svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
-  svg.setAttribute('class', 'wiki-type-icon');
-  svg.setAttribute('aria-hidden', 'true');
-  svg.setAttribute('shape-rendering', 'crispEdges');
-  svg.style.width = `${(width / height) * 1.25}em`;
   art.rows.forEach((row, y) => {
     let x = 0;
     while (x < row.length) {
@@ -1052,8 +1115,8 @@ function wikiTypeIcon(type) {
       let end = x;
       while (end < row.length && row[end] === letter) end += 1;
       const rect = document.createElementNS(ns, 'rect');
-      rect.setAttribute('x', String(x));
-      rect.setAttribute('y', String(y));
+      rect.setAttribute('x', String(x + offsetX));
+      rect.setAttribute('y', String(y + offsetY));
       rect.setAttribute('width', String(end - x));
       rect.setAttribute('height', '1');
       rect.setAttribute('fill', art.palette[letter]);
@@ -1061,6 +1124,28 @@ function wikiTypeIcon(type) {
       x = end;
     }
   });
+}
+
+// Simbolo del tipo; con `category` (0-2) si aggiunge il segno della categoria in basso a destra.
+function wikiTypeIcon(type, category) {
+  const art = WIKI_TYPE_PIXELS[type];
+  if (!art) return null;
+  const mark = WIKI_CATEGORY_PIXELS[category];
+  const ns = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(ns, 'svg');
+  const width = art.rows[0].length;
+  const height = art.rows.length;
+  const totalWidth = mark ? width + 2 : width;
+  const totalHeight = mark ? height + 2 : height;
+  svg.setAttribute('viewBox', `0 0 ${totalWidth} ${totalHeight}`);
+  svg.setAttribute('class', 'wiki-type-icon');
+  svg.setAttribute('aria-hidden', 'true');
+  svg.setAttribute('shape-rendering', 'crispEdges');
+  const iconHeight = 1.25 * totalHeight / height;
+  svg.style.height = `${iconHeight}em`;
+  svg.style.width = `${(totalWidth / totalHeight) * iconHeight}em`;
+  wikiDrawPixels(svg, art, 0, 0);
+  if (mark) wikiDrawPixels(svg, mark, totalWidth - mark.rows[0].length, totalHeight - mark.rows.length);
   return svg;
 }
 
@@ -1459,6 +1544,12 @@ function renderTrapDetail(root, trapId) {
   root.append(section);
 }
 
+function renderStatusDetail(root, statusId) {
+  root.append(wikiHeader('status', statusId, ''));
+  root.append(wikiEl('p', 'wiki-description', (getGameText()?.statusDescriptions || [])[statusId] || ''));
+  root.append(wikiEl('p', 'hint', t('wikiStatusIconNote')));
+}
+
 function renderDungeonDetail(root, dungeonId) {
   const entry = getWikiIndex().dungeons.find((dungeon) => dungeon.id === dungeonId);
   if (!entry) return;
@@ -1586,6 +1677,7 @@ function renderWikiDetail() {
   else if (tab === 'traps') renderTrapDetail(content, id);
   else if (tab === 'abilities') renderAbilityDetail(content, id);
   else if (tab === 'moves') renderMoveDetail(content, id);
+  else if (tab === 'status') renderStatusDetail(content, id);
   else renderDungeonDetail(content, id);
   root.append(content);
 }

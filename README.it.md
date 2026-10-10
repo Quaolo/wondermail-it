@@ -161,7 +161,7 @@ tabella del gioco più la crescita di ogni livello, con un cursore dal livello 1
 serve a ogni evoluzione: livello, QI, uno strumento o una condizione in più come un fiocco, una mossa o l'Attacco
 rispetto alla Difesa. I Pokémon si cercano anche per tipo o per abilità. La scheda Abilità spiega ogni abilità ed elenca i Pokémon che la hanno. La scheda Mosse si può filtrare per tipo e categoria e mostra tipo, categoria, potenza, PP,
 precisione (i due valori che il gioco usa, ancora da verificare in partita), raggio ed effetto di ogni mossa e quali Pokémon la imparano (salendo di livello, con MT/MN o come mossa
-uovo); la scheda di un Pokémon elenca le sue mosse allo stesso modo. I tipi hanno un piccolo simbolo in pixel art disegnato per il sito, non quelli del gioco.
+uovo); la scheda di un Pokémon elenca le sue mosse allo stesso modo. I tipi hanno un piccolo simbolo in pixel art disegnato per il sito, non quelli del gioco, e nell'elenco delle mosse un segno minuscolo in angolo distingue le mosse fisiche, speciali e di stato.
 
 Negli elenchi «Dove si trova» di un Pokémon o di uno strumento, il pulsante Missione qui prepara la missione: quel
 dungeon, il primo piano dove una missione è permessa e il Pokémon o lo strumento come obiettivo. Funziona quando il
@@ -328,7 +328,7 @@ Il test della codifica confronta 60 password con quelle del generatore originale
 - [PMDCollab SpriteCollab](https://sprites.pmdcollab.org/) per i ritratti (di Spike Chunsoft e degli artisti
   della community, CC BY-NC 4.0), che vengono caricati da GitHub e non sono inclusi qui
 - la [wiki di PMDO](https://wiki.pmdo.pmdcollab.org/) e i file di [PMDO](https://github.com/audinowho/DumpAsset)
-  per le icone degli strumenti
+  per le icone degli strumenti, delle trappole e degli effetti
 - [Pixelify Sans](https://github.com/eifetx/Pixelify-Sans) per il carattere dei titoli (SIL Open Font License; qui con il 5 ridisegnato, perché sembrava una S)
 
 Ho sviluppato il progetto insieme a Claude.
